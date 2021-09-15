@@ -7,6 +7,10 @@ const routes = [{
     component: BeeefLibrary,
     name: 'BeeefLibrary',
   }, {
+    path: '/collections',
+    component: Collections,
+    name: 'Collections',
+  }, {
   //   path: '/bodyshop/:param',
   //   component: Bodyshop,
   //   name: 'Bodyshop',

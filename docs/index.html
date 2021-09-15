@@ -70,12 +70,14 @@
     <script src="connectionModule.js"></script>
     <script src="tokensModule.js"></script>
     <script src="zombieBabiesAdoption.js"></script>
+    <script src="collections.js"></script>
     <script src="nftPostcard.js"></script>
     <script src="beeefLibrary.js"></script>
     <script src="genemixer.js"></script>
     <script src="docs.js"></script>
     <script src="routes.js"></script>
 
+    <!-- <link rel="icon" href="images/471_purplehairrainbowmulti_goldchain_goldnosering_brownbg_transparenthair_gp1608_pinkbg.gif" type="image/gif" > -->
     <link rel="apple-touch-icon" sizes="57x57" href="images/apple-icon-57x57.png">
     <link rel="apple-touch-icon" sizes="60x60" href="images/apple-icon-60x60.png">
     <link rel="apple-touch-icon" sizes="72x72" href="images/apple-icon-72x72.png">
@@ -100,10 +102,12 @@
         <div>
           <b-navbar variant="light" fixed="top">
             <b-navbar-brand to="/" variant="primary">
-              <img src="images/ZombieBaby_006_cropped.png" style="max-width: 30px; margin-top: -4px;" alt="Zombie Baby #006" />
+              <!-- <img src="images/471_purplehairrainbowmulti_goldchain_goldnosering_brownbg_transparenthair_gp1608_pinkbg.gif" style="max-width: 50px; margin-top: -4px;" alt="Zombie Baby #006" /> -->
+              <b-avatar rounded="sm" variant="light" size="3.0rem" src="images/471_purplehairrainbowmulti_goldchain_goldnosering_brownbg_transparenthair_gp1608_pinkbg.gif" v-b-popover.hover.bottom="'MELVIS.ETH'" class="ml-0"></b-avatar>
               nix.app
             </b-navbar-brand>
             <b-navbar-nav class="ml-auto">
+              <b-nav-item size="sm" to="/collections" active-class="active" v-b-popover.hover="'Collections'">Collections</b-nav-item>
               <b-nav-item size="sm" to="/beeefLibrary" active-class="active" v-b-popover.hover="'Public PNGs BeeefLibrary'">BeeefLibrary</b-nav-item>
               <b-nav-item size="sm" to="/zombieBabiesAdoption" active-class="active" v-b-popover.hover="'Bodyshop'">Zombie Babies Adoption</b-nav-item>
               <!-- <b-nav-item size="sm" to="/bodyshop/all" active-class="active" v-b-popover.hover="'Bodyshop'">Bodyshop</b-nav-item> -->
