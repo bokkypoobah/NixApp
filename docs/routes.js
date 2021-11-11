@@ -11,6 +11,10 @@ const routes = [{
     component: Collections,
     name: 'Collections',
   }, {
+    path: '/nftpostcard',
+    component: NFTPostcard,
+    name: 'NFTPostcard',
+  }, {
   //   path: '/bodyshop/:param',
   //   component: Bodyshop,
   //   name: 'Bodyshop',
@@ -28,7 +32,7 @@ const routes = [{
     name: '',
   }, {
     path: '*',
-    component: NFTPostcard,
+    component: Nix,
     name: ''
   }
 ];

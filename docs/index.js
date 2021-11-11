@@ -54,6 +54,7 @@ const store = new Vuex.Store({
     connection: connectionModule,
     tokens: tokensModule,
     nftPostcard: nftPostcardModule,
+    nix: nixModule,
     collections: collectionsModule,
     beeefLibrary: beeefLibraryModule,
   }
