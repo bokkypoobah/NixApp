@@ -123,10 +123,10 @@ const Nix = {
       order: {
         token: "0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4",
         taker: null,
-        buyOrSell: 0,
+        buyOrSell: 1,
         anyOrAll: 0,
-        tokenIds: "1, 2, 3, 4",
-        price: "1000000000000000000",
+        tokenIds: "2075, 1479, 881, 18",
+        price: "0.01",
         expiry: 1672491599,
         tradeMax: "5",
         royaltyFactor: "100",
@@ -202,60 +202,24 @@ const Nix = {
             const weth = await nix.weth();
             console.log("weth: " + weth);
 
-
-            // order: {
-            //   token: "0x66fa96804A82034Dd7C44aF5376eEd7207861efd",
-            //   taker: null,
-            //   buyOrSell: 0,
-            //   anyOrAll: 0,
-            //   tokenIds: "1, 2, 3, 4",
-            //   price: "0.01",
-            //   expiry: "1d",
-            //   tradeMax: "5",
-            //   royaltyFactor: "100",
-            //   integrator: null,
-            // },
-
             const taker = this.order.taker == null || this.order.taker.trim().length == 0 ? ADDRESS0 : taker;
             console.log("taker: " + taker);
 
             const tokenIds = this.order.tokenIds.split(",").map(function(item) { return item.trim(); });
             console.log("tokenIds: " + JSON.stringify(tokenIds));
 
+            const price = ethers.utils.parseEther(this.order.price);
+            console.log("price: " + price.toString());
+
             const integrator = this.order.integrator == null || this.order.integrator.trim().length == 0 ? ADDRESS0 : integrator;
             console.log("integrator: " + integrator);
 
             try {
-              const tx = await nixWithSigner.addOrder(this.order.token, taker, this.order.buyOrSell, this.order.anyOrAll, tokenIds, this.order.price, this.order.expiry, this.order.tradeMax, this.order.royaltyFactor, integrator);
+              const tx = await nixWithSigner.addOrder(this.order.token, taker, this.order.buyOrSell, this.order.anyOrAll, tokenIds, price, this.order.expiry, this.order.tradeMax, this.order.royaltyFactor, integrator);
               console.log("tx: " + JSON.stringify(tx));
             } catch (e) {
               console.log("error: " + e.toString());
             }
-          //   const yourBastardYourCall = new ethers.Contract(YOURBASTARDYOURCALLADDRESS, YOURBASTARDYOURCALLABI, provider);
-          //   const yourBastardYourCallWithSigner = yourBastardYourCall.connect(provider.getSigner());
-          //   const tx = await yourBastardYourCallWithSigner.setLicenseForBASTARD(2, tokenId, this.metadatas[tokenId]);
-          //   console.log("EXEC setMetaData - yourBastardYourCall - tx: " + JSON.stringify(tx));
-          //   // this.$bvModal.msgBoxOk("TRANSACTION HASH: " + tx)
-          //   //   .then(value1 => {
-          //   //     event.preventDefault();
-          //   //   })
-          //   //   .catch(err => {
-          //   //     // An error occurred
-          //   //   });
-          //   // function setLicenseForBASTARD(uint8 _version, uint _id, string memory _text) external {
-          //   // console.log("EXEC setMetaData - yourBastardYourCall: " + JSON.stringify(yourBastardYourCall));
-
-          // function addOrder(
-          //     address token,
-          //     address taker,
-          //     BuyOrSell buyOrSell,
-          //     AnyOrAll anyOrAll,
-          //     uint[] memory tokenIds,
-          //     uint price,
-          //     uint expiry,
-          //     uint tradeMax,
-          //     uint royaltyFactor,
-          //     address integrator
           }
         })
         .catch(err => {
