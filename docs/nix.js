@@ -20,9 +20,37 @@ const Nix = {
                       <b-button size="sm" @click="loadInfo" variant="primary">Load Info</b-button>
                     </b-form-group>
 
-                    <b-card-text>
-                    {{ tokensData }}
-                    </b-card-text>
+                    <div v-for="(tokensDataItem, tokensDataIndex) in tokensData">
+                      <b-card body-class="p-0" header-class="m-0 p-0 pl-2" footer-class="p-1" class="m-3 p-0">
+                        <template #header>
+                          <span variant="secondary" class="small truncate">
+                            {{ tokensDataIndex }} ERC-721 NFT Collection <b-link :href="explorer + 'token/' + tokensDataItem.token" target="_blank">{{ tokensDataItem.token }}</b-link>
+                          </span>
+                        </template>
+                        <b-table small fixed striped sticky-header="200px" :items="tokensDataItem.ordersData" head-variant="light">
+                        </b-table>
+
+                        <!--
+                        {{ tokensDataItem }}
+                        <font size="-2">
+                          <b-table small fixed striped sticky-header="200px" :fields="categoryFields" :items="getSortedValuesForCategory(categoryKey)" head-variant="light">
+                            <template #cell(select)="data">
+                              <b-form-checkbox @change="filterChange(categoryKey, data.item.categoryOption)"></b-form-checkbox>
+                            </template>
+                          </b-table>
+                        </font>
+                        -->
+                      </b-card>
+
+
+                      <!--
+
+                      <b-link @click="displayToken(item)">
+                        <b-avatar rounded="sm" variant="light" size="3.0rem" :src="data[item] ? data[item].images[0] : null" v-b-popover.hover.bottom="'#' + item" class="ml-2"></b-avatar>
+                      </b-link>
+                      -->
+                    </div>
+
                   </b-tab>
 
                   <b-tab title="Add Orders" class="p-1">
