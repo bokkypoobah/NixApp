@@ -56,6 +56,12 @@ const Nix = {
                             <template #cell(expiry)="data">
                               {{ formatDate(data.item.expiry) }}
                             </template>
+                            <template #cell(royaltyFactor)="data">
+                              {{ data.item.royaltyFactor.toString() + '%' }}
+                            </template>
+                            <template #cell(orderStatus)="data">
+                              {{ formatOrderStatus(data.item.orderStatus) }}
+                            </template>
 
                           </b-table>
                         </font>
@@ -215,6 +221,9 @@ const Nix = {
     },
     formatAnyOrAll(anyOrAll) {
       return ANYORALLSTRING[anyOrAll];
+    },
+    formatOrderStatus(orderStatus) {
+      return ORDERSTATUSSTRING[orderStatus];
     },
     formatDate(d) {
       if (d == 0) {
