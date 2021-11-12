@@ -15,7 +15,17 @@ const Nix = {
               <b-card no-body class="mt-2">
                 <b-tabs vertical pills card end nav-class="p-2" active-tab-class="p-2">
 
-                  <b-tab active title="Add Orders" class="p-1">
+                  <b-tab active title="Orders" class="p-1">
+                    <b-form-group label-cols="2" label-size="sm" label="">
+                      <b-button size="sm" @click="loadInfo" variant="primary">Load Info</b-button>
+                    </b-form-group>
+
+                    <b-card-text>
+                    {{ tokensData }}
+                    </b-card-text>
+                  </b-tab>
+
+                  <b-tab title="Add Orders" class="p-1">
                     <b-form-group label-cols="2" label-size="sm" label="Token" description="e.g., 0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4 for TestToadz">
                       <b-form-input size="sm" v-model="order.token" class="w-50"></b-form-input>
                     </b-form-group>
@@ -68,38 +78,6 @@ const Nix = {
 
                   <b-tab title="Orders" class="p-1">
                     <b-card-text>
-
-                      <!--
-                      <b-form-group label-cols="2" label-size="sm" label="Width" description="24 to 2048">
-                        <b-input-group>
-                          <template #prepend>
-                            <b-form-input type="text" @change="setCanvasSize()" v-model.trim="canvasSetting.width" class="w-100 mr-2"></b-form-input>
-                            <b-input-group-text>24</b-input-group-text>
-                          </template>
-                          <b-form-input @change="setCanvasSize()" v-model="canvasSetting.width" type="range" min="24" max="2048" class="w-25"></b-form-input>
-                          <template #append>
-                            <b-input-group-text>2048</b-input-group-text>
-                          </template>
-                        </b-input-group>
-                      </b-form-group>
-
-                      <b-form-group label-cols="2" label-size="sm" label="Height" description="24 to 2048">
-                        <b-input-group>
-                          <template #prepend>
-                            <b-form-input type="text" @change="setCanvasSize()" v-model.trim="canvasSetting.height" class="w-100 mr-2"></b-form-input>
-                            <b-input-group-text>24</b-input-group-text>
-                          </template>
-                          <b-form-input @change="setCanvasSize()" v-model="canvasSetting.height" type="range" min="24" max="2048" class="w-25"></b-form-input>
-                          <template #append>
-                            <b-input-group-text>2048</b-input-group-text>
-                          </template>
-                        </b-input-group>
-                      </b-form-group>
-
-                      <b-form-group label-cols="2" label-size="sm" description="To be implemented. Please use your OS print screen buttons">
-                        <b-button disabled size="sm" @click="saveImage()" v-b-popover.hover="'Not working yet. Please use your OS print screen buttons'" variant="info">Save Image</b-button>
-                      </b-form-group>
-                      -->
                     </b-card-text>
                   </b-tab>
 
@@ -141,6 +119,8 @@ const Nix = {
         { value: 0, text: 'Any' },
         { value: 1, text: 'All' },
       ],
+
+      tokensData: [],
     }
   },
   computed: {
@@ -175,6 +155,61 @@ const Nix = {
       }, 1500);
     },
 
+    async loadInfo() {
+      event.preventDefault();
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const blockNumber = await provider.getBlockNumber();
+      console.log("blockNumber: " + blockNumber);
+      const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
+      const nixHelper = new ethers.Contract(NIXHELPERADDRESS, NIXHELPERABI, provider);
+      var tokensData = [];
+      const tokensLength = await nix.tokensLength();
+      if (tokensLength > 0) {
+        var tokensIndices = [...Array(parseInt(tokensLength)).keys()];
+        console.log("tokensIndices: " + JSON.stringify(tokensIndices));
+        const tokens = await nixHelper.getTokens(tokensIndices);
+        console.log("tokens: " + JSON.stringify(tokens));
+        for (let i = 0; i < tokens[0].length; i++) {
+          const token = tokens[0][i];
+          const ordersLength = tokens[1][i];
+          const executed = tokens[2][i];
+          const volumeToken = tokens[3][i];
+          const volumeWeth = tokens[4][i];
+          console.log("token: " + token + ", ordersLength: " + ordersLength + ", executed: " + executed + ", volumeToken: " + volumeToken + ", volumeWeth: " + volumeWeth);
+          var ordersData = [];
+          var orderIndices = [...Array(parseInt(ordersLength)).keys()];
+          const orders = await nixHelper.getOrders(token, orderIndices);
+          console.log("orders: " + JSON.stringify(orders.map((x) => { return x.toString(); })));
+          for (let i = 0; i < ordersLength; i++) {
+            const maker = orders[0][i];
+            const taker = orders[1][i];
+            const tokenIds = orders[2][i];
+            const price = orders[3][i];
+            const data = orders[4][i];
+            const buyOrSell = data[0];
+            const anyOrAll = data[1];
+            const expiry = data[2];
+            const expiryString = expiry == 0 ? "(none)" : new Date(expiry * 1000).toISOString();
+            const tradeCount = data[3];
+            const tradeMax = data[4];
+            const royaltyFactor = data[5];
+            const orderStatus = data[6];
+            ordersData.push({ maker: maker, taker: taker, tokenIds: tokenIds, price: price, buyOrSell: buyOrSell,
+              anyOrAll: anyOrAll, expiry: expiry, tradeCount: tradeCount, tradeMax: tradeMax, royaltyFactor: royaltyFactor,
+              orderStatus: orderStatus });
+            // console.log("maker: " + maker + ", taker: " + taker + ", tokenIds: " + tokenIds + ", price: " + price +
+            //   ", buyOrSell: " + BUYORSELLSTRING[buyOrSell] + ", anyOrAll: " + ANYORALLSTRING[anyOrAll] + ", expiryString: " + expiryString +
+            //   ", tradeCount: " + tradeCount + ", tradeMax: " + tradeMax + ", royaltyFactor: " + royaltyFactor +
+            //   ", orderStatus: " + ORDERSTATUSSTRING[orderStatus]);
+          }
+          console.log("ordersData: " + JSON.stringify(ordersData));
+          tokensData.push({ token: token, ordersLength: ordersLength, executed: executed, volumeToken: volumeToken, volumeWeth: volumeWeth, ordersData: ordersData });
+        }
+        console.log("tokensData: " + JSON.stringify(tokensData, null, 2));
+        this.tokensData = tokensData;
+      }
+    },
+
     addOrder() {
       console.log("addOrder");
       this.$bvModal.msgBoxConfirm('Add Order?', {
@@ -190,30 +225,15 @@ const Nix = {
         })
         .then(async value1 => {
           if (value1) {
-            console.log("addOrder 1");
             event.preventDefault();
-          //   console.log("EXEC setMetaData: " + tokenId + this.metadatas[tokenId]);
             const provider = new ethers.providers.Web3Provider(window.ethereum);
-            console.log("addOrder 2");
             const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
-            console.log("addOrder 3");
             const nixWithSigner = nix.connect(provider.getSigner());
-            console.log("addOrder 4");
             const weth = await nix.weth();
-            console.log("weth: " + weth);
-
             const taker = this.order.taker == null || this.order.taker.trim().length == 0 ? ADDRESS0 : taker;
-            console.log("taker: " + taker);
-
             const tokenIds = this.order.tokenIds.split(",").map(function(item) { return item.trim(); });
-            console.log("tokenIds: " + JSON.stringify(tokenIds));
-
             const price = ethers.utils.parseEther(this.order.price);
-            console.log("price: " + price.toString());
-
             const integrator = this.order.integrator == null || this.order.integrator.trim().length == 0 ? ADDRESS0 : integrator;
-            console.log("integrator: " + integrator);
-
             try {
               const tx = await nixWithSigner.addOrder(this.order.token, taker, this.order.buyOrSell, this.order.anyOrAll, tokenIds, price, this.order.expiry, this.order.tradeMax, this.order.royaltyFactor, integrator);
               console.log("tx: " + JSON.stringify(tx));
