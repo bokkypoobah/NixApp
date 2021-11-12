@@ -24,11 +24,13 @@ const Nix = {
                       <b-card body-class="p-0" header-class="m-0 p-0 pl-2" footer-class="p-1" class="m-3 p-0">
                         <template #header>
                           <span variant="secondary" class="small truncate">
-                            {{ tokensDataIndex }} ERC-721 NFT Collection <b-link :href="explorer + 'token/' + tokensDataItem.token" target="_blank">{{ tokensDataItem.token }}</b-link>
+                            {{ tokensDataIndex }} ERC-721 NFT Collection <b-link :href="explorer + 'token/' + tokensDataItem.token" target="_blank">{{ tokensDataItem.token }}</b-link> - ordersLength: {{ tokensDataItem.ordersLength }}, executed: {{ tokensDataItem.executed }}, volumeToken: {{ tokensDataItem.volumeToken }}, volumeWeth: {{ tokensDataItem.volumeWeth }}
                           </span>
                         </template>
-                        <b-table small fixed striped sticky-header="200px" :items="tokensDataItem.ordersData" head-variant="light">
-                        </b-table>
+                        <font size="-2">
+                          <b-table small fixed striped sticky-header="200px" :items="tokensDataItem.ordersData" head-variant="light">
+                          </b-table>
+                        </font>
 
                         <!--
                         {{ tokensDataItem }}
