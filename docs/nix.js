@@ -11,26 +11,12 @@ const Nix = {
         <b-card no-body class="border-0 m-0 mt-2">
           <b-card-body class="p-0">
 
-            <!--
-            function addOrder(
-                address token,
-                address taker,
-                BuyOrSell buyOrSell,
-                AnyOrAll anyOrAll,
-                uint[] memory tokenIds,
-                uint price,
-                uint expiry,
-                uint tradeMax,
-                uint royaltyFactor,
-                address integrator
-            -->
-
             <div>
               <b-card no-body class="mt-2">
                 <b-tabs vertical pills card end nav-class="p-2" active-tab-class="p-2">
 
                   <b-tab active title="Add Orders" class="p-1">
-                    <b-form-group label-cols="2" label-size="sm" label="Token" description="e.g., 0x66fa96804A82034Dd7C44aF5376eEd7207861efd for TestToadz">
+                    <b-form-group label-cols="2" label-size="sm" label="Token" description="e.g., 0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4 for TestToadz">
                       <b-form-input size="sm" v-model="order.token" class="w-50"></b-form-input>
                     </b-form-group>
 
@@ -54,7 +40,7 @@ const Nix = {
                       <b-form-input size="sm" v-model="order.price" class="w-50"></b-form-input>
                     </b-form-group>
 
-                    <b-form-group label-cols="2" label-size="sm" label="Expiry" description="e.g., 1d">
+                    <b-form-group label-cols="2" label-size="sm" label="Expiry" description="Unixtime e.g., 1672491599 for 23:59:59 31/12/2022 UTC">
                       <b-form-input size="sm" v-model="order.expiry" class="w-50"></b-form-input>
                     </b-form-group>
 
@@ -135,13 +121,13 @@ const Nix = {
       reschedule: true,
 
       order: {
-        token: "0x66fa96804A82034Dd7C44aF5376eEd7207861efd",
+        token: "0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4",
         taker: null,
         buyOrSell: 0,
         anyOrAll: 0,
         tokenIds: "1, 2, 3, 4",
-        price: "0.01",
-        expiry: "1d",
+        price: "1000000000000000000",
+        expiry: 1672491599,
         tradeMax: "5",
         royaltyFactor: "100",
         integrator: null,
@@ -203,10 +189,45 @@ const Nix = {
           centered: true
         })
         .then(async value1 => {
-          // if (value1) {
-          //   event.preventDefault();
+          if (value1) {
+            console.log("addOrder 1");
+            event.preventDefault();
           //   console.log("EXEC setMetaData: " + tokenId + this.metadatas[tokenId]);
-          //   const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            console.log("addOrder 2");
+            const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
+            console.log("addOrder 3");
+            const nixWithSigner = nix.connect(provider.getSigner());
+            console.log("addOrder 4");
+            const weth = await nix.weth();
+            console.log("weth: " + weth);
+
+
+            // order: {
+            //   token: "0x66fa96804A82034Dd7C44aF5376eEd7207861efd",
+            //   taker: null,
+            //   buyOrSell: 0,
+            //   anyOrAll: 0,
+            //   tokenIds: "1, 2, 3, 4",
+            //   price: "0.01",
+            //   expiry: "1d",
+            //   tradeMax: "5",
+            //   royaltyFactor: "100",
+            //   integrator: null,
+            // },
+
+            const taker = this.order.taker == null || this.order.taker.trim().length == 0 ? ADDRESS0 : taker;
+            console.log("taker: " + taker);
+
+            const tokenIds = this.order.tokenIds.split(",").map(function(item) { return item.trim(); });
+            console.log("tokenIds: " + JSON.stringify(tokenIds));
+
+            try {
+              const tx = await nixWithSigner.addOrder(this.order.token, taker, this.order.buyOrSell, this.order.anyOrAll, tokenIds, this.order.price, this.order.expiry, this.order.tradeMax, this.order.royaltyFactor, ADDRESS0);
+              console.log("tx: " + JSON.stringify(tx));
+            } catch (e) {
+              console.log("error: " + e.toString());
+            }
           //   const yourBastardYourCall = new ethers.Contract(YOURBASTARDYOURCALLADDRESS, YOURBASTARDYOURCALLABI, provider);
           //   const yourBastardYourCallWithSigner = yourBastardYourCall.connect(provider.getSigner());
           //   const tx = await yourBastardYourCallWithSigner.setLicenseForBASTARD(2, tokenId, this.metadatas[tokenId]);
@@ -220,7 +241,19 @@ const Nix = {
           //   //   });
           //   // function setLicenseForBASTARD(uint8 _version, uint _id, string memory _text) external {
           //   // console.log("EXEC setMetaData - yourBastardYourCall: " + JSON.stringify(yourBastardYourCall));
-          // }
+
+          // function addOrder(
+          //     address token,
+          //     address taker,
+          //     BuyOrSell buyOrSell,
+          //     AnyOrAll anyOrAll,
+          //     uint[] memory tokenIds,
+          //     uint price,
+          //     uint expiry,
+          //     uint tradeMax,
+          //     uint royaltyFactor,
+          //     address integrator
+          }
         })
         .catch(err => {
           // An error occurred
