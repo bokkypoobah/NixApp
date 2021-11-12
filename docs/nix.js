@@ -70,6 +70,10 @@ const Nix = {
                       <b-form-input size="sm" v-model="order.integrator" class="w-50"></b-form-input>
                     </b-form-group>
 
+                    <b-form-group label-cols="2" label-size="sm" label="">
+                      <b-button size="sm" @click="addOrder" variant="warning">Add Order</b-button>
+                    </b-form-group>
+
                     <b-card>
                       {{ order }}
                     </b-card>
@@ -184,6 +188,45 @@ const Nix = {
         t.statusSidebar = true;
       }, 1500);
     },
+
+    addOrder() {
+      console.log("addOrder");
+      this.$bvModal.msgBoxConfirm('Add Order?', {
+          title: 'Please Confirm',
+          size: 'sm',
+          buttonSize: 'sm',
+          okVariant: 'danger',
+          okTitle: 'Yes',
+          cancelTitle: 'No',
+          footerClass: 'p-2',
+          hideHeaderClose: false,
+          centered: true
+        })
+        .then(async value1 => {
+          // if (value1) {
+          //   event.preventDefault();
+          //   console.log("EXEC setMetaData: " + tokenId + this.metadatas[tokenId]);
+          //   const provider = new ethers.providers.Web3Provider(window.ethereum);
+          //   const yourBastardYourCall = new ethers.Contract(YOURBASTARDYOURCALLADDRESS, YOURBASTARDYOURCALLABI, provider);
+          //   const yourBastardYourCallWithSigner = yourBastardYourCall.connect(provider.getSigner());
+          //   const tx = await yourBastardYourCallWithSigner.setLicenseForBASTARD(2, tokenId, this.metadatas[tokenId]);
+          //   console.log("EXEC setMetaData - yourBastardYourCall - tx: " + JSON.stringify(tx));
+          //   // this.$bvModal.msgBoxOk("TRANSACTION HASH: " + tx)
+          //   //   .then(value1 => {
+          //   //     event.preventDefault();
+          //   //   })
+          //   //   .catch(err => {
+          //   //     // An error occurred
+          //   //   });
+          //   // function setLicenseForBASTARD(uint8 _version, uint _id, string memory _text) external {
+          //   // console.log("EXEC setMetaData - yourBastardYourCall: " + JSON.stringify(yourBastardYourCall));
+          // }
+        })
+        .catch(err => {
+          // An error occurred
+        });
+    },
+
 
     async timeoutCallback() {
       logDebug("Nix", "timeoutCallback() count: " + this.count);
