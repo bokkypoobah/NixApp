@@ -79,6 +79,7 @@ const Nix = {
                   <b-tab title="Orders" class="p-1">
                     <b-card-text>
 
+                      <!--
                       <b-form-group label-cols="2" label-size="sm" label="Width" description="24 to 2048">
                         <b-input-group>
                           <template #prepend>
@@ -108,6 +109,7 @@ const Nix = {
                       <b-form-group label-cols="2" label-size="sm" description="To be implemented. Please use your OS print screen buttons">
                         <b-button disabled size="sm" @click="saveImage()" v-b-popover.hover="'Not working yet. Please use your OS print screen buttons'" variant="info">Save Image</b-button>
                       </b-form-group>
+                      -->
                     </b-card-text>
                   </b-tab>
 
