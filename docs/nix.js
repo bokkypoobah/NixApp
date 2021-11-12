@@ -12,39 +12,6 @@ const Nix = {
           <b-card-body class="p-0">
 
             <!--
-            <b-container class="p-0" fluid>
-              <b-row class="mb-3">
-                <b-col md="8" class="p-3">
-                  <div id="toBeCaptured">
-                    <canvas id="thecanvas" width="1024" height="480" style="border:1px solid; margin: 0 auto; position: absolute;"></canvas>
-                  </div>
-                </b-col>
-                <div>
-                  <b-modal ref="my-modal" hide-footer title="Select frame from GIF" @shown="onGIFFrameSelectionModalOpened">
-                    <b-link @click="addGIFFrame()" v-b-popover.hover="'Click to add this frame to the canvas'">
-                      <div class="d-block text-center">
-                        <h3>Frame {{ gif.frame == null ? '(loading)' : gif.frame }} </h3>
-                        <img id="thegif1" :src="gif.src" :rel:animated_src="gif.src" width="360" height="360" rel:auto_play="0" rel:rubbable="1" class="p-2" />
-                      </div>
-                    </b-link>
-                    <br />
-                    <b-input-group>
-                      <template #prepend>
-                        <b-form-spinbutton wrap @change="setFrame()" v-model.trim="gif.frame" min="0" :max="gif.frames == null ? 0 : (gif.frames - 1)" class="mr-2"></b-form-spinbutton>
-                        <b-input-group-text>0</b-input-group-text>
-                      </template>
-                      <b-form-input @change="setFrame()" v-model="gif.frame" type="range" min="0" :max="gif.frames == null ? 0 : (gif.frames - 1)" class="w-25"></b-form-input>
-                      <template #append>
-                        <b-input-group-text>{{ gif.frames == null ? 0 : (gif.frames - 1) }}</b-input-group-text>
-                      </template>
-                    </b-input-group>
-                    <b-button class="mt-3" variant="outline-danger" block @click="hideModal">Close Me</b-button>
-                    <b-button class="mt-2" variant="outline-warning" block @click="toggleModal">Toggle Me</b-button>
-                  </b-modal>
-                </div>
-              </b-row>
-            </b-container>
-
             function addOrder(
                 address token,
                 address taker,
@@ -56,14 +23,60 @@ const Nix = {
                 uint tradeMax,
                 uint royaltyFactor,
                 address integrator
-
             -->
 
             <div>
               <b-card no-body class="mt-2">
                 <b-tabs vertical pills card end nav-class="p-2" active-tab-class="p-2">
 
-                  <b-tab active title="Orders" class="p-1">
+                  <b-tab active title="Add Orders" class="p-1">
+                    <b-form-group label-cols="2" label-size="sm" label="Token" description="e.g., 0x66fa96804A82034Dd7C44aF5376eEd7207861efd for TestToadz">
+                      <b-form-input size="sm" v-model="order.token" class="w-50"></b-form-input>
+                    </b-form-group>
+
+                    <b-form-group label-cols="2" label-size="sm" label="Taker" description="e.g., 0x12345...">
+                      <b-form-input size="sm" v-model="order.taker" class="w-50"></b-form-input>
+                    </b-form-group>
+
+                    <b-form-group label-cols="2" label-size="sm" label="Buy or Sell">
+                      <b-form-select size="sm" v-model="order.buyOrSell" :options="buyOrSellOptions" class="w-50"></b-form-select>
+                    </b-form-group>
+
+                    <b-form-group label-cols="2" label-size="sm" label="Any or All">
+                      <b-form-select size="sm" v-model="order.anyOrAll" :options="anyOrAllOptions" class="w-50"></b-form-select>
+                    </b-form-group>
+
+                    <b-form-group label-cols="2" label-size="sm" label="Token Ids" description="e.g., 1, 2, 3, 4">
+                      <b-form-input size="sm" v-model="order.tokenIds" class="w-50"></b-form-input>
+                    </b-form-group>
+
+                    <b-form-group label-cols="2" label-size="sm" label="Price" description="e.g., 0.1 for 0.1 WETH">
+                      <b-form-input size="sm" v-model="order.price" class="w-50"></b-form-input>
+                    </b-form-group>
+
+                    <b-form-group label-cols="2" label-size="sm" label="Expiry" description="e.g., 1d">
+                      <b-form-input size="sm" v-model="order.expiry" class="w-50"></b-form-input>
+                    </b-form-group>
+
+                    <b-form-group label-cols="2" label-size="sm" label="TradeMax" description="e.g., 5">
+                      <b-form-input size="sm" v-model="order.tradeMax" class="w-50"></b-form-input>
+                    </b-form-group>
+
+                    <b-form-group label-cols="2" label-size="sm" label="Royalty Factor" description="0 to 100. e.g., 100">
+                      <b-form-input size="sm" v-model="order.royaltyFactor" class="w-50"></b-form-input>
+                    </b-form-group>
+
+                    <b-form-group label-cols="2" label-size="sm" label="Integrator" description="e.g., 0x2345...">
+                      <b-form-input size="sm" v-model="order.integrator" class="w-50"></b-form-input>
+                    </b-form-group>
+
+                    <b-card>
+                      {{ order }}
+                    </b-card>
+
+                  </b-tab>
+
+                  <b-tab title="Orders" class="p-1">
                     <b-card-text>
 
                       <b-form-group label-cols="2" label-size="sm" label="Width" description="24 to 2048">
@@ -241,6 +254,28 @@ const Nix = {
     return {
       count: 0,
       reschedule: true,
+
+      order: {
+        token: "0x66fa96804A82034Dd7C44aF5376eEd7207861efd",
+        taker: null,
+        buyOrSell: 0,
+        anyOrAll: 0,
+        tokenIds: "1, 2, 3, 4",
+        price: "0.01",
+        expiry: "1d",
+        tradeMax: "5",
+        royaltyFactor: "100",
+        integrator: null,
+      },
+
+      buyOrSellOptions: [
+        { value: 0, text: 'Buy' },
+        { value: 1, text: 'Sell' },
+      ],
+      anyOrAllOptions: [
+        { value: 0, text: 'Any' },
+        { value: 1, text: 'All' },
+      ],
 
       assets: [],
 
