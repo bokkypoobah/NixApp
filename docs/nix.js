@@ -222,8 +222,11 @@ const Nix = {
             const tokenIds = this.order.tokenIds.split(",").map(function(item) { return item.trim(); });
             console.log("tokenIds: " + JSON.stringify(tokenIds));
 
+            const integrator = this.order.integrator == null || this.order.integrator.trim().length == 0 ? ADDRESS0 : integrator;
+            console.log("integrator: " + integrator);
+
             try {
-              const tx = await nixWithSigner.addOrder(this.order.token, taker, this.order.buyOrSell, this.order.anyOrAll, tokenIds, this.order.price, this.order.expiry, this.order.tradeMax, this.order.royaltyFactor, ADDRESS0);
+              const tx = await nixWithSigner.addOrder(this.order.token, taker, this.order.buyOrSell, this.order.anyOrAll, tokenIds, this.order.price, this.order.expiry, this.order.tradeMax, this.order.royaltyFactor, integrator);
               console.log("tx: " + JSON.stringify(tx));
             } catch (e) {
               console.log("error: " + e.toString());
