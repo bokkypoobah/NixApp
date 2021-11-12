@@ -38,6 +38,21 @@ const Nix = {
                               </b-link>
                               -->
                             </template>
+                            <template #cell(taker)="data">
+                              <b-link :href="explorer + 'address/' + data.item.taker" target="_blank">{{ data.item.taker.substring(0, 10) + '...' }}</b-link>
+                            </template>
+                            <template #cell(tokenIds)="data">
+                              {{ JSON.stringify(data.item.tokenIds.map((x) => { return x.toString(); })) }}
+                            </template>
+                            <template #cell(price)="data">
+                              {{ formatETH(data.item.price) }}
+                            </template>
+                            <template #cell(buyOrSell)="data">
+                              {{ formatBuyOrSell(data.item.buyOrSell) }}
+                            </template>
+                            <template #cell(anyOrAll)="data">
+                              {{ formatAnyOrAll(data.item.anyOrAll) }}
+                            </template>
 
                           </b-table>
                         </font>
@@ -185,6 +200,19 @@ const Nix = {
     },
   },
   methods: {
+    formatETH(e) {
+      try {
+        return e ? ethers.utils.commify(ethers.utils.formatEther(e)) : null;
+      } catch (err) {
+      }
+      return e.toFixed(9);
+    },
+    formatBuyOrSell(buyOrSell) {
+      return BUYORSELLSTRING[buyOrSell];
+    },
+    formatAnyOrAll(anyOrAll) {
+      return ANYORALLSTRING[anyOrAll];
+    },
 
     setPowerOn() {
       store.dispatch('connection/setPowerOn', true);
