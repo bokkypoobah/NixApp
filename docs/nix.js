@@ -29,6 +29,16 @@ const Nix = {
                         </template>
                         <font size="-2">
                           <b-table small fixed striped sticky-header="200px" :items="tokensDataItem.ordersData" head-variant="light">
+
+                            <template #cell(maker)="data">
+                              <b-link :href="explorer + 'address/' + data.item.maker" target="_blank">{{ data.item.maker.substring(0, 10) + '...' }}</b-link>
+                              <!--
+                              <b-link @click="displayToken(data.item.tokenId)" v-b-popover.hover="'Click for details'">
+                                <b-img-lazy width="300%" :src="data.item.images[0]" />
+                              </b-link>
+                              -->
+                            </template>
+
                           </b-table>
                         </font>
 
