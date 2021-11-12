@@ -1,25 +1,26 @@
 const Nix = {
   template: `
     <div class="mt-5 pt-3">
-      <b-card no-body header="Nix" class="border-0" header-class="p-1">
+      <b-card class="mt-5" header-class="warningheader" header="Web3 Connection And/Or Incorrect Network Detected" v-if="!powerOn || network == null || network.chainId != 4">
+        <b-card-text>
+          Please install the MetaMask extension, connect to the Rinkeby network and refresh this page. Then click the [Power] button on the top right.
+        </b-card-text>
+      </b-card>
+
+      <b-card no-body header="Nix" class="border-0" header-class="p-1"  v-if="network && network.chainId == 4">
         <b-card no-body class="border-0 m-0 mt-2">
           <b-card-body class="p-0">
 
+            <!--
             <b-container class="p-0" fluid>
-
               <b-row class="mb-3">
                 <b-col md="8" class="p-3">
                   <div id="toBeCaptured">
                     <canvas id="thecanvas" width="1024" height="480" style="border:1px solid; margin: 0 auto; position: absolute;"></canvas>
                   </div>
                 </b-col>
-
                 <div>
-                  <b-button id="show-btn" @click="showModal">Open Modal</b-button>
-                  <b-button id="toggle-btn" @click="toggleModal">Toggle Modal</b-button>
-
                   <b-modal ref="my-modal" hide-footer title="Select frame from GIF" @shown="onGIFFrameSelectionModalOpened">
-
                     <b-link @click="addGIFFrame()" v-b-popover.hover="'Click to add this frame to the canvas'">
                       <div class="d-block text-center">
                         <h3>Frame {{ gif.frame == null ? '(loading)' : gif.frame }} </h3>
@@ -27,7 +28,6 @@ const Nix = {
                       </div>
                     </b-link>
                     <br />
-
                     <b-input-group>
                       <template #prepend>
                         <b-form-spinbutton wrap @change="setFrame()" v-model.trim="gif.frame" min="0" :max="gif.frames == null ? 0 : (gif.frames - 1)" class="mr-2"></b-form-spinbutton>
@@ -38,35 +38,32 @@ const Nix = {
                         <b-input-group-text>{{ gif.frames == null ? 0 : (gif.frames - 1) }}</b-input-group-text>
                       </template>
                     </b-input-group>
-
                     <b-button class="mt-3" variant="outline-danger" block @click="hideModal">Close Me</b-button>
                     <b-button class="mt-2" variant="outline-warning" block @click="toggleModal">Toggle Me</b-button>
                   </b-modal>
                 </div>
-
-                <!--
-                <b-col md="4" class="ml-auto p-3">
-                  <pre>
-                    <code class="json">
-{{ JSON.stringify(selectedObject, null, 4) }}
-                    </code>
-                  </pre>
-                </b-col>
-                -->
-
               </b-row>
             </b-container>
-            <!--
-            <b-form-group label-cols="2" label-size="sm">
-              <b-button size="sm" @click="saveImage()" variant="info">Save Image</b-button>
-            </b-form-group>
+
+            function addOrder(
+                address token,
+                address taker,
+                BuyOrSell buyOrSell,
+                AnyOrAll anyOrAll,
+                uint[] memory tokenIds,
+                uint price,
+                uint expiry,
+                uint tradeMax,
+                uint royaltyFactor,
+                address integrator
+
             -->
 
             <div>
               <b-card no-body class="mt-2">
                 <b-tabs vertical pills card end nav-class="p-2" active-tab-class="p-2">
 
-                  <b-tab title="Canvas" class="p-1">
+                  <b-tab active title="Orders" class="p-1">
                     <b-card-text>
 
                       <b-form-group label-cols="2" label-size="sm" label="Width" description="24 to 2048">
@@ -95,18 +92,13 @@ const Nix = {
                         </b-input-group>
                       </b-form-group>
 
-                      <!--
-                      <b-form-group label-cols="2" label-size="sm">
-                        <b-button size="sm" @click="setCanvasSize()" variant="info">Set Canvas Size</b-button>
-                      </b-form-group>
-                      -->
                       <b-form-group label-cols="2" label-size="sm" description="To be implemented. Please use your OS print screen buttons">
                         <b-button disabled size="sm" @click="saveImage()" v-b-popover.hover="'Not working yet. Please use your OS print screen buttons'" variant="info">Save Image</b-button>
                       </b-form-group>
                     </b-card-text>
                   </b-tab>
 
-                  <b-tab active title="NFTs" class="p-1">
+                  <b-tab title="Trades" class="p-1">
 
                     <b-row class="mb-3">
                       <b-col md="6" class="p-3">
@@ -144,11 +136,6 @@ const Nix = {
                               </b-link>
                               {{ getCollectionTitle(asset).substring(0, 32) }}
                             </span>
-                            <!--
-                            <span class="float-right">
-                              <b-link :href="asset.permalink + '?ref=0x000001f568875F378Bf6d170B790967FE429C81A'" v-b-popover.hover="'View on OpenSea.io'" target="_blank"><img src="images/381114e-opensea-logomark-flat-colored-blue.png" width="20px" /></b-link>
-                            </span>
-                            -->
                           </template>
                           <template #footer>
                             <span class="small truncate" v-b-popover.hover="getAssetName(asset)">
@@ -358,6 +345,9 @@ const Nix = {
     },
     coinbase() {
       return store.getters['connection/coinbase'];
+    },
+    network() {
+      return store.getters['connection/network'];
     },
     networkName() {
       return store.getters['connection/networkName'];

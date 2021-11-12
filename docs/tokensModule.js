@@ -1,7 +1,7 @@
 const Tokens = {
   template: `
     <div>
-      <b-card header-class="warningheader" header="Incorrect Network Detected" v-if="network != 1337 && network != 1 && network != 3">
+      <b-card header-class="warningheader" header="Incorrect Network Detected" v-if="network != 1337 && network != 1 && network != 4">
         <b-card-text>
           Please switch to the Ethereum mainnet in MetaMask and refresh this page
         </b-card-text>
