@@ -53,6 +53,9 @@ const Nix = {
                             <template #cell(anyOrAll)="data">
                               {{ formatAnyOrAll(data.item.anyOrAll) }}
                             </template>
+                            <template #cell(expiry)="data">
+                              {{ formatDate(data.item.expiry) }}
+                            </template>
 
                           </b-table>
                         </font>
@@ -212,6 +215,17 @@ const Nix = {
     },
     formatAnyOrAll(anyOrAll) {
       return ANYORALLSTRING[anyOrAll];
+    },
+    formatDate(d) {
+      if (d == 0) {
+        return "(no expiry)";
+      } else {
+        if (new RegExp('^[0-9]+$').test(d)) {
+          return new Date(parseInt(d) * 1000).toISOString(); // .substring(4);
+        } else {
+          return new Date(d).toDateString().substring(4);
+        }
+      }
     },
 
     setPowerOn() {
