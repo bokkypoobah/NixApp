@@ -18,22 +18,22 @@ const Nix = {
                   <b-tab title="(W)ETH" class="p-1">
                     <b-card header="Balances" class="mb-2">
                       <b-card-text>
-                        <b-form-group label-cols="2" label-size="sm" label="">
+                        <b-form-group label-cols="3" label-size="sm" label="">
                           <b-button size="sm" @click="checkWeth" variant="primary">Check</b-button>
                         </b-form-group>
-                        <b-form-group label-cols="2" label-size="sm" label="Account">
+                        <b-form-group label-cols="3" label-size="sm" label="Account">
                           <b-link :href="explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ coinbase }}</b-link>
                         </b-form-group>
-                        <b-form-group label-cols="2" label-size="sm" label="ETH Balance">
+                        <b-form-group label-cols="3" label-size="sm" label="ETH Balance">
                           <b-form-input size="sm" readonly v-model="weth.ethBalance" class="w-50"></b-form-input>
                         </b-form-group>
-                        <b-form-group label-cols="2" label-size="sm" label="WETH Address">
+                        <b-form-group label-cols="3" label-size="sm" label="WETH Address">
                           <b-link :href="explorer + 'address/' + weth.address + '#code'" class="card-link" target="_blank">{{ weth.address }}</b-link>
                         </b-form-group>
-                        <b-form-group label-cols="2" label-size="sm" label="WETH Balance">
+                        <b-form-group label-cols="3" label-size="sm" label="WETH Balance">
                           <b-form-input size="sm" readonly v-model="weth.wethBalance" class="w-50"></b-form-input>
                         </b-form-group>
-                        <b-form-group label-cols="2" label-size="sm" label="WETH Allowance To Nix">
+                        <b-form-group label-cols="3" label-size="sm" label="WETH Allowance To Nix">
                           <b-form-input size="sm" readonly v-model="weth.wethAllowanceToNix" class="w-50"></b-form-input>
                         </b-form-group>
                       </b-card-text>
@@ -41,16 +41,16 @@ const Nix = {
 
                     <b-card header="Wrap ETH To WETH" class="mb-2">
                       <b-card-text>
-                        <b-form-group label-cols="2" label-size="sm" label="ETH to wrap" description="e.g. 0.123456789">
+                        <b-form-group label-cols="3" label-size="sm" label="ETH to wrap" description="e.g. 0.123456789">
                           <b-form-input size="sm" v-model="weth.ethToWrap" class="w-50"></b-form-input>
                         </b-form-group>
-                        <b-form-group label-cols="2" label-size="sm" label="">
+                        <b-form-group label-cols="3" label-size="sm" label="">
                           <b-button size="sm" @click="wrapEth" variant="warning">Wrap</b-button>
                         </b-form-group>
-                        <b-form-group v-if="weth.wrapMessage && weth.wrapMessage.substring(0, 2) != '0x'" label-cols="2" label-size="sm" label="">
+                        <b-form-group v-if="weth.wrapMessage && weth.wrapMessage.substring(0, 2) != '0x'" label-cols="3" label-size="sm" label="">
                           <b-form-input size="sm" readonly v-model="weth.wrapMessage" class="w-50"></b-form-input>
                         </b-form-group>
-                        <b-form-group v-if="weth.wrapMessage && weth.wrapMessage.substring(0, 2) == '0x'" label-cols="2" label-size="sm" label="">
+                        <b-form-group v-if="weth.wrapMessage && weth.wrapMessage.substring(0, 2) == '0x'" label-cols="3" label-size="sm" label="">
                           Tx <b-link :href="explorer + 'tx/' + weth.wrapMessage" class="card-link" target="_blank">{{ weth.wrapMessage }}</b-link>
                         </b-form-group>
                       </b-card-text>
@@ -58,16 +58,16 @@ const Nix = {
 
                     <b-card header="Unwrap WETH To ETH" class="mb-2">
                       <b-card-text>
-                        <b-form-group label-cols="2" label-size="sm" label="WETH to unwrap" description="e.g. 0.123456789">
+                        <b-form-group label-cols="3" label-size="sm" label="WETH to unwrap" description="e.g. 0.123456789">
                           <b-form-input size="sm" v-model="weth.wethToUnwrap" class="w-50"></b-form-input>
                         </b-form-group>
-                        <b-form-group label-cols="2" label-size="sm" label="">
+                        <b-form-group label-cols="3" label-size="sm" label="">
                           <b-button size="sm" @click="unwrapWeth" variant="warning">Unwrap</b-button>
                         </b-form-group>
-                        <b-form-group v-if="weth.unwrapMessage && weth.unwrapMessage.substring(0, 2) != '0x'" label-cols="2" label-size="sm" label="">
+                        <b-form-group v-if="weth.unwrapMessage && weth.unwrapMessage.substring(0, 2) != '0x'" label-cols="3" label-size="sm" label="">
                           <b-form-input size="sm" readonly v-model="weth.unwrapMessage" class="w-50"></b-form-input>
                         </b-form-group>
-                        <b-form-group v-if="weth.unwrapMessage && weth.unwrapMessage.substring(0, 2) == '0x'" label-cols="2" label-size="sm" label="">
+                        <b-form-group v-if="weth.unwrapMessage && weth.unwrapMessage.substring(0, 2) == '0x'" label-cols="3" label-size="sm" label="">
                           Tx <b-link :href="explorer + 'tx/' + weth.unwrapMessage" class="card-link" target="_blank">{{ weth.unwrapMessage }}</b-link>
                         </b-form-group>
                       </b-card-text>
@@ -75,16 +75,16 @@ const Nix = {
 
                     <b-card header="Approve WETH Allowance For Nix To Spend" class="mb-2">
                       <b-card-text>
-                        <b-form-group label-cols="2" label-size="sm" label="WETH to approve to Nix" description="e.g. 0.123456789">
+                        <b-form-group label-cols="3" label-size="sm" label="WETH to approve to Nix" description="e.g. 0.123456789">
                           <b-form-input size="sm" v-model="weth.wethToApproveToNix" class="w-50"></b-form-input>
                         </b-form-group>
-                        <b-form-group label-cols="2" label-size="sm" label="">
+                        <b-form-group label-cols="3" label-size="sm" label="">
                           <b-button size="sm" @click="approveWeth" variant="warning">Approve</b-button>
                         </b-form-group>
-                        <b-form-group v-if="weth.approvalMessage && weth.approvalMessage.substring(0, 2) != '0x'" label-cols="2" label-size="sm" label="">
+                        <b-form-group v-if="weth.approvalMessage && weth.approvalMessage.substring(0, 2) != '0x'" label-cols="3" label-size="sm" label="">
                           <b-form-input size="sm" readonly v-model="weth.approvalMessage" class="w-50"></b-form-input>
                         </b-form-group>
-                        <b-form-group v-if="weth.approvalMessage && weth.approvalMessage.substring(0, 2) == '0x'" label-cols="2" label-size="sm" label="">
+                        <b-form-group v-if="weth.approvalMessage && weth.approvalMessage.substring(0, 2) == '0x'" label-cols="3" label-size="sm" label="">
                           Tx <b-link :href="explorer + 'tx/' + weth.approvalMessage" class="card-link" target="_blank">{{ weth.approvalMessage }}</b-link>
                         </b-form-group>
                       </b-card-text>
@@ -95,43 +95,81 @@ const Nix = {
                   <b-tab active title="TestToadz" class="p-1">
                     <b-card header="TestToadz" class="mb-2">
                       <b-card-text>
-                        <b-form-group label-cols="2" label-size="sm" label="">
+                        <b-form-group label-cols="3" label-size="sm" label="">
                           <b-button size="sm" @click="checkTestToadz" variant="primary">Check</b-button>
                         </b-form-group>
-                        <b-form-group label-cols="2" label-size="sm" label="Token Address">
+                        <b-form-group label-cols="3" label-size="sm" label="Token Address">
                           <b-link :href="explorer + 'token/' + testToadz.address" class="card-link" target="_blank">{{ testToadz.address }}</b-link>
                         </b-form-group>
-                        <b-form-group label-cols="2" label-size="sm" label="Supports ERC-721 '0x80ac58cd'">
+                        <b-form-group label-cols="3" label-size="sm" label="Supports ERC-721 '0x80ac58cd'">
                           <b-form-input size="sm" readonly v-model="testToadz.supportsERC721" class="w-50"></b-form-input>
                         </b-form-group>
-                        <b-form-group label-cols="2" label-size="sm" label="Supports ERC-721 Metadata '0x5b5e139f'">
+                        <b-form-group label-cols="3" label-size="sm" label="Supports ERC-721 Metadata '0x5b5e139f'">
                           <b-form-input size="sm" readonly v-model="testToadz.supportsERC721METADATA" class="w-50"></b-form-input>
                         </b-form-group>
-                        <b-form-group label-cols="2" label-size="sm" label="Supports ERC-721 Enumerable '0x780e9d63'">
+                        <b-form-group label-cols="3" label-size="sm" label="Supports ERC-721 Enumerable '0x780e9d63'">
                           <b-form-input size="sm" readonly v-model="testToadz.supportsERC721ENUMERABLE" class="w-50"></b-form-input>
                         </b-form-group>
-                        <b-form-group label-cols="2" label-size="sm" label="Symbol">
+                        <b-form-group label-cols="3" label-size="sm" label="Symbol">
                           <b-form-input size="sm" readonly v-model="testToadz.symbol" class="w-50"></b-form-input>
                         </b-form-group>
-                        <b-form-group label-cols="2" label-size="sm" label="Name">
+                        <b-form-group label-cols="3" label-size="sm" label="Name">
                           <b-form-input size="sm" readonly v-model="testToadz.name" class="w-50"></b-form-input>
                         </b-form-group>
-                        <b-form-group label-cols="2" label-size="sm" label="Balance">
+                        <b-form-group label-cols="3" label-size="sm" label="Balance">
                           <b-form-input size="sm" readonly v-model="testToadz.balance" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group label-cols="3" label-size="sm" label="Approved To Nix For Trading">
+                          <b-form-input size="sm" readonly v-model="testToadz.approvedToNix" class="w-50"></b-form-input>
                         </b-form-group>
                       </b-card-text>
                     </b-card>
+
+                    <b-card header="Mint TestToadz" class="mb-2">
+                      <b-card-text>
+                        <b-form-group label-cols="3" label-size="sm" label="Number to mint" description="Up to 3 at a time. 20 max can be minted per account">
+                          <b-form-input size="sm" v-model="testToadz.mintNumber" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group label-cols="3" label-size="sm" label="">
+                          <b-button size="sm" @click="mintTestToadz" variant="warning">Mint</b-button>
+                        </b-form-group>
+                        <b-form-group v-if="testToadz.mintMessage && testToadz.mintMessage.substring(0, 2) != '0x'" label-cols="3" label-size="sm" label="">
+                          <b-form-input size="sm" readonly v-model="testToadz.mintMessage" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group v-if="testToadz.mintMessage && testToadz.mintMessage.substring(0, 2) == '0x'" label-cols="3" label-size="sm" label="">
+                          Tx <b-link :href="explorer + 'tx/' + testToadz.mintMessage" class="card-link" target="_blank">{{ testToadz.mintMessage }}</b-link>
+                        </b-form-group>
+                      </b-card-text>
+                    </b-card>
+
+                    <b-card header="Approve TestToadz or Revoke TestToadz Approval To Nix For Trading" class="mb-2">
+                      <b-card-text>
+                        <b-form-group label-cols="3" label-size="sm" label="">
+                          <b-button size="sm" @click="approveTestToadzToNix(true)" variant="warning">Approve</b-button>
+                        </b-form-group>
+                        <b-form-group label-cols="3" label-size="sm" label="">
+                          <b-button size="sm" @click="approveTestToadzToNix(false)" variant="warning">Revoke Approval</b-button>
+                        </b-form-group>
+                        <b-form-group v-if="testToadz.approvalMessage && testToadz.approvalMessage.substring(0, 2) != '0x'" label-cols="3" label-size="sm" label="">
+                          <b-form-input size="sm" readonly v-model="testToadz.approvalMessage" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group v-if="testToadz.approvalMessage && testToadz.approvalMessage.substring(0, 2) == '0x'" label-cols="3" label-size="sm" label="">
+                          Tx <b-link :href="explorer + 'tx/' + testToadz.approvalMessage" class="card-link" target="_blank">{{ testToadz.approvalMessage }}</b-link>
+                        </b-form-group>
+                      </b-card-text>
+                    </b-card>
+
                   </b-tab>
                   <!--
                   <b-tab title="Approvals" class="p-1">
-                    <b-form-group label-cols="2" label-size="sm" label="">
+                    <b-form-group label-cols="3" label-size="sm" label="">
                       <b-button size="sm" @click="checkApprovals" variant="primary">Check</b-button>
                     </b-form-group>
                   </b-tab>
                   -->
 
                   <b-tab title="Orders" class="p-1">
-                    <b-form-group label-cols="2" label-size="sm" label="">
+                    <b-form-group label-cols="3" label-size="sm" label="">
                       <b-button size="sm" @click="loadInfo" variant="primary">Load Info</b-button>
                     </b-form-group>
 
@@ -205,47 +243,47 @@ const Nix = {
                   </b-tab>
 
                   <b-tab title="Add Orders" class="p-1">
-                    <b-form-group label-cols="2" label-size="sm" label="Token" description="e.g., 0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4 for TestToadz">
+                    <b-form-group label-cols="3" label-size="sm" label="Token" description="e.g., 0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4 for TestToadz">
                       <b-form-input size="sm" v-model="order.token" class="w-50"></b-form-input>
                     </b-form-group>
 
-                    <b-form-group label-cols="2" label-size="sm" label="Taker" description="e.g., 0x12345...">
+                    <b-form-group label-cols="3" label-size="sm" label="Taker" description="e.g., 0x12345...">
                       <b-form-input size="sm" v-model="order.taker" class="w-50"></b-form-input>
                     </b-form-group>
 
-                    <b-form-group label-cols="2" label-size="sm" label="Buy or Sell">
+                    <b-form-group label-cols="3" label-size="sm" label="Buy or Sell">
                       <b-form-select size="sm" v-model="order.buyOrSell" :options="buyOrSellOptions" class="w-50"></b-form-select>
                     </b-form-group>
 
-                    <b-form-group label-cols="2" label-size="sm" label="Any or All">
+                    <b-form-group label-cols="3" label-size="sm" label="Any or All">
                       <b-form-select size="sm" v-model="order.anyOrAll" :options="anyOrAllOptions" class="w-50"></b-form-select>
                     </b-form-group>
 
-                    <b-form-group label-cols="2" label-size="sm" label="Token Ids" description="e.g., 1, 2, 3, 4">
+                    <b-form-group label-cols="3" label-size="sm" label="Token Ids" description="e.g., 1, 2, 3, 4">
                       <b-form-input size="sm" v-model="order.tokenIds" class="w-50"></b-form-input>
                     </b-form-group>
 
-                    <b-form-group label-cols="2" label-size="sm" label="Price" description="e.g., 0.1 for 0.1 WETH">
+                    <b-form-group label-cols="3" label-size="sm" label="Price" description="e.g., 0.1 for 0.1 WETH">
                       <b-form-input size="sm" v-model="order.price" class="w-50"></b-form-input>
                     </b-form-group>
 
-                    <b-form-group label-cols="2" label-size="sm" label="Expiry" description="Unixtime e.g., 1672491599 for 23:59:59 31/12/2022 UTC">
+                    <b-form-group label-cols="3" label-size="sm" label="Expiry" description="Unixtime e.g., 1672491599 for 23:59:59 31/12/2022 UTC">
                       <b-form-input size="sm" v-model="order.expiry" class="w-50"></b-form-input>
                     </b-form-group>
 
-                    <b-form-group label-cols="2" label-size="sm" label="TradeMax" description="e.g., 5">
+                    <b-form-group label-cols="3" label-size="sm" label="TradeMax" description="e.g., 5">
                       <b-form-input size="sm" v-model="order.tradeMax" class="w-50"></b-form-input>
                     </b-form-group>
 
-                    <b-form-group label-cols="2" label-size="sm" label="Royalty Factor" description="0 to 100. e.g., 100">
+                    <b-form-group label-cols="3" label-size="sm" label="Royalty Factor" description="0 to 100. e.g., 100">
                       <b-form-input size="sm" v-model="order.royaltyFactor" class="w-50"></b-form-input>
                     </b-form-group>
 
-                    <b-form-group label-cols="2" label-size="sm" label="Integrator" description="e.g., 0x2345...">
+                    <b-form-group label-cols="3" label-size="sm" label="Integrator" description="e.g., 0x2345...">
                       <b-form-input size="sm" v-model="order.integrator" class="w-50"></b-form-input>
                     </b-form-group>
 
-                    <b-form-group label-cols="2" label-size="sm" label="">
+                    <b-form-group label-cols="3" label-size="sm" label="">
                       <b-button size="sm" @click="addOrder" variant="warning">Add Order</b-button>
                     </b-form-group>
 
@@ -298,6 +336,10 @@ const Nix = {
         symbol: null,
         name: null,
         balance: null,
+        approvedToNix: null,
+        approvalMessage: null,
+        mintNumber: null,
+        mintMessage: null,
       },
 
       order: {
@@ -501,13 +543,89 @@ const Nix = {
     async checkTestToadz() {
       event.preventDefault();
       const provider = new ethers.providers.Web3Provider(window.ethereum);
+
+      const erc721Helper = new ethers.Contract(ERC721HELPERADDRESS, ERC721HELPERABI, provider);
+      const tokenInfo = await erc721Helper.tokenInfo([TESTTOADZADDRESS]);
+      console.log(JSON.stringify(tokenInfo, null, 2));
+      // var tokensIndices = [...Array(parseInt(tokensLength)).keys()];
+
+
       const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
-      this.testToadz.symbol = await testToadz.symbol();
-      this.testToadz.name = await testToadz.name();
-      this.testToadz.balance = await testToadz.balanceOf(this.coinbase);
-      this.testToadz.supportsERC721 = await testToadz.supportsInterface(ERC721_INTERFACE);
-      this.testToadz.supportsERC721METADATA = await testToadz.supportsInterface(ERC721METADATA_INTERFACE);
-      this.testToadz.supportsERC721ENUMERABLE = await testToadz.supportsInterface(ERC721ENUMERABLE_INTERFACE);
+      this.testToadz.supportsERC721 = (await testToadz.supportsInterface(ERC721_INTERFACE)).toString();
+      this.testToadz.supportsERC721METADATA = (await testToadz.supportsInterface(ERC721METADATA_INTERFACE)).toString();
+      this.testToadz.supportsERC721ENUMERABLE = (await testToadz.supportsInterface(ERC721ENUMERABLE_INTERFACE)).toString();
+      this.testToadz.symbol = (await testToadz.symbol()).toString();
+      this.testToadz.name = (await testToadz.name()).toString();
+      this.testToadz.balance = (await testToadz.balanceOf(this.coinbase)).toString();
+      this.testToadz.approvedToNix = (await testToadz.isApprovedForAll(this.coinbase, NIXADDRESS)).toString();
+    },
+
+    approveTestToadzToNix(approved) {
+      console.log("approveTestToadzToNix(" + approved + ")");
+      this.$bvModal.msgBoxConfirm(approved ? 'Approve TestToadz for Nix trading?' : 'Revoke TestToadz approval for Nix trading?', {
+          title: 'Please Confirm',
+          size: 'sm',
+          buttonSize: 'sm',
+          okVariant: 'danger',
+          okTitle: 'Yes',
+          cancelTitle: 'No',
+          footerClass: 'p-2',
+          hideHeaderClose: false,
+          centered: true
+        })
+        .then(async value1 => {
+          if (value1) {
+            event.preventDefault();
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
+            const testToadzSigner = testToadz.connect(provider.getSigner());
+            try {
+              const tx = await testToadzSigner.setApprovalForAll(NIXADDRESS, approved);
+              this.testToadz.approvalMessage = tx.hash;
+              console.log("tx: " + JSON.stringify(tx));
+            } catch (e) {
+              this.testToadz.approvalMessage = e.toString();
+              console.log("error: " + e.toString());
+            }
+          }
+        })
+        .catch(err => {
+          // An error occurred
+        });
+    },
+
+    mintTestToadz() {
+      console.log("mintTestToadz()");
+      this.$bvModal.msgBoxConfirm('Mint ' + this.testToadz.mintNumber + ' TestToadz?', {
+          title: 'Please Confirm',
+          size: 'sm',
+          buttonSize: 'sm',
+          okVariant: 'danger',
+          okTitle: 'Yes',
+          cancelTitle: 'No',
+          footerClass: 'p-2',
+          hideHeaderClose: false,
+          centered: true
+        })
+        .then(async value1 => {
+          if (value1) {
+            event.preventDefault();
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
+            const testToadzSigner = testToadz.connect(provider.getSigner());
+            try {
+              const tx = await testToadzSigner.mint(this.testToadz.mintNumber);
+              this.testToadz.mintMessage = tx.hash;
+              console.log("tx: " + JSON.stringify(tx));
+            } catch (e) {
+              this.testToadz.mintMessage = e.toString();
+              console.log("error: " + e.toString());
+            }
+          }
+        })
+        .catch(err => {
+          // An error occurred
+        });
     },
 
     async loadInfo() {
