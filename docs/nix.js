@@ -127,7 +127,10 @@ const Nix = {
                       </b-card-text>
                       <b-card-text>
                         <font size="-2">
-                          <b-table small fixed striped sticky-header="1000px" :items="testToadz.owners" head-variant="light">
+                          <b-table small fixed striped sticky-header="1000px" :fields="testToadzFields" :items="testToadz.owners" head-variant="light">
+                            <template #cell(tokenURI)="data">
+                              {{ testToadz.tokenURIs[data.item.tokenId] || '(none)' }}
+                            </template>
                           </b-table>
                         </font>
                       </b-card-text>
@@ -349,7 +352,14 @@ const Nix = {
         mintNumber: null,
         mintMessage: null,
         owners: [],
+        tokenURIs: {},
       },
+
+      testToadzFields: [
+        { key: 'tokenId', label: 'Token Id', sortable: true },
+        { key: 'owner', label: 'Owner', sortable: true },
+        { key: 'tokenURI', label: 'TokenURI', sortable: true },
+      ],
 
       order: {
         token: "0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4",
@@ -580,12 +590,15 @@ const Nix = {
       const tokenURIsInfo = await erc721Helper.tokenURIsByTokenIds(TESTTOADZADDRESS, tokenIds);
       console.log(JSON.stringify(tokenURIsInfo, null, 2));
       const tokenURIRecords = [];
+      const tokenURIs = {};
       for (let i = 0; i < tokenURIsInfo[0].length; i++) {
         if (tokenURIsInfo[0][i]) {
           console.log(tokenURIsInfo[1][i]);
           tokenURIRecords.push({ chainId: this.network.chainId, contract: TESTTOADZADDRESS, tokenId: tokenIds[i], tokenURI: tokenURIsInfo[1][i], timestamp: timestamp });
+          tokenURIs[tokenIds[i]] = tokenURIsInfo[1][i];
         }
       }
+      this.testToadz.tokenURIs = tokenURIs;
 
       var db0 = new Dexie("NixDB");
       db0.version(1).stores({
