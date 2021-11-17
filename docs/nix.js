@@ -15,7 +15,73 @@ const Nix = {
               <b-card no-body class="mt-2">
                 <b-tabs vertical pills card end nav-class="p-2" active-tab-class="p-2">
 
-                  <b-tab active title="Orders" class="p-1">
+                  <b-tab active title="(W)ETH" class="p-1">
+                    <b-card header="Balances" class="mb-2">
+                      <b-card-text>
+                        <b-form-group label-cols="2" label-size="sm" label="">
+                          <b-button size="sm" @click="checkWeth" variant="primary">Check</b-button>
+                        </b-form-group>
+                        <b-form-group label-cols="2" label-size="sm" label="Account">
+                          <b-link :href="explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ coinbase }}</b-link>
+                        </b-form-group>
+                        <b-form-group label-cols="2" label-size="sm" label="ETH Balance">
+                          <b-form-input size="sm" readonly v-model="weth.ethBalance" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group label-cols="2" label-size="sm" label="WETH Address">
+                          <b-link :href="explorer + 'address/' + weth.address + '#code'" class="card-link" target="_blank">{{ weth.address }}</b-link>
+                        </b-form-group>
+                        <b-form-group label-cols="2" label-size="sm" label="WETH Balance">
+                          <b-form-input size="sm" readonly v-model="weth.wethBalance" class="w-50"></b-form-input>
+                        </b-form-group>
+                      </b-card-text>
+                    </b-card>
+                    <b-card header="Wrap ETH To WETH" class="mb-2">
+                      <b-card-text>
+                        <b-form-group label-cols="2" label-size="sm" label="ETH to wrap" description="e.g. 0.123456789">
+                          <b-form-input size="sm" v-model="weth.ethToWrap" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group label-cols="2" label-size="sm" label="">
+                          <b-button size="sm" @click="wrapEth" variant="warning">Wrap</b-button>
+                        </b-form-group>
+                        <b-form-group v-if="weth.wrapMessage && weth.wrapMessage.substring(0, 2) != '0x'" label-cols="2" label-size="sm" label="">
+                          <b-form-input size="sm" readonly v-model="weth.wrapMessage" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group v-if="weth.wrapMessage && weth.wrapMessage.substring(0, 2) == '0x'" label-cols="2" label-size="sm" label="">
+                          Tx <b-link :href="explorer + 'tx/' + weth.wrapMessage" class="card-link" target="_blank">{{ weth.wrapMessage }}</b-link>
+                        </b-form-group>
+                      </b-card-text>
+                    </b-card>
+                    <b-card header="Unwrap WETH To ETH" class="mb-2">
+                      <b-card-text>
+                        <b-form-group label-cols="2" label-size="sm" label="WETH to unwrap" description="e.g. 0.123456789">
+                          <b-form-input size="sm" v-model="weth.wethToUnwrap" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group label-cols="2" label-size="sm" label="">
+                          <b-button size="sm" @click="unwrapWeth" variant="warning">Unwrap</b-button>
+                        </b-form-group>
+                        <b-form-group v-if="weth.unwrapMessage" label-cols="2" label-size="sm" label="">
+                          <b-form-input size="sm" readonly v-model="weth.unwrapMessage" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group v-if="weth.unwrapMessage && weth.unwrapMessage.substring(0, 2) != '0x'" label-cols="2" label-size="sm" label="">
+                          <b-form-input size="sm" readonly v-model="weth.unwrapMessage" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group v-if="weth.unwrapMessage && weth.unwrapMessage.substring(0, 2) == '0x'" label-cols="2" label-size="sm" label="">
+                          Tx <b-link :href="explorer + 'tx/' + weth.unwrapMessage" class="card-link" target="_blank">{{ weth.unwrapMessage }}</b-link>
+                        </b-form-group>
+                      </b-card-text>
+                    </b-card>
+
+                  </b-tab>
+
+                  <!--
+                  <b-tab title="Approvals" class="p-1">
+                    <b-form-group label-cols="2" label-size="sm" label="">
+                      <b-button size="sm" @click="checkApprovals" variant="primary">Check</b-button>
+                    </b-form-group>
+                  </b-tab>
+                  -->
+
+                  <b-tab title="Orders" class="p-1">
                     <b-form-group label-cols="2" label-size="sm" label="">
                       <b-button size="sm" @click="loadInfo" variant="primary">Load Info</b-button>
                     </b-form-group>
@@ -57,7 +123,7 @@ const Nix = {
                               {{ formatDate(data.item.expiry) }}
                             </template>
                             <template #cell(royaltyFactor)="data">
-                              {{ data.item.royaltyFactor.toString() + '%' }}
+                              {{ data.item.royaltyFactor.toString() }}
                             </template>
                             <template #cell(orderStatus)="data">
                               {{ formatOrderStatus(data.item.orderStatus) }}
@@ -162,6 +228,16 @@ const Nix = {
       count: 0,
       reschedule: true,
 
+      weth: {
+        ethBalance: null,
+        address: WETHADDRESS,
+        wethBalance: null,
+        ethToWrap: null,
+        wrapMessage: null,
+        wethToUnwrap: null,
+        unwrapMessage: null,
+      },
+
       order: {
         token: "0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4",
         taker: null,
@@ -244,6 +320,84 @@ const Nix = {
       setTimeout(function() {
         t.statusSidebar = true;
       }, 1500);
+    },
+
+    async checkWeth() {
+      event.preventDefault();
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const ethBalance = await provider.getBalance(this.coinbase);
+      this.weth.ethBalance = ethers.utils.formatEther(ethBalance.toString());
+      const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
+      const wethBalance = await weth.balanceOf(this.coinbase);
+      this.weth.wethBalance = ethers.utils.formatEther(wethBalance.toString());
+    },
+
+    wrapEth() {
+      console.log("wrapEth");
+      this.$bvModal.msgBoxConfirm('Wrap ' + this.weth.ethToWrap + ' ETH?', {
+          title: 'Please Confirm',
+          size: 'sm',
+          buttonSize: 'sm',
+          okVariant: 'danger',
+          okTitle: 'Yes',
+          cancelTitle: 'No',
+          footerClass: 'p-2',
+          hideHeaderClose: false,
+          centered: true
+        })
+        .then(async value1 => {
+          if (value1) {
+            event.preventDefault();
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
+            const wethWithSigner = weth.connect(provider.getSigner());
+            try {
+              const tx = await wethWithSigner.deposit({ value: ethers.utils.parseEther(this.weth.ethToWrap) });
+              this.weth.wrapMessage = tx.hash;
+              console.log("tx: " + JSON.stringify(tx));
+            } catch (e) {
+              this.weth.wrapMessage = e.toString();
+              console.log("error: " + e.toString());
+            }
+          }
+        })
+        .catch(err => {
+          // An error occurred
+        });
+    },
+
+    unwrapWeth() {
+      console.log("unwrapWeth");
+      this.$bvModal.msgBoxConfirm('Unwrap ' + this.weth.wethToUnwrap + ' WETH?', {
+          title: 'Please Confirm',
+          size: 'sm',
+          buttonSize: 'sm',
+          okVariant: 'danger',
+          okTitle: 'Yes',
+          cancelTitle: 'No',
+          footerClass: 'p-2',
+          hideHeaderClose: false,
+          centered: true
+        })
+        .then(async value1 => {
+          if (value1) {
+            event.preventDefault();
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
+            const wethWithSigner = weth.connect(provider.getSigner());
+            try {
+              const tx = await wethWithSigner.withdraw(ethers.utils.parseEther(this.weth.wethToUnwrap));
+              this.weth.unwrapMessage = tx.hash;
+              console.log("tx: " + JSON.stringify(tx));
+            } catch (e) {
+              this.weth.unwrapMessage = e.toString();
+              console.log("error: " + e.toString());
+            }
+          }
+        })
+        .catch(err => {
+          // An error occurred
+        });
     },
 
     async loadInfo() {

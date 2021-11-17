@@ -179,13 +179,13 @@ const tokensModule = {
             console.log("assetOwner is " + ADDRESS0 + " so set to " + assetOwner);
           }
           const contract = asset.asset_contract.address.toLowerCase();
-          console.log("Asset: " + JSON.stringify(asset.name || '(no name)') + ", contract: " + contract);
+          // console.log("Asset: " + JSON.stringify(asset.name || '(no name)') + ", contract: " + contract);
           // console.log(JSON.stringify(asset, null, 2));
           let permission = permissions[assetOwner + ':' + contract];
           if (permission == null) {
             permission = permissions[assetOwner + ':' + null];
           }
-          console.log("  assetOwner: " + assetOwner + ", contract: " + contract + " => permission: " + JSON.stringify(permission));
+          // console.log("  assetOwner: " + assetOwner + ", contract: " + contract + " => permission: " + JSON.stringify(permission));
           if (permission && (permission.permission == 1 || permission.permission == 2)) {
             var traits = [];
             for (let traitIndex = 0; traitIndex < asset.traits.length; traitIndex++) {
@@ -206,7 +206,7 @@ const tokensModule = {
                 assetList: []
               });
               collection = state.collections[contract];
-              console.log("New collection: " + JSON.stringify(collection));
+              // console.log("New collection: " + JSON.stringify(collection));
             }
             const key = contract + "." + asset.token_id;
             state.touched[key] = 1;
@@ -298,7 +298,7 @@ const tokensModule = {
   },
   actions: {
     async loadLibrary(context) {
-      logInfo("tokensModule", "actions.loadLibrary()");
+      logDebug("tokensModule", "actions.loadLibrary()");
 
       // const defaultRegistryEntries = [
       //   ["0xBeeef66749B64Afe43Bbc9475635Eb510cFE4922", "0xBeeef66749B64Afe43Bbc9475635Eb510cFE4922", "0xBEEEf7786F0681Dd80651e4F05253dB8C9Fb74d1", "0x00000217d2795F1Da57e392D2a5bC87125BAA38D"],
@@ -358,7 +358,7 @@ const tokensModule = {
         // logInfo("tokensModule", "  owner: " + owner + ", contract: " + contract + ", permission: " + permission + ", curation: " + curation);
       }
       // logInfo("tokensModule", "actions.loadLibrary() - owners: " + JSON.stringify(owners));
-      logInfo("tokensModule", "actions.loadLibrary() - permissions: " + JSON.stringify(permissions));
+      logDebug("tokensModule", "actions.loadLibrary() - permissions: " + JSON.stringify(permissions));
 
       context.commit('updateAssetsPreparation');
       for (const [owner, ownersContracts] of Object.entries(owners)) {
@@ -384,7 +384,7 @@ const tokensModule = {
           while (!completed) {
             const offset = PAGESIZE * page;
             const url = "https://api.opensea.io/api/v1/assets?owner=" + owner + "&order_direction=desc&limit=" + PAGESIZE + "&offset=" + offset;
-            logInfo("tokensModule", "actions.loadLibrary() owner url:" + url);
+            logDebug("tokensModule", "actions.loadLibrary() owner url:" + url);
             const data = await fetch(url).then(response => response.json());
             context.commit('updateAssets', { owner, permissions, data } );
             // if (data.assets && data.assets.length > 0) {
