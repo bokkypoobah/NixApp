@@ -128,7 +128,7 @@ const Nix = {
                       <b-card-text>
                         <font size="-2">
                           <b-table small fixed striped sticky-header="1000px" :items="testToadz.owners" head-variant="light">
-                          <!-- <b-table small fixed striped :items="testToadz.owners" head-variant="light"> -->
+                          </b-table>
                         </font>
                       </b-card-text>
                     </b-card>
@@ -561,21 +561,45 @@ const Nix = {
       var tokensIndices = [...Array(parseInt(totalSupply)).keys()];
       const ownersInfo = await erc721Helper.ownersByTokenIds(TESTTOADZADDRESS, tokensIndices);
       const owners = [];
+      const tokenIds = [];
+      const ownerRecords = [];
+      const timestamp = parseInt(new Date() / 1000);
       for (let i = 0; i < ownersInfo[0].length; i++) {
         if (ownersInfo[0][i]) {
           console.log(ownersInfo[1][i]);
           owners.push({ tokenId: tokensIndices[i], owner: ownersInfo[1][i] });
+          tokenIds.push(tokensIndices[i]);
+          ownerRecords.push({ chainId: this.network.chainId, contract: TESTTOADZADDRESS, tokenId: tokensIndices[i], owner: ownersInfo[1][i], timestamp: timestamp });
         }
       }
       console.log("End: " + new Date().toString());
-      console.log(JSON.stringify(owners, null, 2));
+      // console.log(JSON.stringify(owners, null, 2));
+      console.log(JSON.stringify(ownerRecords, null, 2));
       this.testToadz.owners = owners;
+
+      const tokenURIsInfo = await erc721Helper.tokenURIsByTokenIds(TESTTOADZADDRESS, tokenIds);
+      console.log(JSON.stringify(tokenURIsInfo, null, 2));
+      const tokenURIRecords = [];
+      for (let i = 0; i < tokenURIsInfo[0].length; i++) {
+        if (tokenURIsInfo[0][i]) {
+          console.log(tokenURIsInfo[1][i]);
+          tokenURIRecords.push({ chainId: this.network.chainId, contract: TESTTOADZADDRESS, tokenId: tokenIds[i], tokenURI: tokenURIsInfo[1][i], timestamp: timestamp });
+        }
+      }
 
       var db0 = new Dexie("NixDB");
       db0.version(1).stores({
         // nftData: '&tokenId,asset,timestamp',
         owners: '[chainId+contract+tokenId],chainId,contract,tokenId,owner,timestamp',
-        tokenURIs: '[chainId+contract+tokenId],chainId,contract,tokenId,tokenURIs,timestamp',
+        tokenURIs: '[chainId+contract+tokenId],chainId,contract,tokenId,tokenURI,timestamp',
+      });
+      await db0.owners.bulkPut(ownerRecords).then (function(){
+      }).catch(function(error) {
+        console.log("error: " + error);
+      });
+      await db0.tokenURIs.bulkPut(tokenURIRecords).then (function(){
+      }).catch(function(error) {
+        console.log("error: " + error);
       });
 
       console.log("chainId: " + this.network.chainId);
