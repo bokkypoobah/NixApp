@@ -33,8 +33,12 @@ const Nix = {
                         <b-form-group label-cols="2" label-size="sm" label="WETH Balance">
                           <b-form-input size="sm" readonly v-model="weth.wethBalance" class="w-50"></b-form-input>
                         </b-form-group>
+                        <b-form-group label-cols="2" label-size="sm" label="WETH Allowance To Nix">
+                          <b-form-input size="sm" readonly v-model="weth.wethAllowanceToNix" class="w-50"></b-form-input>
+                        </b-form-group>
                       </b-card-text>
                     </b-card>
+
                     <b-card header="Wrap ETH To WETH" class="mb-2">
                       <b-card-text>
                         <b-form-group label-cols="2" label-size="sm" label="ETH to wrap" description="e.g. 0.123456789">
@@ -51,6 +55,7 @@ const Nix = {
                         </b-form-group>
                       </b-card-text>
                     </b-card>
+
                     <b-card header="Unwrap WETH To ETH" class="mb-2">
                       <b-card-text>
                         <b-form-group label-cols="2" label-size="sm" label="WETH to unwrap" description="e.g. 0.123456789">
@@ -59,14 +64,28 @@ const Nix = {
                         <b-form-group label-cols="2" label-size="sm" label="">
                           <b-button size="sm" @click="unwrapWeth" variant="warning">Unwrap</b-button>
                         </b-form-group>
-                        <b-form-group v-if="weth.unwrapMessage" label-cols="2" label-size="sm" label="">
-                          <b-form-input size="sm" readonly v-model="weth.unwrapMessage" class="w-50"></b-form-input>
-                        </b-form-group>
                         <b-form-group v-if="weth.unwrapMessage && weth.unwrapMessage.substring(0, 2) != '0x'" label-cols="2" label-size="sm" label="">
                           <b-form-input size="sm" readonly v-model="weth.unwrapMessage" class="w-50"></b-form-input>
                         </b-form-group>
                         <b-form-group v-if="weth.unwrapMessage && weth.unwrapMessage.substring(0, 2) == '0x'" label-cols="2" label-size="sm" label="">
                           Tx <b-link :href="explorer + 'tx/' + weth.unwrapMessage" class="card-link" target="_blank">{{ weth.unwrapMessage }}</b-link>
+                        </b-form-group>
+                      </b-card-text>
+                    </b-card>
+
+                    <b-card header="Approve WETH Allowance For Nix To Spend" class="mb-2">
+                      <b-card-text>
+                        <b-form-group label-cols="2" label-size="sm" label="WETH to approve to Nix" description="e.g. 0.123456789">
+                          <b-form-input size="sm" v-model="weth.wethToApproveToNix" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group label-cols="2" label-size="sm" label="">
+                          <b-button size="sm" @click="approveWeth" variant="warning">Approve</b-button>
+                        </b-form-group>
+                        <b-form-group v-if="weth.approvalMessage && weth.approvalMessage.substring(0, 2) != '0x'" label-cols="2" label-size="sm" label="">
+                          <b-form-input size="sm" readonly v-model="weth.approvalMessage" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group v-if="weth.approvalMessage && weth.approvalMessage.substring(0, 2) == '0x'" label-cols="2" label-size="sm" label="">
+                          Tx <b-link :href="explorer + 'tx/' + weth.approvalMessage" class="card-link" target="_blank">{{ weth.approvalMessage }}</b-link>
                         </b-form-group>
                       </b-card-text>
                     </b-card>
@@ -232,10 +251,13 @@ const Nix = {
         ethBalance: null,
         address: WETHADDRESS,
         wethBalance: null,
+        wethAllowanceToNix: null,
         ethToWrap: null,
         wrapMessage: null,
         wethToUnwrap: null,
         unwrapMessage: null,
+        wethToApproveToNix: null,
+        approvalMessage: null,
       },
 
       order: {
@@ -330,6 +352,8 @@ const Nix = {
       const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
       const wethBalance = await weth.balanceOf(this.coinbase);
       this.weth.wethBalance = ethers.utils.formatEther(wethBalance.toString());
+      const wethAllowanceToNix = await weth.allowance(this.coinbase, NIXADDRESS);
+      this.weth.wethAllowanceToNix = ethers.utils.formatEther(wethAllowanceToNix.toString());
     },
 
     wrapEth() {
@@ -391,6 +415,40 @@ const Nix = {
               console.log("tx: " + JSON.stringify(tx));
             } catch (e) {
               this.weth.unwrapMessage = e.toString();
+              console.log("error: " + e.toString());
+            }
+          }
+        })
+        .catch(err => {
+          // An error occurred
+        });
+    },
+
+    approveWeth() {
+      console.log("approveWeth");
+      this.$bvModal.msgBoxConfirm('Approve ' + this.weth.wethToApproveToNix + ' WETH for Nix to spend?', {
+          title: 'Please Confirm',
+          size: 'sm',
+          buttonSize: 'sm',
+          okVariant: 'danger',
+          okTitle: 'Yes',
+          cancelTitle: 'No',
+          footerClass: 'p-2',
+          hideHeaderClose: false,
+          centered: true
+        })
+        .then(async value1 => {
+          if (value1) {
+            event.preventDefault();
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
+            const wethWithSigner = weth.connect(provider.getSigner());
+            try {
+              const tx = await wethWithSigner.approve(NIXADDRESS, ethers.utils.parseEther(this.weth.wethToApproveToNix));
+              this.weth.approvalMessage = tx.hash;
+              console.log("tx: " + JSON.stringify(tx));
+            } catch (e) {
+              this.weth.approvalMessage = e.toString();
               console.log("error: " + e.toString());
             }
           }
