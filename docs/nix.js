@@ -101,6 +101,7 @@ const Nix = {
                         <b-form-group label-cols="3" label-size="sm" label="Token Address">
                           <b-link :href="explorer + 'token/' + testToadz.address" class="card-link" target="_blank">{{ testToadz.address }}</b-link>
                         </b-form-group>
+                        <!--
                         <b-form-group label-cols="3" label-size="sm" label="Supports ERC-721 '0x80ac58cd'">
                           <b-form-input size="sm" readonly v-model="testToadz.supportsERC721" class="w-50"></b-form-input>
                         </b-form-group>
@@ -110,6 +111,7 @@ const Nix = {
                         <b-form-group label-cols="3" label-size="sm" label="Supports ERC-721 Enumerable '0x780e9d63'">
                           <b-form-input size="sm" readonly v-model="testToadz.supportsERC721ENUMERABLE" class="w-50"></b-form-input>
                         </b-form-group>
+                        -->
                         <b-form-group label-cols="3" label-size="sm" label="Symbol">
                           <b-form-input size="sm" readonly v-model="testToadz.symbol" class="w-50"></b-form-input>
                         </b-form-group>
@@ -124,9 +126,10 @@ const Nix = {
                         </b-form-group>
                       </b-card-text>
                       <b-card-text>
-
-                      <b-table small fixed striped sticky-header="200px" :items="testToadz.owners" head-variant="light">
-
+                        <font size="-2">
+                          <b-table small fixed striped sticky-header="1000px" :items="testToadz.owners" head-variant="light">
+                          <!-- <b-table small fixed striped :items="testToadz.owners" head-variant="light"> -->
+                        </font>
                       </b-card-text>
                     </b-card>
 
@@ -567,6 +570,15 @@ const Nix = {
       console.log("End: " + new Date().toString());
       console.log(JSON.stringify(owners, null, 2));
       this.testToadz.owners = owners;
+
+      var db0 = new Dexie("NixDB");
+      db0.version(1).stores({
+        // nftData: '&tokenId,asset,timestamp',
+        owners: '[chainId+contract+tokenId],chainId,contract,tokenId,owner,timestamp',
+        tokenURIs: '[chainId+contract+tokenId],chainId,contract,tokenId,tokenURIs,timestamp',
+      });
+
+      console.log("chainId: " + this.network.chainId);
 
       const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
       this.testToadz.supportsERC721 = (await testToadz.supportsInterface(ERC721_INTERFACE)).toString();
