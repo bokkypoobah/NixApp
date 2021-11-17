@@ -15,7 +15,7 @@ const Nix = {
               <b-card no-body class="mt-2">
                 <b-tabs vertical pills card end nav-class="p-2" active-tab-class="p-2">
 
-                  <b-tab active title="(W)ETH" class="p-1">
+                  <b-tab title="(W)ETH" class="p-1">
                     <b-card header="Balances" class="mb-2">
                       <b-card-text>
                         <b-form-group label-cols="2" label-size="sm" label="">
@@ -92,6 +92,36 @@ const Nix = {
 
                   </b-tab>
 
+                  <b-tab active title="TestToadz" class="p-1">
+                    <b-card header="TestToadz" class="mb-2">
+                      <b-card-text>
+                        <b-form-group label-cols="2" label-size="sm" label="">
+                          <b-button size="sm" @click="checkTestToadz" variant="primary">Check</b-button>
+                        </b-form-group>
+                        <b-form-group label-cols="2" label-size="sm" label="Token Address">
+                          <b-link :href="explorer + 'token/' + testToadz.address" class="card-link" target="_blank">{{ testToadz.address }}</b-link>
+                        </b-form-group>
+                        <b-form-group label-cols="2" label-size="sm" label="Supports ERC-721 '0x80ac58cd'">
+                          <b-form-input size="sm" readonly v-model="testToadz.supportsERC721" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group label-cols="2" label-size="sm" label="Supports ERC-721 Metadata '0x5b5e139f'">
+                          <b-form-input size="sm" readonly v-model="testToadz.supportsERC721METADATA" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group label-cols="2" label-size="sm" label="Supports ERC-721 Enumerable '0x780e9d63'">
+                          <b-form-input size="sm" readonly v-model="testToadz.supportsERC721ENUMERABLE" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group label-cols="2" label-size="sm" label="Symbol">
+                          <b-form-input size="sm" readonly v-model="testToadz.symbol" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group label-cols="2" label-size="sm" label="Name">
+                          <b-form-input size="sm" readonly v-model="testToadz.name" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group label-cols="2" label-size="sm" label="Balance">
+                          <b-form-input size="sm" readonly v-model="testToadz.balance" class="w-50"></b-form-input>
+                        </b-form-group>
+                      </b-card-text>
+                    </b-card>
+                  </b-tab>
                   <!--
                   <b-tab title="Approvals" class="p-1">
                     <b-form-group label-cols="2" label-size="sm" label="">
@@ -258,6 +288,16 @@ const Nix = {
         unwrapMessage: null,
         wethToApproveToNix: null,
         approvalMessage: null,
+      },
+
+      testToadz: {
+        address: TESTTOADZADDRESS,
+        supportsERC721: null,
+        supportsERC721METADATA: null,
+        supportsERC721ENUMERABLE: null,
+        symbol: null,
+        name: null,
+        balance: null,
       },
 
       order: {
@@ -456,6 +496,18 @@ const Nix = {
         .catch(err => {
           // An error occurred
         });
+    },
+
+    async checkTestToadz() {
+      event.preventDefault();
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
+      this.testToadz.symbol = await testToadz.symbol();
+      this.testToadz.name = await testToadz.name();
+      this.testToadz.balance = await testToadz.balanceOf(this.coinbase);
+      this.testToadz.supportsERC721 = await testToadz.supportsInterface(ERC721_INTERFACE);
+      this.testToadz.supportsERC721METADATA = await testToadz.supportsInterface(ERC721METADATA_INTERFACE);
+      this.testToadz.supportsERC721ENUMERABLE = await testToadz.supportsInterface(ERC721ENUMERABLE_INTERFACE);
     },
 
     async loadInfo() {
