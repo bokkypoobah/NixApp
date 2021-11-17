@@ -123,6 +123,11 @@ const Nix = {
                           <b-form-input size="sm" readonly v-model="testToadz.approvedToNix" class="w-50"></b-form-input>
                         </b-form-group>
                       </b-card-text>
+                      <b-card-text>
+
+                      <b-table small fixed striped sticky-header="200px" :items="testToadz.owners" head-variant="light">
+
+                      </b-card-text>
                     </b-card>
 
                     <b-card header="Mint TestToadz" class="mb-2">
@@ -340,6 +345,7 @@ const Nix = {
         approvalMessage: null,
         mintNumber: null,
         mintMessage: null,
+        owners: [],
       },
 
       order: {
@@ -545,10 +551,22 @@ const Nix = {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
 
       const erc721Helper = new ethers.Contract(ERC721HELPERADDRESS, ERC721HELPERABI, provider);
+      console.log("Start: " + new Date().toString());
       const tokenInfo = await erc721Helper.tokenInfo([TESTTOADZADDRESS]);
-      console.log(JSON.stringify(tokenInfo, null, 2));
-      // var tokensIndices = [...Array(parseInt(tokensLength)).keys()];
-
+      // console.log(JSON.stringify(tokenInfo, null, 2));
+      const totalSupply = 10000;
+      var tokensIndices = [...Array(parseInt(totalSupply)).keys()];
+      const ownersInfo = await erc721Helper.ownersByTokenIds(TESTTOADZADDRESS, tokensIndices);
+      const owners = [];
+      for (let i = 0; i < ownersInfo[0].length; i++) {
+        if (ownersInfo[0][i]) {
+          console.log(ownersInfo[1][i]);
+          owners.push({ tokenId: tokensIndices[i], owner: ownersInfo[1][i] });
+        }
+      }
+      console.log("End: " + new Date().toString());
+      console.log(JSON.stringify(owners, null, 2));
+      this.testToadz.owners = owners;
 
       const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
       this.testToadz.supportsERC721 = (await testToadz.supportsInterface(ERC721_INTERFACE)).toString();
