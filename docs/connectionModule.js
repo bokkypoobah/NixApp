@@ -269,6 +269,12 @@ const Connection = {
           logDebug("Connection", "execWeb3() Getting data");
           try {
             const provider = new ethers.providers.Web3Provider(window.ethereum);
+            // function handleNewBlock(b) {
+            //   logInfo("Connection", "execWeb3() handleNewBlock: " + JSON.stringify(b));
+            //   this.refreshNow = true;
+            // }
+            // provider.on('block', handleNewBlock);
+
             const network = await provider.getNetwork();
             store.dispatch('connection/setNetwork', network);
             const block = await provider.getBlock();
@@ -294,9 +300,12 @@ const Connection = {
         }
       }
 
-      store.dispatch('tokens/execWeb3', { count: this.count });
+      // store.dispatch('nixData/execWeb3', { count: this.count });
       // if (false && store.getters['connection/connection'] && store.getters['connection/connection'].connected) {
-        // await store.dispatch('tokenContract/execWeb3', { count: this.count, networkChanged, blockChanged, coinbaseChanged });
+        const networkChanged = false;
+        const blockChanged = false;
+        const coinbaseChanged = false;
+        store.dispatch('nixData/execWeb3', { count: this.count, networkChanged: networkChanged, blockChanged: blockChanged, coinbaseChanged: coinbaseChanged });
         // if (this.$route.name == "DeployTokenContract") {
         //   await store.dispatch('deployTokenContract/execWeb3', { count: this.count, networkChanged, blockChanged, coinbaseChanged });
         // } else if (this.$route.name == "TokenContractExplorer" /* || this.$route.name == "GoblokStatus" */) {
