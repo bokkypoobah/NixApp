@@ -13,6 +13,13 @@ const Nix = {
 
             <div>
               <b-card no-body class="mt-2">
+
+                <!--
+                <b-form-group label-cols="3" label-size="sm" label="" class="my-3">
+                  <b-button size="sm" @click="testIt" variant="primary">TestIt</b-button>
+                </b-form-group>
+                -->
+
                 <b-tabs vertical pills card end nav-class="p-2" active-tab-class="p-2">
 
                   <b-tab title="(W)ETH" class="p-1">
@@ -333,7 +340,7 @@ const Nix = {
 
                   </b-tab>
 
-                  <b-tab title="Orders" class="p-1">
+                  <b-tab title="Execute Orders" class="p-1">
                     <b-card-text>
                     </b-card-text>
                   </b-tab>
@@ -478,6 +485,29 @@ const Nix = {
       }, 1500);
     },
 
+    async testIt() {
+      event.preventDefault();
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      // const ethBalance = await provider.getBalance(this.coinbase);
+      // this.weth.ethBalance = ethers.utils.formatEther(ethBalance.toString());
+      const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
+
+      weth.on("*", (event) => {
+        console.log("event: ", JSON.stringify(event));
+      });
+
+      // weth.events.Deposit({
+      //   fromBlock: 'latest'
+      // }, function(error, event){
+      //   console.log("EVENT: " + JSON.stringify(event));
+      // });
+
+      // const wethBalance = await weth.balanceOf(this.coinbase);
+      // this.weth.wethBalance = ethers.utils.formatEther(wethBalance.toString());
+      // const wethAllowanceToNix = await weth.allowance(this.coinbase, NIXADDRESS);
+      // this.weth.wethAllowanceToNix = ethers.utils.formatEther(wethAllowanceToNix.toString());
+    },
+
     async checkWeth() {
       event.preventDefault();
       const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -599,7 +629,7 @@ const Nix = {
       console.log("Start: " + new Date().toString());
       const tokenInfo = await erc721Helper.tokenInfo([TESTTOADZADDRESS]);
       // console.log(JSON.stringify(tokenInfo, null, 2));
-      const totalSupply = 10000;
+      const totalSupply = 6969; // TestToadz
       var tokensIndices = [...Array(parseInt(totalSupply)).keys()];
       const ownersInfo = await erc721Helper.ownersByTokenIds(TESTTOADZADDRESS, tokensIndices);
       const owners = [];
@@ -838,9 +868,8 @@ const Nix = {
         });
     },
 
-
     async timeoutCallback() {
-      logDebug("Nix", "timeoutCallback() count: " + this.count);
+      logInfo("Nix", "timeoutCallback() count: " + this.count);
 
       this.count++;
       var t = this;
@@ -860,52 +889,6 @@ const Nix = {
     logDebug("Nix", "Calling timeoutCallback()");
     this.timeoutCallback();
     // this.loadNFTs();
-
-    let storedCanvas;
-    try {
-      storedCanvas = JSON.parse(localStorage.getItem('canvas'));
-    } catch (e) {
-      storedCanvas = null;
-    }
-    // logDebug("Nix", "LocalStorage storedCanvas: " + JSON.stringify(storedCanvas));
-
-    logDebug("Nix", "Canvas: " + JSON.stringify(this.canvas));
-    if (storedCanvas == null) {
-      logDebug("Nix", "Canvas");
-      this.canvas = new fabric.Canvas('thecanvas', {
-        hoverCursor: 'pointer',
-        selection: false,
-        targetFindTolerance: 2
-      });
-      const rect = new fabric.Rect({
-        left: 50,
-        top: 50,
-        fill: 'cyan',
-        width: 380,
-        height: 380
-      });
-      this.canvas.add(rect);
-      const text = new fabric.IText('Tap and Type', {
-          left: 100,
-          top: 100,
-      });
-      this.canvas.add(text);
-      localStorage.setItem('canvas', JSON.stringify(this.canvas));
-      logDebug("Nix", "LocalStorage Canvas: " + JSON.stringify(this.canvas));
-    } else {
-      this.canvas = new fabric.Canvas('thecanvas', {
-        hoverCursor: 'pointer',
-        selection: false,
-        targetFindTolerance: 2
-      });
-      const t = this;
-      this.canvas.loadFromJSON(storedCanvas, function() {
-        // logDebug("Nix", "LocalStorage loadFromJSON: " + JSON.stringify(storedCanvas));
-         t.canvas.renderAll();
-      },function(o,object){
-         // console.log(o,object)
-      })
-    }
   },
   destroyed() {
     this.reschedule = false;
