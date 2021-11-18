@@ -96,7 +96,7 @@ const Nix = {
                     <b-card header="TestToadz" class="mb-2">
                       <b-card-text>
                         <b-form-group label-cols="3" label-size="sm" label="">
-                          <b-button size="sm" @click="checkTestToadz" variant="primary">Check</b-button>
+                          <b-button size="sm" @click="loadTestToadz" variant="primary">Load</b-button>
                         </b-form-group>
                         <b-form-group label-cols="3" label-size="sm" label="Token Address">
                           <b-link :href="explorer + 'token/' + testToadz.address" class="card-link" target="_blank">{{ testToadz.address }}</b-link>
@@ -130,6 +130,35 @@ const Nix = {
                           <b-table small fixed striped sticky-header="1000px" :fields="testToadzFields" :items="testToadz.owners" head-variant="light">
                             <template #cell(tokenURI)="data">
                               {{ testToadz.tokenURIs[data.item.tokenId] || '(none)' }}
+                            </template>
+                          </b-table>
+                        </font>
+                      </b-card-text>
+                    </b-card>
+
+                    <b-card header="Check TestToadz Royalties" class="mb-2">
+                      <b-card-text>
+                        <b-form-group label-cols="3" label-size="sm" label="TokenId" description="e.g., 123">
+                          <b-form-input size="sm" v-model="testToadz.royaltyTokenId" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group label-cols="3" label-size="sm" label="Sale amount" description="In WETH. e.g., 0.456">
+                          <b-form-input size="sm" v-model="testToadz.royaltyAmount" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group label-cols="3" label-size="sm" label="">
+                          <b-button size="sm" @click="checkTestToadzRoyalty" variant="primary">Check</b-button>
+                        </b-form-group>
+                        <b-form-group label-cols="3" label-size="sm" label="Nix RoyaltyEngine">
+                          <div v-if="testToadz.nixRoyaltyEngine">
+                            <b-link :href="explorer + 'address/' + testToadz.nixRoyaltyEngine" class="card-link" target="_blank">{{ testToadz.nixRoyaltyEngine }}</b-link>
+                          </div>
+                          <div v-else>
+                            Click Check for address
+                          </div>
+                        </b-form-group>
+                        <font size="-2">
+                          <b-table small fixed striped sticky-header="1000px" :items="testToadz.royaltyPayments" head-variant="light">
+                            <template #cell(payAmount)="data">
+                              {{ formatETH(data.item.payAmount) }}
                             </template>
                           </b-table>
                         </font>
@@ -347,6 +376,10 @@ const Nix = {
         symbol: null,
         name: null,
         balance: null,
+        nixRoyaltyEngine: null,
+        royaltyTokenId: null,
+        royaltyAmount: null,
+        royaltyPayments: [],
         approvedToNix: null,
         approvalMessage: null,
         mintNumber: null,
@@ -559,10 +592,9 @@ const Nix = {
         });
     },
 
-    async checkTestToadz() {
+    async loadTestToadz() {
       event.preventDefault();
       const provider = new ethers.providers.Web3Provider(window.ethereum);
-
       const erc721Helper = new ethers.Contract(ERC721HELPERADDRESS, ERC721HELPERABI, provider);
       console.log("Start: " + new Date().toString());
       const tokenInfo = await erc721Helper.tokenInfo([TESTTOADZADDRESS]);
@@ -625,6 +657,25 @@ const Nix = {
       this.testToadz.name = (await testToadz.name()).toString();
       this.testToadz.balance = (await testToadz.balanceOf(this.coinbase)).toString();
       this.testToadz.approvedToNix = (await testToadz.isApprovedForAll(this.coinbase, NIXADDRESS)).toString();
+    },
+
+    async checkTestToadzRoyalty() {
+      event.preventDefault();
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
+      const nixRoyaltyEngine = await nix.royaltyEngine();
+      this.testToadz.nixRoyaltyEngine = nixRoyaltyEngine;
+      const royaltyEngine = new ethers.Contract(nixRoyaltyEngine, ROYALTYENGINEABI, provider);
+      const royaltyPayments = [];
+      try {
+        const results = await royaltyEngine.getRoyaltyView(TESTTOADZADDRESS, this.testToadz.royaltyTokenId, ethers.utils.parseEther(this.testToadz.royaltyAmount));
+        for (let i = 0; i < results[0].length; i++) {
+          royaltyPayments.push({ payTo: results[0][i], payAmount: results[1][i] });
+        }
+      } catch (e) {
+        royaltyPayments.push({ payTo: "Error", payAmount: "Error" });
+      }
+      this.testToadz.royaltyPayments = royaltyPayments;
     },
 
     approveTestToadzToNix(approved) {
