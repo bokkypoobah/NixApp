@@ -22,13 +22,7 @@ const Nix = {
 
                 <b-tabs vertical pills card end nav-class="p-2" active-tab-class="p-2">
 
-                  <b-tab active title="Orders" class="p-1">
-                    <!--
-                    <b-form-group label-cols="3" label-size="sm" label="">
-                      <b-button size="sm" @click="loadInfo" variant="primary">Load Info</b-button>
-                    </b-form-group>
-                    -->
-
+                  <b-tab title="Orders" class="p-1">
                     <div v-if="!tokensData || tokensData.length == 0">
                       <b-card>
                         <b-card-text>
@@ -72,33 +66,33 @@ const Nix = {
                             <template #cell(orderStatus)="data">
                               {{ formatOrderStatus(data.item.orderStatus) }}
                             </template>
-
                           </b-table>
                         </font>
-
-                        <!--
-                        {{ tokensDataItem }}
-                        <font size="-2">
-                          <b-table small fixed striped sticky-header="200px" :fields="categoryFields" :items="getSortedValuesForCategory(categoryKey)" head-variant="light">
-                            <template #cell(select)="data">
-                              <b-form-checkbox @change="filterChange(categoryKey, data.item.categoryOption)"></b-form-checkbox>
-                            </template>
-                          </b-table>
-                        </font>
-                        -->
                       </b-card>
-
-
-                      <!--
-
-                      <b-link @click="displayToken(item)">
-                        <b-avatar rounded="sm" variant="light" size="3.0rem" :src="data[item] ? data[item].images[0] : null" v-b-popover.hover.bottom="'#' + item" class="ml-2"></b-avatar>
-                      </b-link>
-                      -->
                     </div>
 
                   </b-tab>
 
+                  <b-tab active title="Trades" class="p-1">
+                    <div v-if="!tradeData || tradeData.length == 0">
+                      <b-card>
+                        <b-card-text>
+                          Loading trades
+                        </b-card-text>
+                      </b-card>
+                    </div>
+                    <b-card>
+                      <font size="-2">
+                        <b-table small fixed striped sticky-header="1000px" :fields="tradeFields" :items="tradeData" head-variant="light" show-empty>
+                          <template #cell(orders)="data">
+                            <div v-for="(token, tokenIndex) in data.item.orders">
+                              {{ token[0] }} {{ token[1].toString() }}
+                            </div>
+                          </template>
+                        </b-table>
+                      </font>
+                    </b-card>
+                  </b-tab>
 
                   <b-tab title="(W)ETH" class="p-1">
                     <b-card header="Balances" class="mb-2">
@@ -394,9 +388,6 @@ const Nix = {
                     </b-card-text>
                   </b-tab>
 
-                  <b-tab title="Trades" class="p-1">
-                  </b-tab>
-
                 </b-tabs>
               </b-card>
             </div>
@@ -484,7 +475,13 @@ const Nix = {
         { value: 1, text: 'All' },
       ],
 
-      // tokensData: [],
+      tradeFields: [
+        { key: 'tradeId', label: 'Trade Id', thStyle: 'width: 10%;', sortable: true },
+        { key: 'taker', label: 'Taker', thStyle: 'width: 20%;', sortable: true },
+        { key: 'royaltyFactor', label: 'Royalty Factor', thStyle: 'width: 10%;', sortable: true },
+        { key: 'blockNumber', label: 'Block Number', thStyle: 'width: 10%;', sortable: true },
+        { key: 'orders', label: 'Orders', thStyle: 'width: 40%;', sortable: true },
+      ],
     }
   },
   computed: {
@@ -509,6 +506,9 @@ const Nix = {
     },
     tokensData() {
       return store.getters['nixData/tokensData'];
+    },
+    tradeData() {
+      return store.getters['nixData/tradeData'];
     },
   },
   methods: {

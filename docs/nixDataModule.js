@@ -70,6 +70,9 @@ const NixData = {
     tokensData() {
       return store.getters['nixData/tokensData'];
     },
+    tradeData() {
+      return store.getters['nixData/tradeData'];
+    },
     // collectionList() {
     //   return store.getters['tokens/collectionList'];
     // },
@@ -115,6 +118,7 @@ const nixDataModule = {
   state: {
     nixRoyaltyEngine: null,
     tokensData: [],
+    tradeData: [],
 
     // collections: {},
     // collectionList: [],
@@ -136,6 +140,7 @@ const nixDataModule = {
   getters: {
     nixRoyaltyEngine: state => state.nixRoyaltyEngine,
     tokensData: state => state.tokensData,
+    tradeData: state => state.tradeData,
 
     // collections: state => state.collections,
     // collectionList: state => state.collectionList,
@@ -159,6 +164,10 @@ const nixDataModule = {
     updateTokensData(state, tokensData) {
       // logInfo("nixDataModule", "updateTokensData: " + JSON.stringify(tokensData));
       state.tokensData = tokensData;
+    },
+    updateTradeData(state, tradeData) {
+      logInfo("nixDataModule", "updateTradeData: " + JSON.stringify(tradeData));
+      state.tradeData = tradeData;
     },
     // updateAssetsPreparation(state) {
     //   const keys = Object.keys(state.assets);
@@ -526,9 +535,9 @@ const nixDataModule = {
           var tokensData = [];
           const tokensLength = await nix.tokensLength();
           if (tokensLength > 0) {
-            var tokensIndices = [...Array(parseInt(tokensLength)).keys()];
-            // console.log("tokensIndices: " + JSON.stringify(tokensIndices));
-            const tokens = await nixHelper.getTokens(tokensIndices);
+            var tokenIndices = [...Array(parseInt(tokensLength)).keys()];
+            // console.log("tokenIndices: " + JSON.stringify(tokenIndices));
+            const tokens = await nixHelper.getTokens(tokenIndices);
             // console.log("tokens: " + JSON.stringify(tokens));
             for (let i = 0; i < tokens[0].length; i++) {
               const token = tokens[0][i];
@@ -569,6 +578,24 @@ const nixDataModule = {
             // console.log("tokensData: " + JSON.stringify(tokensData, null, 2));
             // this.tokensData = tokensData;
             commit('updateTokensData', tokensData);
+
+            const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
+            const tradesLength = await nix.tradesLength();
+            const loaded = 0;
+            var tradeData = [];
+            // console.log(range(loaded, parseInt(tradesLength) - 1, 1));
+            const tradeIndices = range(loaded, parseInt(tradesLength) - 1, 1);
+            const trades = await nixHelper.getTrades(tradeIndices);
+            // console.log("trades: " + JSON.stringify(trades));
+            for (let i = 0; i < trades[0].length; i++) {
+              console.log("trades[" + i + "]: " + JSON.stringify(trades[i], null, 2));
+              const taker = trades[0][i];
+              const royaltyFactor = trades[1][i];
+              const blockNumber = trades[2][i];
+              const orders = trades[3][i];
+              tradeData.push({ tradeId: i, taker: taker, royaltyFactor: royaltyFactor, blockNumber: blockNumber, orders: orders });
+            }
+            commit('updateTradeData', tradeData);
           }
 
 
