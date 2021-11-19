@@ -262,6 +262,9 @@ const Nix = {
                         </b-form-group>
                         <font size="-2">
                           <b-table small fixed striped sticky-header="1000px" :items="testToadz.royaltyPayments" head-variant="light">
+                            <template #cell(payTo)="data">
+                              <b-link :href="explorer + 'token/' + weth.address + '?a=' + data.item.payTo" class="card-link" target="_blank">{{ data.item.payTo }}</b-link>
+                            </template>
                             <template #cell(payAmount)="data">
                               {{ formatETH(data.item.payAmount) }}
                             </template>
