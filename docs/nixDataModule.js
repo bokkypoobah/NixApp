@@ -532,24 +532,22 @@ const nixDataModule = {
             });
           }
 
+          const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
+
           var tokensData = [];
           const tokensLength = await nix.tokensLength();
           if (tokensLength > 0) {
-            var tokenIndices = [...Array(parseInt(tokensLength)).keys()];
-            // console.log("tokenIndices: " + JSON.stringify(tokenIndices));
+            var tokenIndices = range(0, tokensLength - 1, 1);
             const tokens = await nixHelper.getTokens(tokenIndices);
-            // console.log("tokens: " + JSON.stringify(tokens));
             for (let i = 0; i < tokens[0].length; i++) {
               const token = tokens[0][i];
               const ordersLength = tokens[1][i];
               const executed = tokens[2][i];
               const volumeToken = tokens[3][i];
               const volumeWeth = tokens[4][i];
-              // console.log("token: " + token + ", ordersLength: " + ordersLength + ", executed: " + executed + ", volumeToken: " + volumeToken + ", volumeWeth: " + volumeWeth);
               var ordersData = [];
-              var orderIndices = [...Array(parseInt(ordersLength)).keys()];
+              var orderIndices = range(0, ordersLength - 1, 1);
               const orders = await nixHelper.getOrders(token, orderIndices);
-              // console.log("orders: " + JSON.stringify(orders.map((x) => { return x.toString(); })));
               for (let i = 0; i < ordersLength; i++) {
                 const maker = orders[0][i];
                 const taker = orders[1][i];
@@ -564,41 +562,29 @@ const nixDataModule = {
                 const tradeMax = data[4];
                 const royaltyFactor = data[5];
                 const orderStatus = data[6];
-                ordersData.push({ orderId: i, maker: maker, taker: taker, tokenIds: tokenIds, price: price, buyOrSell: buyOrSell,
+                ordersData.push({ orderIndex: i, maker: maker, taker: taker, tokenIds: tokenIds, price: price, buyOrSell: buyOrSell,
                   anyOrAll: anyOrAll, expiry: expiry, tradeCount: tradeCount, tradeMax: tradeMax, royaltyFactor: royaltyFactor,
                   orderStatus: orderStatus });
-            //     // console.log("maker: " + maker + ", taker: " + taker + ", tokenIds: " + tokenIds + ", price: " + price +
-            //     //   ", buyOrSell: " + BUYORSELLSTRING[buyOrSell] + ", anyOrAll: " + ANYORALLSTRING[anyOrAll] + ", expiryString: " + expiryString +
-            //     //   ", tradeCount: " + tradeCount + ", tradeMax: " + tradeMax + ", royaltyFactor: " + royaltyFactor +
-            //     //   ", orderStatus: " + ORDERSTATUSSTRING[orderStatus]);
               }
-              // console.log("ordersData: " + JSON.stringify(ordersData));
               tokensData.push({ token: token, ordersLength: ordersLength, executed: executed, volumeToken: volumeToken, volumeWeth: volumeWeth, ordersData: ordersData });
             }
-            // console.log("tokensData: " + JSON.stringify(tokensData, null, 2));
-            // this.tokensData = tokensData;
             commit('updateTokensData', tokensData);
 
-            const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
             const tradesLength = await nix.tradesLength();
             const loaded = 0;
             var tradeData = [];
-            // console.log(range(loaded, parseInt(tradesLength) - 1, 1));
             const tradeIndices = range(loaded, parseInt(tradesLength) - 1, 1);
             const trades = await nixHelper.getTrades(tradeIndices);
-            // console.log("trades: " + JSON.stringify(trades));
             for (let i = 0; i < trades[0].length; i++) {
               console.log("trades[" + i + "]: " + JSON.stringify(trades[i], null, 2));
               const taker = trades[0][i];
               const royaltyFactor = trades[1][i];
               const blockNumber = trades[2][i];
               const orders = trades[3][i];
-              tradeData.push({ tradeId: i, taker: taker, royaltyFactor: royaltyFactor, blockNumber: blockNumber, orders: orders });
+              tradeData.push({ tradeIndex: i, taker: taker, royaltyFactor: royaltyFactor, blockNumber: blockNumber, orders: orders });
             }
             commit('updateTradeData', tradeData);
           }
-
-
         }
 
 

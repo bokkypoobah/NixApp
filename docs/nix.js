@@ -73,7 +73,7 @@ const Nix = {
 
                   </b-tab>
 
-                  <b-tab active title="Trades" class="p-1">
+                  <b-tab title="Trades" class="p-1">
                     <div v-if="!tradeData || tradeData.length == 0">
                       <b-card>
                         <b-card-text>
@@ -476,7 +476,7 @@ const Nix = {
       ],
 
       tradeFields: [
-        { key: 'tradeId', label: 'Trade Id', thStyle: 'width: 10%;', sortable: true },
+        { key: 'tradeIndex', label: 'Trade Index', thStyle: 'width: 10%;', sortable: true },
         { key: 'taker', label: 'Taker', thStyle: 'width: 20%;', sortable: true },
         { key: 'royaltyFactor', label: 'Royalty Factor', thStyle: 'width: 10%;', sortable: true },
         { key: 'blockNumber', label: 'Block Number', thStyle: 'width: 10%;', sortable: true },
