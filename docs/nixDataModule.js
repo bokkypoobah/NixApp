@@ -555,7 +555,7 @@ const nixDataModule = {
                 const tradeMax = data[4];
                 const royaltyFactor = data[5];
                 const orderStatus = data[6];
-                ordersData.push({ maker: maker, taker: taker, tokenIds: tokenIds, price: price, buyOrSell: buyOrSell,
+                ordersData.push({ orderId: i, maker: maker, taker: taker, tokenIds: tokenIds, price: price, buyOrSell: buyOrSell,
                   anyOrAll: anyOrAll, expiry: expiry, tradeCount: tradeCount, tradeMax: tradeMax, royaltyFactor: royaltyFactor,
                   orderStatus: orderStatus });
             //     // console.log("maker: " + maker + ", taker: " + taker + ", tokenIds: " + tokenIds + ", price: " + price +
