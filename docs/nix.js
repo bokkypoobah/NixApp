@@ -953,7 +953,7 @@ const Nix = {
             const nixWithSigner = nix.connect(provider.getSigner());
             const weth = await nix.weth();
             const taker = this.order.taker == null || this.order.taker.trim().length == 0 ? ADDRESS0 : taker;
-            const tokenIds = this.order.tokenIds.split(",").map(function(item) { return item.trim(); });
+            const tokenIds = this.order.tokenIds == null || this.order.tokenIds.trim().length == 0 ? [] : this.order.tokenIds.split(",").map(function(item) { return item.trim(); });
             const price = ethers.utils.parseEther(this.order.price);
             const integrator = this.order.integrator == null || this.order.integrator.trim().length == 0 ? ADDRESS0 : integrator;
             try {
