@@ -117,10 +117,10 @@ const Connection = {
             <b-col cols="4" class="small">ETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ balanceString }}</b-link></b-col>
           </b-row>
           <b-row>
-            <b-col cols="4" class="small">WETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ wethBalanceString }}</b-link></b-col>
+            <b-col cols="4" class="small">WETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'token/' + wethAddress + '?=' + coinbase" class="card-link" target="_blank">{{ wethBalanceString }}</b-link></b-col>
           </b-row>
           <b-row>
-            <b-col cols="4" class="small">WETH Allow Nix</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ wethAllowanceToNixString }}</b-link></b-col>
+            <b-col cols="4" class="small">WETH Allow Nix</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + wethAddress + '#events'" class="card-link" target="_blank">{{ wethAllowanceToNixString }}</b-link></b-col>
           </b-row>
           <b-row v-show="Object.keys(faucets).length">
             <b-col cols="4" class="small">Faucet(s)</b-col>
@@ -205,6 +205,9 @@ const Connection = {
     },
     balanceString() {
       return store.getters['connection/balance'] == null ? "" : new BigNumber(store.getters['connection/balance']).shift(-18).toString();
+    },
+    wethAddress() {
+      return WETHADDRESS;
     },
     wethBalanceString() {
       return store.getters['connection/wethBalance']; //  == null ? "" : ethers.utils.formatEther(store.getters['connection/wethBalance']);

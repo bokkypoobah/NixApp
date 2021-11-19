@@ -373,6 +373,27 @@ const Nix = {
 
                   <b-tab title="Execute Orders" class="p-1">
                     <b-card-text>
+                      <b-form-group label-cols="3" label-size="sm" label="Token" description="e.g., 0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4 for TestToadz">
+                        <b-form-input size="sm" v-model="execute.token" class="w-50"></b-form-input>
+                      </b-form-group>
+                      <b-form-group label-cols="3" label-size="sm" label="Order index" description="e.g., 3">
+                        <b-form-input size="sm" v-model="execute.orderIndex" class="w-50"></b-form-input>
+                      </b-form-group>
+                      <b-form-group label-cols="3" label-size="sm" label="Token Ids" description="e.g., 1, 2, 5">
+                        <b-form-input size="sm" v-model="execute.tokenIds" class="w-50"></b-form-input>
+                      </b-form-group>
+                      <b-form-group label-cols="3" label-size="sm" label="Net Amount" description="e.g., -0.1234">
+                        <b-form-input size="sm" v-model="execute.netAmount" class="w-50"></b-form-input>
+                      </b-form-group>
+                      <b-form-group label-cols="3" label-size="sm" label="Royalty Factor" description="0 to 100. e.g., 100">
+                        <b-form-input size="sm" v-model="execute.royaltyFactor" class="w-50"></b-form-input>
+                      </b-form-group>
+                      <b-form-group label-cols="3" label-size="sm" label="">
+                        <b-button size="sm" @click="executeOrders" variant="warning">Execute Orders</b-button>
+                      </b-form-group>
+                      <b-card>
+                        {{ execute }}
+                      </b-card>
                     </b-card-text>
                   </b-tab>
 
@@ -444,6 +465,15 @@ const Nix = {
         price: "0.01",
         expiry: 1672491599,
         tradeMax: "5",
+        royaltyFactor: "100",
+        integrator: null,
+      },
+
+      execute: {
+        token: "0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4",
+        orderIndex: null,
+        tokenIds: null,
+        netAmount: null,
         royaltyFactor: "100",
         integrator: null,
       },
@@ -928,6 +958,42 @@ const Nix = {
             const integrator = this.order.integrator == null || this.order.integrator.trim().length == 0 ? ADDRESS0 : integrator;
             try {
               const tx = await nixWithSigner.addOrder(this.order.token, taker, this.order.buyOrSell, this.order.anyOrAll, tokenIds, price, this.order.expiry, this.order.tradeMax, this.order.royaltyFactor, integrator);
+              console.log("tx: " + JSON.stringify(tx));
+            } catch (e) {
+              console.log("error: " + e.toString());
+            }
+          }
+        })
+        .catch(err => {
+          // An error occurred
+        });
+    },
+
+    executeOrders() {
+      console.log("executeOrders");
+      this.$bvModal.msgBoxConfirm('Execute Orders?', {
+          title: 'Please Confirm',
+          size: 'sm',
+          buttonSize: 'sm',
+          okVariant: 'danger',
+          okTitle: 'Yes',
+          cancelTitle: 'No',
+          footerClass: 'p-2',
+          hideHeaderClose: false,
+          centered: true
+        })
+        .then(async value1 => {
+          if (value1) {
+            event.preventDefault();
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
+            const nixWithSigner = nix.connect(provider.getSigner());
+            const weth = await nix.weth();
+            const tokenIds = this.execute.tokenIds.split(",").map(function(item) { return item.trim(); });
+            const netAmount = ethers.utils.parseEther(this.execute.netAmount);
+            const integrator = this.execute.integrator == null || this.execute.integrator.trim().length == 0 ? ADDRESS0 : integrator;
+            try {
+              const tx = await nixWithSigner.executeOrders([this.execute.token], [this.execute.orderIndex], [tokenIds], netAmount, this.execute.royaltyFactor, integrator);
               console.log("tx: " + JSON.stringify(tx));
             } catch (e) {
               console.log("error: " + e.toString());
