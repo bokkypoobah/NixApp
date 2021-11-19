@@ -22,6 +22,90 @@ const Nix = {
 
                 <b-tabs vertical pills card end nav-class="p-2" active-tab-class="p-2">
 
+                  <b-tab active title="Orders" class="p-1">
+                    <!--
+                    <b-form-group label-cols="3" label-size="sm" label="">
+                      <b-button size="sm" @click="loadInfo" variant="primary">Load Info</b-button>
+                    </b-form-group>
+                    -->
+
+                    <div v-if="!tokensData || tokensData.length == 0">
+                      <b-card>
+                        <b-card-text>
+                          Loading orders
+                        </b-card-text>
+                      </b-card>
+                    </div>
+                    <div v-for="(tokensDataItem, tokensDataIndex) in tokensData">
+                      <b-card body-class="p-0" header-class="m-0 p-0 pl-2" footer-class="p-1" class="m-3 p-0">
+                        <template #header>
+                          <span variant="secondary" class="small truncate">
+                            {{ tokensDataIndex }} ERC-721 NFT Collection <b-link :href="explorer + 'token/' + tokensDataItem.token" target="_blank">{{ tokensDataItem.token }}</b-link> - ordersLength: {{ tokensDataItem.ordersLength }}, executed: {{ tokensDataItem.executed }}, volumeToken: {{ tokensDataItem.volumeToken }}, volumeWeth: {{ tokensDataItem.volumeWeth }}
+                          </span>
+                        </template>
+                        <font size="-2">
+                          <b-table small fixed striped sticky-header="200px" :items="tokensDataItem.ordersData" head-variant="light" show-empty>
+
+                            <template #cell(maker)="data">
+                              <b-link :href="explorer + 'address/' + data.item.maker" target="_blank">{{ data.item.maker.substring(0, 10) + '...' }}</b-link>
+                              <!--
+                              <b-link @click="displayToken(data.item.tokenId)" v-b-popover.hover="'Click for details'">
+                                <b-img-lazy width="300%" :src="data.item.images[0]" />
+                              </b-link>
+                              -->
+                            </template>
+                            <template #cell(taker)="data">
+                              <b-link :href="explorer + 'address/' + data.item.taker" target="_blank">{{ data.item.taker.substring(0, 10) + '...' }}</b-link>
+                            </template>
+                            <template #cell(tokenIds)="data">
+                              {{ JSON.stringify(data.item.tokenIds.map((x) => { return x.toString(); })) }}
+                            </template>
+                            <template #cell(price)="data">
+                              {{ formatETH(data.item.price) }}
+                            </template>
+                            <template #cell(buyOrSell)="data">
+                              {{ formatBuyOrSell(data.item.buyOrSell) }}
+                            </template>
+                            <template #cell(anyOrAll)="data">
+                              {{ formatAnyOrAll(data.item.anyOrAll) }}
+                            </template>
+                            <template #cell(expiry)="data">
+                              {{ formatDate(data.item.expiry) }}
+                            </template>
+                            <template #cell(royaltyFactor)="data">
+                              {{ data.item.royaltyFactor.toString() }}
+                            </template>
+                            <template #cell(orderStatus)="data">
+                              {{ formatOrderStatus(data.item.orderStatus) }}
+                            </template>
+
+                          </b-table>
+                        </font>
+
+                        <!--
+                        {{ tokensDataItem }}
+                        <font size="-2">
+                          <b-table small fixed striped sticky-header="200px" :fields="categoryFields" :items="getSortedValuesForCategory(categoryKey)" head-variant="light">
+                            <template #cell(select)="data">
+                              <b-form-checkbox @change="filterChange(categoryKey, data.item.categoryOption)"></b-form-checkbox>
+                            </template>
+                          </b-table>
+                        </font>
+                        -->
+                      </b-card>
+
+
+                      <!--
+
+                      <b-link @click="displayToken(item)">
+                        <b-avatar rounded="sm" variant="light" size="3.0rem" :src="data[item] ? data[item].images[0] : null" v-b-popover.hover.bottom="'#' + item" class="ml-2"></b-avatar>
+                      </b-link>
+                      -->
+                    </div>
+
+                  </b-tab>
+
+
                   <b-tab title="(W)ETH" class="p-1">
                     <b-card header="Balances" class="mb-2">
                       <b-card-text>
@@ -99,7 +183,7 @@ const Nix = {
 
                   </b-tab>
 
-                  <b-tab active title="TestToadz" class="p-1">
+                  <b-tab title="TestToadz" class="p-1">
                     <b-card header="TestToadz" class="mb-2">
                       <b-card-text>
                         <b-form-group label-cols="3" label-size="sm" label="">
@@ -215,79 +299,6 @@ const Nix = {
                   </b-tab>
                   -->
 
-                  <b-tab title="Orders" class="p-1">
-                    <b-form-group label-cols="3" label-size="sm" label="">
-                      <b-button size="sm" @click="loadInfo" variant="primary">Load Info</b-button>
-                    </b-form-group>
-
-                    <div v-for="(tokensDataItem, tokensDataIndex) in tokensData">
-                      <b-card body-class="p-0" header-class="m-0 p-0 pl-2" footer-class="p-1" class="m-3 p-0">
-                        <template #header>
-                          <span variant="secondary" class="small truncate">
-                            {{ tokensDataIndex }} ERC-721 NFT Collection <b-link :href="explorer + 'token/' + tokensDataItem.token" target="_blank">{{ tokensDataItem.token }}</b-link> - ordersLength: {{ tokensDataItem.ordersLength }}, executed: {{ tokensDataItem.executed }}, volumeToken: {{ tokensDataItem.volumeToken }}, volumeWeth: {{ tokensDataItem.volumeWeth }}
-                          </span>
-                        </template>
-                        <font size="-2">
-                          <b-table small fixed striped sticky-header="200px" :items="tokensDataItem.ordersData" head-variant="light">
-
-                            <template #cell(maker)="data">
-                              <b-link :href="explorer + 'address/' + data.item.maker" target="_blank">{{ data.item.maker.substring(0, 10) + '...' }}</b-link>
-                              <!--
-                              <b-link @click="displayToken(data.item.tokenId)" v-b-popover.hover="'Click for details'">
-                                <b-img-lazy width="300%" :src="data.item.images[0]" />
-                              </b-link>
-                              -->
-                            </template>
-                            <template #cell(taker)="data">
-                              <b-link :href="explorer + 'address/' + data.item.taker" target="_blank">{{ data.item.taker.substring(0, 10) + '...' }}</b-link>
-                            </template>
-                            <template #cell(tokenIds)="data">
-                              {{ JSON.stringify(data.item.tokenIds.map((x) => { return x.toString(); })) }}
-                            </template>
-                            <template #cell(price)="data">
-                              {{ formatETH(data.item.price) }}
-                            </template>
-                            <template #cell(buyOrSell)="data">
-                              {{ formatBuyOrSell(data.item.buyOrSell) }}
-                            </template>
-                            <template #cell(anyOrAll)="data">
-                              {{ formatAnyOrAll(data.item.anyOrAll) }}
-                            </template>
-                            <template #cell(expiry)="data">
-                              {{ formatDate(data.item.expiry) }}
-                            </template>
-                            <template #cell(royaltyFactor)="data">
-                              {{ data.item.royaltyFactor.toString() }}
-                            </template>
-                            <template #cell(orderStatus)="data">
-                              {{ formatOrderStatus(data.item.orderStatus) }}
-                            </template>
-
-                          </b-table>
-                        </font>
-
-                        <!--
-                        {{ tokensDataItem }}
-                        <font size="-2">
-                          <b-table small fixed striped sticky-header="200px" :fields="categoryFields" :items="getSortedValuesForCategory(categoryKey)" head-variant="light">
-                            <template #cell(select)="data">
-                              <b-form-checkbox @change="filterChange(categoryKey, data.item.categoryOption)"></b-form-checkbox>
-                            </template>
-                          </b-table>
-                        </font>
-                        -->
-                      </b-card>
-
-
-                      <!--
-
-                      <b-link @click="displayToken(item)">
-                        <b-avatar rounded="sm" variant="light" size="3.0rem" :src="data[item] ? data[item].images[0] : null" v-b-popover.hover.bottom="'#' + item" class="ml-2"></b-avatar>
-                      </b-link>
-                      -->
-                    </div>
-
-                  </b-tab>
 
                   <b-tab title="Add Orders" class="p-1">
                     <b-form-group label-cols="3" label-size="sm" label="Token" description="e.g., 0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4 for TestToadz">
@@ -423,7 +434,7 @@ const Nix = {
         { value: 1, text: 'All' },
       ],
 
-      tokensData: [],
+      // tokensData: [],
     }
   },
   computed: {
@@ -445,6 +456,9 @@ const Nix = {
     accounts() {
       return [ store.getters['connection/coinbase'], "0xBeeef66749B64Afe43Bbc9475635Eb510cFE4922" ];
       // return [ "0x000001f568875F378Bf6d170B790967FE429C81A", "0x00000217d2795F1Da57e392D2a5bC87125BAA38D", "0x000003e1E88A1110E961f135dF8cdEa4b1FFA81a", "0x07fb31ff47Dc15f78C5261EEb3D711fb6eA985D1" ];
+    },
+    tokensData() {
+      return store.getters['nixData/tokensData'];
     },
   },
   methods: {
