@@ -7,7 +7,7 @@ const Nix = {
         </b-card-text>
       </b-card>
 
-      <b-card no-body header="Nix" class="border-0" header-class="p-1"  v-if="network && network.chainId == 4">
+      <b-card no-body header="Nix" class="border-0" header-class="p-1" v-if="network && network.chainId == 4">
         <b-card no-body class="border-0 m-0 mt-2">
           <b-card-body class="p-0">
 
@@ -177,6 +177,26 @@ const Nix = {
                         </b-form-group>
                         <b-form-group v-if="weth.approvalMessage && weth.approvalMessage.substring(0, 2) == '0x'" label-cols="3" label-size="sm" label="">
                           Tx <b-link :href="explorer + 'tx/' + weth.approvalMessage" class="card-link" target="_blank">{{ weth.approvalMessage }}</b-link>
+                        </b-form-group>
+                      </b-card-text>
+                    </b-card>
+
+                    <b-card header="Transfer WETH" class="mb-2">
+                      <b-card-text>
+                        <b-form-group label-cols="3" label-size="sm" label="Transfer WETH to" description="e.g. 0x123456...">
+                          <b-form-input size="sm" v-model="weth.transferTo" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group label-cols="3" label-size="sm" label="WETH to approve to Nix" description="e.g. 0.123456789">
+                          <b-form-input size="sm" v-model="weth.transferAmount" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group label-cols="3" label-size="sm" label="">
+                          <b-button size="sm" @click="transferWeth" variant="warning">Transfer</b-button>
+                        </b-form-group>
+                        <b-form-group v-if="weth.transferMessage && weth.transferMessage.substring(0, 2) != '0x'" label-cols="3" label-size="sm" label="">
+                          <b-form-input size="sm" readonly v-model="weth.transferMessage" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group v-if="weth.transferMessage && weth.transferMessage.substring(0, 2) == '0x'" label-cols="3" label-size="sm" label="">
+                          Tx <b-link :href="explorer + 'tx/' + weth.transferMessage" class="card-link" target="_blank">{{ weth.transferMessage }}</b-link>
                         </b-form-group>
                       </b-card-text>
                     </b-card>
@@ -384,6 +404,9 @@ const Nix = {
         unwrapMessage: null,
         wethToApproveToNix: null,
         approvalMessage: null,
+        transferTo: null,
+        transferAmount: null,
+        transferMessage: null,
       },
 
       testToadz: {
@@ -627,6 +650,40 @@ const Nix = {
               console.log("tx: " + JSON.stringify(tx));
             } catch (e) {
               this.weth.approvalMessage = e.toString();
+              console.log("error: " + e.toString());
+            }
+          }
+        })
+        .catch(err => {
+          // An error occurred
+        });
+    },
+
+    transferWeth() {
+      console.log("transferWeth");
+      this.$bvModal.msgBoxConfirm('Transfer ' + this.weth.transferAmount + ' to ' + this.weth.transferTo + '?', {
+          title: 'Please Confirm',
+          size: 'sm',
+          buttonSize: 'sm',
+          okVariant: 'danger',
+          okTitle: 'Yes',
+          cancelTitle: 'No',
+          footerClass: 'p-2',
+          hideHeaderClose: false,
+          centered: true
+        })
+        .then(async value1 => {
+          if (value1) {
+            event.preventDefault();
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
+            const wethWithSigner = weth.connect(provider.getSigner());
+            try {
+              const tx = await wethWithSigner.transfer(this.weth.transferTo, ethers.utils.parseEther(this.weth.transferAmount));
+              this.weth.transferMessage = tx.hash;
+              console.log("tx: " + JSON.stringify(tx));
+            } catch (e) {
+              this.weth.transferMessage = e.toString();
               console.log("error: " + e.toString());
             }
           }

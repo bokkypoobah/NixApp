@@ -110,11 +110,17 @@ const Connection = {
           <b-row>
             <b-col cols="4" class="small">Wallet</b-col>
             <b-col class="small truncate" cols="8">
-              <b-link :href="explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ coinbase == null ? '' : (coinbase.substring(0, 10) + '...') }}</b-link><span class="float-right"><b-link v-b-popover.hover="'View on OpenSea.io'" :href="'https://testnets.opensea.io/accounts/'+ coinbase" target="_blank"><img src="images/381114e-opensea-logomark-flat-colored-blue.png" width="20px" /></b-link> <b-link :href="'https://rarible.com/user/'+ coinbase" v-b-popover.hover="'View on Rarible.com'" target="_blank"><img src="images/rarible_feb7c08ba34c310f059947d23916f76c12314e85.png" height="20px" /></b-link></span>
+              <b-link :href="explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ coinbase == null ? '' : (coinbase.substring(0, 10) + '...') }}</b-link><span class="float-right"><b-link v-b-popover.hover="'View on OpenSea.io'" :href="'https://testnets.opensea.io/accounts/'+ coinbase" target="_blank"><img src="images/381114e-opensea-logomark-flat-colored-blue.png" width="20px" /></b-link> <!-- <b-link :href="'https://rarible.com/user/'+ coinbase" v-b-popover.hover="'View on Rarible.com'" target="_blank"><img src="images/rarible_feb7c08ba34c310f059947d23916f76c12314e85.png" height="20px" /></b-link> --></span>
             </b-col>
           </b-row>
           <b-row>
-            <b-col cols="4" class="small">Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ balanceString }}</b-link></b-col>
+            <b-col cols="4" class="small">ETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ balanceString }}</b-link></b-col>
+          </b-row>
+          <b-row>
+            <b-col cols="4" class="small">WETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ wethBalanceString }}</b-link></b-col>
+          </b-row>
+          <b-row>
+            <b-col cols="4" class="small">WETH Allow Nix</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ wethAllowanceToNixString }}</b-link></b-col>
           </b-row>
           <b-row v-show="Object.keys(faucets).length">
             <b-col cols="4" class="small">Faucet(s)</b-col>
@@ -199,6 +205,12 @@ const Connection = {
     },
     balanceString() {
       return store.getters['connection/balance'] == null ? "" : new BigNumber(store.getters['connection/balance']).shift(-18).toString();
+    },
+    wethBalanceString() {
+      return store.getters['connection/wethBalance']; //  == null ? "" : ethers.utils.formatEther(store.getters['connection/wethBalance']);
+    },
+    wethAllowanceToNixString() {
+      return store.getters['connection/wethAllowanceToNix']; //  == null ? "" : new BigNumber(store.getters['connection/wethAllowanceToNix']).shift(-18).toString();
     },
     block() {
       return store.getters['connection/block'];
@@ -289,6 +301,12 @@ const Connection = {
             store.dispatch('connection/setCoinbase', coinbase);
             const balance = await provider.getBalance(this.coinbase);
             store.dispatch('connection/setBalance', balance);
+
+            const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
+            const wethBalance = await weth.balanceOf(this.coinbase);
+            const wethAllowanceToNix = await weth.allowance(this.coinbase, NIXADDRESS);
+            store.dispatch('connection/setWethInfo', { wethBalance: ethers.utils.formatEther(wethBalance), wethAllowanceToNix: ethers.utils.formatEther(wethAllowanceToNix) });
+
           } catch (e) {
             store.dispatch('connection/setConnectionError', 'Cannot retrieve data from web3 provider');
           }
@@ -369,6 +387,8 @@ const connectionModule = {
     coinbase: null,
     coinbaseUpdated: false,
     balance: null,
+    wethBalance: null,
+    wethAllowanceToNix: null,
     block: null,
     blockUpdated: false,
     txs: {},
@@ -387,6 +407,10 @@ const connectionModule = {
     coinbase: state => state.coinbase,
     coinbaseUpdated: state => state.coinbaseUpdated,
     balance: state => state.balance,
+
+    wethBalance: state => state.wethBalance,
+    wethAllowanceToNix: state => state.wethAllowanceToNix,
+
     block: state => state.block,
     blockUpdated: state => state.blockUpdated,
     txs: state => state.txs,
@@ -436,6 +460,10 @@ const connectionModule = {
     },
     setBalance(state, b) {
       state.balance = b;
+    },
+    setWethInfo(state, { wethBalance, wethAllowanceToNix }) {
+      state.wethBalance = wethBalance;
+      state.wethAllowanceToNix = wethAllowanceToNix;
     },
     setBlock(state, block) {
       logDebug("connectionModule", "mutations.setBlock()");
@@ -492,6 +520,9 @@ const connectionModule = {
     },
     setBalance(context, b) {
       context.commit('setBalance', b);
+    },
+    setWethInfo(context, { wethBalance, wethAllowanceToNix} ) {
+      context.commit('setWethInfo', { wethBalance, wethAllowanceToNix });
     },
     setBlock(context, block) {
       logDebug("connectionModule", "actions.setBlock()");
