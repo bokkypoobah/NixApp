@@ -455,11 +455,11 @@ const nixDataModule = {
       context.commit('updateSelectedId', selectedId);
     },
     // Called by Connection.execWeb3()
-    async execWeb3({ state, commit, rootState }, { count, networkChanged, blockChanged, coinbaseChanged }) {
-      logInfo("nixDataModule", "execWeb3() start[" + count + ", " + JSON.stringify(rootState.route.params) + ", " + networkChanged + ", " + blockChanged + ", " + coinbaseChanged+ "]");
+    async execWeb3({ state, commit, rootState }, { count, listenersInstalled }) {
+      logDebug("nixDataModule", "execWeb3() start[" + count + ", " + listenersInstalled + ", " + JSON.stringify(rootState.route.params) + "]");
       if (!state.executing) {
         commit('updateExecuting', true);
-        logDebug("nixDataModule", "execWeb3() executing[" + count + ", " + JSON.stringify(rootState.route.params) + ", " + networkChanged + ", " + blockChanged + ", " + coinbaseChanged + "]");
+        logDebug("nixDataModule", "execWeb3() executing[" + count + ", " + JSON.stringify(rootState.route.params) + "]");
 
         var paramsChanged = false;
         if (state.params != rootState.route.params.param) {
@@ -468,13 +468,39 @@ const nixDataModule = {
           commit('updateParams', rootState.route.params.param);
         }
 
-        if (networkChanged || blockChanged || coinbaseChanged || paramsChanged) {
+        const connected = store.getters['connection/connected'];
+        const block = store.getters['connection/block'];
+        const blockUpdated = store.getters['connection/blockUpdated'];
+        if (connected && blockUpdated) {
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          const blockNumber = block ? block.number : await provider.getBlockNumber();
+          logInfo("nixDataModule", "execWeb3() count: " + count + ", blockUpdated: " + blockUpdated + ", blockNumber: " + blockNumber + ", listenersInstalled: " + listenersInstalled + ", rootState.route.params: " + JSON.stringify(rootState.route.params) + "]");
+          const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
+          const nixHelper = new ethers.Contract(NIXHELPERADDRESS, NIXHELPERABI, provider);
+
+          // Install listeners
+          if (!listenersInstalled) {
+            logInfo("nixDataModule", "execWeb3() installing listener");
+            nix.on("*", (event) => {
+              // console.log("nix - event: ", JSON.stringify(event));
+              logInfo("nixDataModule", "nix - event: " + JSON.stringify(event));
+            });
+          }
+
+
+        }
+
+
+        // const networkChanged = false;
+        // const blockChanged = false;
+        // const coinbaseChanged = false;
+        // if (networkChanged || blockChanged || coinbaseChanged || paramsChanged) {
 
           // You can also use an ENS name for the contract address
-          const nftAddress = "token.zombiebabies.eth"; // state.nftData.nftAddress;
-          logDebug("nixDataModule", "execWeb3() nftAddress: " + nftAddress);
+          // const nftAddress = "token.zombiebabies.eth"; // state.nftData.nftAddress;
+          // logDebug("nixDataModule", "execWeb3() nftAddress: " + nftAddress);
 
-          const nftAbi = ERC1155NFTABI;
+          // const nftAbi = ERC1155NFTABI;
           // logDebug("nixDataModule", "execWeb3() nftAbi: " + JSON.stringify(nftAbi));
 
           // // The ERC-20 Contract ABI, which is a common contract interface
@@ -495,160 +521,48 @@ const nixDataModule = {
           // ];
 
           // store.getters['connection/coinbase']
-          const name = await store.getters['connection/connection'].provider.lookupAddress(store.getters['connection/coinbase']);
-          logDebug("nixDataModule", "execWeb3() coinbase: " + JSON.stringify(store.getters['connection/coinbase']) + " => " + name);
-
-          // // const allnames = await ReverseRecords.getNames(['coinbase']);
-          // // logDebug("Connection", "execWeb3() allnames: " + JSON.stringify(allnames));
-          const addresses = [ "0x07fb31ff47Dc15f78C5261EEb3D711fb6eA985D1", "0x000001f568875F378Bf6d170B790967FE429C81A", "0xBeeef66749B64Afe43Bbc9475635Eb510cFE4922"];
-          const ensReverseRecordsContract = new ethers.Contract(ENSREVERSERECORDSADDRESS, ENSREVERSERECORDSABI, store.getters['connection/connection'].provider);
-          const allnames = await ensReverseRecordsContract.getNames(addresses);
-          logDebug("nixDataModule", "execWeb3() allnames: " + JSON.stringify(addresses) + " => " + allnames);
-          const validNames = allnames.filter((n) => normalize(n) === n );
-          logDebug("nixDataModule", "execWeb3() validNames: " + JSON.stringify(addresses) + " => " + validNames);
-
-          const beeeefRegistryContract = new ethers.Contract(BEEEEFREGISTRYENS, BEEEEFREGISTRYABI, store.getters['connection/connection'].provider);
-          const entries = await beeeefRegistryContract.getEntries();
-          logDebug("nixDataModule", "execWeb3() beeeefRegistryContract.entries: " + JSON.stringify(entries));
-
+          // const name = await store.getters['connection/connection'].provider.lookupAddress(store.getters['connection/coinbase']);
+          // logDebug("nixDataModule", "execWeb3() coinbase: " + JSON.stringify(store.getters['connection/coinbase']) + " => " + name);
           //
-          // // The Contract object
-          const nftContract = new ethers.Contract(nftAddress, nftAbi, store.getters['connection/connection'].provider);
-          // logDebug("nixDataModule", "execWeb3() nftContract: " + JSON.stringify(nftContract));
+          // // // const allnames = await ReverseRecords.getNames(['coinbase']);
+          // // // logDebug("Connection", "execWeb3() allnames: " + JSON.stringify(allnames));
+          // const addresses = [ "0x07fb31ff47Dc15f78C5261EEb3D711fb6eA985D1", "0x000001f568875F378Bf6d170B790967FE429C81A", "0xBeeef66749B64Afe43Bbc9475635Eb510cFE4922"];
+          // const ensReverseRecordsContract = new ethers.Contract(ENSREVERSERECORDSADDRESS, ENSREVERSERECORDSABI, store.getters['connection/connection'].provider);
+          // const allnames = await ensReverseRecordsContract.getNames(addresses);
+          // logDebug("nixDataModule", "execWeb3() allnames: " + JSON.stringify(addresses) + " => " + allnames);
+          // const validNames = allnames.filter((n) => normalize(n) === n );
+          // logDebug("nixDataModule", "execWeb3() validNames: " + JSON.stringify(addresses) + " => " + validNames);
+          //
+          // const beeeefRegistryContract = new ethers.Contract(BEEEEFREGISTRYENS, BEEEEFREGISTRYABI, store.getters['connection/connection'].provider);
+          // const entries = await beeeefRegistryContract.getEntries();
+          // logDebug("nixDataModule", "execWeb3() beeeefRegistryContract.entries: " + JSON.stringify(entries));
 
-          const tokenIds = store.getters['tokens/allTokenIds'];
-          const accounts = [];
-          for (let i = 0; i < tokenIds.length; i++) {
-            accounts.push(store.getters['connection/coinbase']);
-          }
-          logDebug("nixDataModule", "execWeb3() tokens/allTokenIds: " + JSON.stringify(store.getters['tokens/allTokenIds']));
-
-          const balanceOfs = await nftContract.balanceOfBatch(accounts, tokenIds);
-          logDebug("nixDataModule", "execWeb3() balanceOfs: " + JSON.stringify(balanceOfs.map((x) => { return x.toString(); })));
-          commit('updateBalances', balanceOfs.map((x) => { return x.toString(); }));
-
-          const cryptoPunksMarketContract = new ethers.Contract(CRYPTOPUNKMARKETADDRESS, CRYPTOPUNKMARKETABI, store.getters['connection/connection'].provider);
-          const cpBalanceOf = await cryptoPunksMarketContract.balanceOf(store.getters['connection/coinbase']);
-          logDebug("nixDataModule", "execWeb3() cpBalanceOf: " + cpBalanceOf);
-
-
-          // Direct query. Could deploy contract to perform multicall
-          // for (let i = 0; i < 10000; i++) {
-          //   const owner = await cryptoPunksMarketContract.punkIndexToAddress(i);
-          //   if (i % 100 == 0) {
-          //     logDebug("nixDataModule", "execWeb3() owner: " + owner + " " + i);
-          //   }
-          //   // if (owner == store.getters['connection/coinbase']) {
-          //   // }
+          // //
+          // // // The Contract object
+          // const nftContract = new ethers.Contract(nftAddress, nftAbi, store.getters['connection/connection'].provider);
+          // // logDebug("nixDataModule", "execWeb3() nftContract: " + JSON.stringify(nftContract));
+          //
+          // const tokenIds = store.getters['tokens/allTokenIds'];
+          // const accounts = [];
+          // for (let i = 0; i < tokenIds.length; i++) {
+          //   accounts.push(store.getters['connection/coinbase']);
           // }
-
-          /*
-          let url = "https://wrappedpunks.com:3000/api/punks?user=" + store.getters['connection/coinbase'] + "&type=punk&page=1&pageSize=1200";
-          let req = new XMLHttpRequest();
-          req.overrideMimeType("application/json");
-          req.open('GET', url, true);
-          req.onload  = function() {
-            logDebug("nixDataModule", "execWeb3() punkData txt: " + req.readyState + " => " + req.responseText);
-            const punkData = JSON.parse(req.responseText);
-            logDebug("nixDataModule", "execWeb3() punkData: " + JSON.stringify(punkData));
-          };
-          req.send(null);
-
-          // CryptoPunks - OpenSea
-          url = "https://api.opensea.io/api/v1/assets?owner=" + store.getters['connection/coinbase'] + "&asset_contract_address=" + CRYPTOPUNKMARKETADDRESS + "&order_direction=desc&offset=0&limit=50";
-          req = new XMLHttpRequest();
-          req.overrideMimeType("application/json");
-          req.open('GET', url, true);
-          req.onload  = function() {
-            logDebug("nixDataModule", "execWeb3() openSeaPunkData txt: " + req.readyState + " => " + req.responseText);
-            if (req.readyState == 4) {
-              const openSeaPunkData = JSON.parse(req.responseText);
-              logDebug("nixDataModule", "execWeb3() openSeaPunkData JSON: " + JSON.stringify(openSeaPunkData));
-            }
-          };
-          req.send(null);
-
-          // Pixel Portraits - OpenSea
-          url = "https://api.opensea.io/api/v1/assets?owner=" + store.getters['connection/coinbase'] + "&order_direction=desc&offset=0&limit=50&collection=the-pixel-portraits";
-          req = new XMLHttpRequest();
-          req.overrideMimeType("application/json");
-          req.open('GET', url, true);
-          req.onload  = function() {
-            logDebug("nixDataModule", "execWeb3() pixelPortraitsData txt: " + req.readyState + " => " + req.responseText);
-            if (req.readyState == 4) {
-              const pixelPortraitsData = JSON.parse(req.responseText);
-              logDebug("nixDataModule", "execWeb3() pixelPortraitsData JSON: " + JSON.stringify(pixelPortraitsData));
-            }
-          };
-          req.send(null);
-
-          // PunkBodies - OpenSea
-          url = "https://api.opensea.io/api/v1/assets?owner=" + store.getters['connection/coinbase'] + "&asset_contract_address=" + PUNKBODIESADDRESS + "&order_direction=desc&offset=0&limit=50";
-          req = new XMLHttpRequest();
-          req.overrideMimeType("application/json");
-          req.open('GET', url, true);
-          req.onload  = function() {
-            logDebug("nixDataModule", "execWeb3() openSeaPunkData txt: " + req.readyState + " => " + req.responseText);
-            if (req.readyState == 4) {
-              const openSeaPunkData = JSON.parse(req.responseText);
-              logInfo("nixDataModule", "execWeb3() openSeaPunkData JSON: " + JSON.stringify(openSeaPunkData));
-            }
-          };
-          req.send(null);
-
-          // PunkBodies - Direct to contract
-          const punkBodiesContract = new ethers.Contract(PUNKBODIESADDRESS, PUNKBODIESABI, store.getters['connection/connection'].provider);
-          const pbBalanceOf = await punkBodiesContract.balanceOf(store.getters['connection/coinbase']);
-          logInfo("nixDataModule", "execWeb3() pbBalanceOf: " + pbBalanceOf);
-
-          for (let i = 0; i < pbBalanceOf; i++) {
-              const tokenId = await punkBodiesContract.tokenOfOwnerByIndex(store.getters['connection/coinbase'], i);
-              logInfo("nixDataModule", "execWeb3() i: " + i + ", tokenId: " + tokenId);
-          }
-          */
-
-
-
-
-          // var tokenToolz = web3.eth.contract(TOKENTOOLZABI).at(TOKENTOOLZADDRESS);
+          // logDebug("nixDataModule", "execWeb3() tokens/allTokenIds: " + JSON.stringify(store.getters['tokens/allTokenIds']));
           //
-          // // TODO: Load up STARTUPTOKENLIST ?
+          // const balanceOfs = await nftContract.balanceOfBatch(accounts, tokenIds);
+          // logDebug("nixDataModule", "execWeb3() balanceOfs: " + JSON.stringify(balanceOfs.map((x) => { return x.toString(); })));
+          // commit('updateBalances', balanceOfs.map((x) => { return x.toString(); }));
           //
-          // // logInfo("nixDataModule", "execWeb3() state.tokenData: " + JSON.stringify(state.tokenData));
-          // if (count == 1) {
-          //   for (var address in state.tokenData) {
-          //     var token = state.tokenData[address];
-          //     var _tokenInfo = promisify(cb => tokenToolz.getTokenInfo(token.address, store.getters['connection/coinbase'], store.getters['optinoFactory/address'], cb));
-          //     var tokenInfo = await _tokenInfo;
-          //     var symbol = tokenInfo[4];
-          //     var name = tokenInfo[5];
-          //     var decimals = parseInt(tokenInfo[0]);
-          //     var totalSupply = tokenInfo[1].shift(-decimals).toString();
-          //     var balance = tokenInfo[2].shift(-decimals).toString();
-          //     var allowance = tokenInfo[3].shift(-decimals).toString();
-          //     commit('updateToken', { address: token.address, symbol: symbol, name: name, decimals: decimals, totalSupply: totalSupply, balance: balance, allowance: allowance, source: token.source } );
-          //   }
-          // } else {
-          //   var addresses = Object.keys(state.tokenData);
-          //   var addressesLength = addresses.length;
-          //   var chunks = chunkArray(addresses, 10);
-          //   for (var chunkIndex in chunks) {
-          //     var chunk = chunks[chunkIndex];
-          //     var _tokensInfo = promisify(cb => tokenToolz.getTokensInfo(chunk, store.getters['connection/coinbase'], store.getters['optinoFactory/address'], cb));
-          //     var tokensInfo = await _tokensInfo;
-          //     for (var tokenIndex = 0; tokenIndex < chunk.length; tokenIndex++) {
-          //       var address = chunk[tokenIndex].toLowerCase();
-          //       var token = state.tokenData[address];
-          //       commit('updateToken', { address: token.address, symbol: token.symbol, name: token.name, decimals: token.decimals, totalSupply: tokensInfo[0][tokenIndex].shift(-token.decimals).toString(), balance: tokensInfo[1][tokenIndex].shift(-token.decimals).toString(), allowance: tokensInfo[2][tokenIndex].shift(-token.decimals).toString(), source: token.source });
-          //     }
-          //   }
-          //   // logInfo("nixDataModule", "timeoutCallback() - refreshed " + addressesLength);
-          // }
-        }
+          // const cryptoPunksMarketContract = new ethers.Contract(CRYPTOPUNKMARKETADDRESS, CRYPTOPUNKMARKETABI, store.getters['connection/connection'].provider);
+          // const cpBalanceOf = await cryptoPunksMarketContract.balanceOf(store.getters['connection/coinbase']);
+          // logDebug("nixDataModule", "execWeb3() cpBalanceOf: " + cpBalanceOf);
+
+
+        // }
         commit('updateExecuting', false);
-        logDebug("nixDataModule", "execWeb3() end[" + count + ", " + networkChanged + ", " + blockChanged + ", " + coinbaseChanged + "]");
+        logDebug("nixDataModule", "execWeb3() end[" + count + "]");
       } else {
-        logDebug("nixDataModule", "execWeb3() already executing[" + count + ", " + networkChanged + ", " + blockChanged + ", " + coinbaseChanged + "]");
+        logDebug("nixDataModule", "execWeb3() already executing[" + count + "]");
       }
     },
   },

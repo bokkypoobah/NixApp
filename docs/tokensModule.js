@@ -66,7 +66,7 @@ const Tokens = {
   },
   methods: {
     async timeoutCallback() {
-      logInfo("Tokens", "timeoutCallback() count: " + this.count);
+      logDebug("Tokens", "timeoutCallback() count: " + this.count);
 
       this.count++;
       var t = this;
@@ -86,9 +86,9 @@ const Tokens = {
     logInfo("Tokens", "beforeDestroy()");
   },
   mounted() {
-    logInfo("Tokens", "mounted()");
+    logDebug("Tokens", "mounted()");
     this.reschedule = true;
-    logInfo("Tokens", "Calling timeoutCallback()");
+    logDebug("Tokens", "Calling timeoutCallback()");
     this.timeoutCallback();
   },
 };

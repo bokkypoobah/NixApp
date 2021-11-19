@@ -229,7 +229,7 @@ const Connection = {
       store.dispatch('connection/setTxError', "");
     },
     async execWeb3() {
-      logInfo("Connection", "execWeb3() start[" + this.count + "]");
+      logDebug("Connection", "execWeb3() start[" + this.count + "]");
 
       if (this.powerOn) {
         if (!window.ethereum.isConnected() || !window.ethereum['isUnlocked']) {
@@ -250,28 +250,31 @@ const Connection = {
         if (this.connected && !this.listenersInstalled) {
           logInfo("Connection", "execWeb3() Installing listeners");
           function handleChainChanged(_chainId) {
-            logInfo("Connection", "execWeb3() handleChainChanged: " + _chainId);
-            // We recommend reloading the page, unless you must do otherwise
-            // console.log('Ethereum chain changed. Reloading as recommended.')
-            // chainId = _chainId
             alert('Ethereum chain has changed. We will reload the page as recommended.')
             window.location.reload();
           }
-          const t = this;
           window.ethereum.on('chainChanged', handleChainChanged);
-          function handleAccountsChanged(accounts) {
-            logInfo("Connection", "execWeb3() handleAccountsChanged: " + accounts);
+
+          const t = this;
+          async function handleAccountsChanged(accounts) {
+            logInfo("Connection", "execWeb3() handleAccountsChanged: " + JSON.stringify(accounts));
+            const signer = provider.getSigner()
+            const coinbase = await signer.getAddress();
+            store.dispatch('connection/setCoinbase', coinbase);
             t.refreshNow = true;
           }
           window.ethereum.on('accountsChanged', handleAccountsChanged);
+          // const signer = provider.getSigner()
+          // const coinbase = await signer.getAddress();
+          // store.dispatch('connection/setCoinbase', coinbase);
+
           const provider = new ethers.providers.Web3Provider(window.ethereum);
           function handleNewBlock(b) {
-            logInfo("Connection", "execWeb3() handleNewBlock: " + JSON.stringify(b));
+            // logInfo("Connection", "execWeb3() handleNewBlock: " + JSON.stringify(b));
             t.refreshNow = true;
           }
           provider.on('block', handleNewBlock);
 
-          this.listenersInstalled = true;
         }
         if (this.connected) {
           logDebug("Connection", "execWeb3() Getting data");
@@ -284,7 +287,7 @@ const Connection = {
             const signer = provider.getSigner()
             const coinbase = await signer.getAddress();
             store.dispatch('connection/setCoinbase', coinbase);
-            const balance = await provider.getBalance(coinbase);
+            const balance = await provider.getBalance(this.coinbase);
             store.dispatch('connection/setBalance', balance);
           } catch (e) {
             store.dispatch('connection/setConnectionError', 'Cannot retrieve data from web3 provider');
@@ -302,18 +305,11 @@ const Connection = {
         }
       }
 
-      // store.dispatch('nixData/execWeb3', { count: this.count });
-      // if (false && store.getters['connection/connection'] && store.getters['connection/connection'].connected) {
-        const networkChanged = false;
-        const blockChanged = false;
-        const coinbaseChanged = false;
-        store.dispatch('nixData/execWeb3', { count: this.count, networkChanged: networkChanged, blockChanged: blockChanged, coinbaseChanged: coinbaseChanged });
-        // if (this.$route.name == "DeployTokenContract") {
-        //   await store.dispatch('deployTokenContract/execWeb3', { count: this.count, networkChanged, blockChanged, coinbaseChanged });
-        // } else if (this.$route.name == "TokenContractExplorer" /* || this.$route.name == "GoblokStatus" */) {
-        //   await store.dispatch('tokenContractExplorer/execWeb3', { count: this.count, networkChanged, blockChanged, coinbaseChanged });
-        // }
-      // }
+      store.dispatch('nixData/execWeb3', { count: this.count, listenersInstalled: this.listenersInstalled });
+
+      if (!this.listenersInstalled) {
+        this.listenersInstalled = true;
+      }
       logDebug("Connection", "execWeb3() end[" + this.count + "]");
     },
     async timeoutCallback() {
@@ -350,7 +346,7 @@ const Connection = {
     var t = this;
     setTimeout(function() {
       t.timeoutCallback();
-    }, 500);
+    }, 1000);
   },
   destroyed() {
     logDebug("Connection", "destroyed()");

@@ -869,7 +869,7 @@ const Nix = {
     },
 
     async timeoutCallback() {
-      logInfo("Nix", "timeoutCallback() count: " + this.count);
+      logDebug("Nix", "timeoutCallback() count: " + this.count);
 
       this.count++;
       var t = this;
