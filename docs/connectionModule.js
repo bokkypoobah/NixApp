@@ -257,24 +257,26 @@ const Connection = {
             alert('Ethereum chain has changed. We will reload the page as recommended.')
             window.location.reload();
           }
+          const t = this;
           window.ethereum.on('chainChanged', handleChainChanged);
           function handleAccountsChanged(accounts) {
             logInfo("Connection", "execWeb3() handleAccountsChanged: " + accounts);
-            this.refreshNow = true;
+            t.refreshNow = true;
           }
           window.ethereum.on('accountsChanged', handleAccountsChanged);
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          function handleNewBlock(b) {
+            logInfo("Connection", "execWeb3() handleNewBlock: " + JSON.stringify(b));
+            t.refreshNow = true;
+          }
+          provider.on('block', handleNewBlock);
+
           this.listenersInstalled = true;
         }
         if (this.connected) {
           logDebug("Connection", "execWeb3() Getting data");
           try {
             const provider = new ethers.providers.Web3Provider(window.ethereum);
-            // function handleNewBlock(b) {
-            //   logInfo("Connection", "execWeb3() handleNewBlock: " + JSON.stringify(b));
-            //   this.refreshNow = true;
-            // }
-            // provider.on('block', handleNewBlock);
-
             const network = await provider.getNetwork();
             store.dispatch('connection/setNetwork', network);
             const block = await provider.getBlock();
@@ -315,11 +317,11 @@ const Connection = {
       logDebug("Connection", "execWeb3() end[" + this.count + "]");
     },
     async timeoutCallback() {
-      if (this.count++ % 15 == 0 || this.refreshNow) {
-        await this.execWeb3();
+      if (this.count++ % 150 == 0 || this.refreshNow) {
         if (this.refreshNow) {
           this.refreshNow = false;
         }
+        await this.execWeb3();
       }
       if (this.block != null) {
         this.lastBlockTimeDiff = getTimeDiff(this.block.timestamp);
@@ -338,7 +340,7 @@ const Connection = {
       if (this.reschedule) {
         setTimeout(function() {
           t.timeoutCallback();
-        }, 1000);
+        }, 100);
       }
     }
   },
