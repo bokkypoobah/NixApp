@@ -12,19 +12,19 @@ const NixData = {
           <b-row>
             <b-col cols="4" class="small">Nix</b-col>
             <b-col class="small truncate" cols="8">
-              <b-link :href="explorer + 'address/' + nixAddress + '#code'" class="card-link" target="_blank">{{ nixAddress == null ? '' : (nixAddress.substring(0, 10) + '...') }}</b-link>
+              <b-link :href="explorer + 'address/' + nixAddress + '#code'" class="card-link" target="_blank">{{ nixAddress == null ? '' : (nixAddress.substring(0, 20) + '...') }}</b-link>
             </b-col>
           </b-row>
           <b-row>
             <b-col cols="4" class="small">Nix Helper</b-col>
             <b-col class="small truncate" cols="8">
-              <b-link :href="explorer + 'address/' + nixHelperAddress + '#code'" class="card-link" target="_blank">{{ nixHelperAddress == null ? '' : (nixHelperAddress.substring(0, 10) + '...') }}</b-link>
+              <b-link :href="explorer + 'address/' + nixHelperAddress + '#code'" class="card-link" target="_blank">{{ nixHelperAddress == null ? '' : (nixHelperAddress.substring(0, 20) + '...') }}</b-link>
             </b-col>
           </b-row>
           <b-row>
             <b-col cols="4" class="small">Royalty Engine</b-col>
             <b-col class="small truncate" cols="8">
-              <b-link :href="explorer + 'address/' + nixRoyaltyEngine + '#code'" class="card-link" target="_blank">{{ nixRoyaltyEngine == null ? '' : (nixRoyaltyEngine.substring(0, 10) + '...') }}</b-link>
+              <b-link :href="explorer + 'address/' + nixRoyaltyEngine + '#code'" class="card-link" target="_blank">{{ nixRoyaltyEngine == null ? '' : (nixRoyaltyEngine.substring(0, 20) + '...') }}</b-link>
             </b-col>
           </b-row>
         </b-card>
