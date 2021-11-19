@@ -7,45 +7,34 @@ const NixData = {
         </b-card-text>
       </b-card>
       <b-button v-b-toggle.contracts size="sm" block variant="outline-info">Contracts</b-button>
-      <b-collapse id="contracts" visible class="mt-2">
+      <b-collapse id="contracts" visible class="my-2">
         <b-card no-body class="border-0" v-if="network && network.chainId == 4">
           <b-row>
             <b-col cols="4" class="small">Nix</b-col>
             <b-col class="small truncate" cols="8">
               <b-link :href="explorer + 'address/' + nixAddress + '#code'" class="card-link" target="_blank">{{ nixAddress == null ? '' : (nixAddress.substring(0, 10) + '...') }}</b-link>
             </b-col>
+          </b-row>
+          <b-row>
             <b-col cols="4" class="small">Nix Helper</b-col>
             <b-col class="small truncate" cols="8">
               <b-link :href="explorer + 'address/' + nixHelperAddress + '#code'" class="card-link" target="_blank">{{ nixHelperAddress == null ? '' : (nixHelperAddress.substring(0, 10) + '...') }}</b-link>
             </b-col>
-            <!--
-            <b-col class="small truncate" cols="8">
-              <b-link :href="explorer + 'address/' + nftData.nftAddress + '#code'" class="card-link" target="_blank">{{ nftData.nftAddress == null ? '' : (nftData.nftAddress.substring(0, 10) + '...') }}</b-link>
-              <span class="float-right"><b-link v-b-popover.hover="'View on OpenSea.io'" :href="nftData.openSeaUrl" target="_blank"><img src="images/381114e-opensea-logomark-flat-colored-blue.png" width="20px" /></b-link> <b-link :href="'https://rarible.com/collection/'+ nftData.nftAddress" v-b-popover.hover="'View on Rarible.com'" target="_blank"><img src="images/rarible_feb7c08ba34c310f059947d23916f76c12314e85.png" height="20px" /></b-link>
-              </span>
-            </b-col>
-            -->
           </b-row>
-          <!--
           <b-row>
-            <b-col cols="4" class="small">Adoption Centre</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + nftData.adoptionCentreV1Address + '#code'" class="card-link" target="_blank">{{ nftData.adoptionCentreV1Address == null ? '' : (nftData.adoptionCentreV1Address.substring(0, 10) + '...') }}</b-link></b-col>
+            <b-col cols="4" class="small">Royalty Engine</b-col>
+            <b-col class="small truncate" cols="8">
+              <b-link :href="explorer + 'address/' + nixRoyaltyEngine + '#code'" class="card-link" target="_blank">{{ nixRoyaltyEngine == null ? '' : (nixRoyaltyEngine.substring(0, 10) + '...') }}</b-link>
+            </b-col>
           </b-row>
-          -->
         </b-card>
       </b-collapse>
-      <b-button v-b-toggle.library size="sm" block variant="outline-info">Library</b-button>
-      <b-collapse id="library" visible class="mt-2">
+      <b-button v-b-toggle.tokens size="sm" block variant="outline-info">Tokens</b-button>
+      <b-collapse id="tokens" visible class="my-2">
         <b-card no-body class="border-0">
-          <!--
           <b-row>
-            <b-col cols="4" class="small">NIX Tokens Data</b-col><b-col class="small truncate" cols="8">{{ Object.keys(tokensData).length }}</b-col>
+            <b-col cols="4" class="small">Tokens</b-col><b-col class="small truncate" cols="8">{{ Object.keys(tokensData).length }}</b-col>
           </b-row>
-          -->
-          <!--
-          <b-row>
-            <b-col cols="4" class="small">Assets</b-col><b-col class="small truncate" cols="8">{{ Object.keys(assets).length }}</b-col>
-          </b-row>
-          -->
         </b-card>
       </b-collapse>
     </div>
@@ -75,8 +64,11 @@ const NixData = {
     nixHelperAddress() {
       return NIXHELPERADDRESS;
     },
+    nixRoyaltyEngine() {
+      return store.getters['nixData/nixRoyaltyEngine'];
+    },
     tokensData() {
-      return store.getters['tokens/tokensData'];
+      return store.getters['nixData/tokensData'];
     },
     // collectionList() {
     //   return store.getters['tokens/collectionList'];
@@ -121,6 +113,7 @@ const NixData = {
 const nixDataModule = {
   namespaced: true,
   state: {
+    nixRoyaltyEngine: null,
     tokensData: [],
 
     // collections: {},
@@ -141,6 +134,7 @@ const nixDataModule = {
     executing: false,
   },
   getters: {
+    nixRoyaltyEngine: state => state.nixRoyaltyEngine,
     tokensData: state => state.tokensData,
 
     // collections: state => state.collections,
@@ -158,8 +152,12 @@ const nixDataModule = {
     params: state => state.params,
   },
   mutations: {
+    updateNixRoyaltyEngine(state, nixRoyaltyEngine) {
+      // logInfo("nixDataModule", "updateNixRoyaltyEngine: " + nixRoyaltyEngine);
+      state.nixRoyaltyEngine = nixRoyaltyEngine;
+    },
     updateTokensData(state, tokensData) {
-      logInfo("nixDataModule", "updateTokensData: " + JSON.stringify(tokensData));
+      // logInfo("nixDataModule", "updateTokensData: " + JSON.stringify(tokensData));
       state.tokensData = tokensData;
     },
     // updateAssetsPreparation(state) {
@@ -510,6 +508,11 @@ const nixDataModule = {
           const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
           const nixHelper = new ethers.Contract(NIXHELPERADDRESS, NIXHELPERABI, provider);
 
+          if (!state.nixRoyaltyEngine) {
+            const nixRoyaltyEngine = await nix.royaltyEngine();
+            commit('updateNixRoyaltyEngine', nixRoyaltyEngine);
+          }
+
           // TODO - Capture relevant events, and refresh only the updated orders & trades data
           // Install listeners
           if (!listenersInstalled) {
@@ -524,20 +527,20 @@ const nixDataModule = {
           const tokensLength = await nix.tokensLength();
           if (tokensLength > 0) {
             var tokensIndices = [...Array(parseInt(tokensLength)).keys()];
-            console.log("tokensIndices: " + JSON.stringify(tokensIndices));
+            // console.log("tokensIndices: " + JSON.stringify(tokensIndices));
             const tokens = await nixHelper.getTokens(tokensIndices);
-            console.log("tokens: " + JSON.stringify(tokens));
+            // console.log("tokens: " + JSON.stringify(tokens));
             for (let i = 0; i < tokens[0].length; i++) {
               const token = tokens[0][i];
               const ordersLength = tokens[1][i];
               const executed = tokens[2][i];
               const volumeToken = tokens[3][i];
               const volumeWeth = tokens[4][i];
-              console.log("token: " + token + ", ordersLength: " + ordersLength + ", executed: " + executed + ", volumeToken: " + volumeToken + ", volumeWeth: " + volumeWeth);
+              // console.log("token: " + token + ", ordersLength: " + ordersLength + ", executed: " + executed + ", volumeToken: " + volumeToken + ", volumeWeth: " + volumeWeth);
               var ordersData = [];
               var orderIndices = [...Array(parseInt(ordersLength)).keys()];
               const orders = await nixHelper.getOrders(token, orderIndices);
-              console.log("orders: " + JSON.stringify(orders.map((x) => { return x.toString(); })));
+              // console.log("orders: " + JSON.stringify(orders.map((x) => { return x.toString(); })));
               for (let i = 0; i < ordersLength; i++) {
                 const maker = orders[0][i];
                 const taker = orders[1][i];
