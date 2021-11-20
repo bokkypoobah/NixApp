@@ -95,6 +95,11 @@ const Nix = {
                           <template #cell(txHash)="data">
                             <b-link :href="explorer + 'tx/' + data.item.txHash" target="_blank">{{ data.item.txHash.substring(0, 10) + '...' }}</b-link>
                           </template>
+                          <template #cell(events)="data">
+                            <div v-for="(event, eventIndex) in data.item.events">
+                              {{ event.description }}
+                            </div>
+                          </template>
                         </b-table>
                       </font>
                     </b-card>
@@ -483,11 +488,12 @@ const Nix = {
 
       tradeFields: [
         { key: 'tradeIndex', label: 'Trade Index', thStyle: 'width: 10%;', sortable: true },
-        { key: 'taker', label: 'Taker', thStyle: 'width: 20%;', sortable: true },
+        { key: 'taker', label: 'Taker', thStyle: 'width: 10%;', sortable: true },
         { key: 'royaltyFactor', label: 'Royalty Factor', thStyle: 'width: 10%;', sortable: true },
         { key: 'blockNumber', label: 'Block Number', thStyle: 'width: 10%;', sortable: true },
-        { key: 'orders', label: 'Orders (Token:OrderIndex)', thStyle: 'width: 30%;', sortable: true },
+        { key: 'orders', label: 'Orders (Token:OrderIndex)', thStyle: 'width: 20%;', sortable: true },
         { key: 'txHash', label: 'Tx', thStyle: 'width: 10%;', sortable: true },
+        { key: 'events', label: 'Events', thStyle: 'width: 30%;', sortable: true },
       ],
     }
   },

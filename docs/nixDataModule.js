@@ -259,16 +259,108 @@ const nixDataModule = {
                 return null;
               }
 
+              async function getOrderExecutedEvents(txHash) {
+                const results = [];
+                const txReceipt = await provider.getTransactionReceipt(txHash);
+                for (let j = 0; j < txReceipt.logs.length; j++) {
+                  const log = txReceipt.logs[j];
+                  if (log.address == nix.address) {
+                    const parsedLog = nix.interface.parseLog(log);
+                    try {
+                      const decodedEventLog = nix.interface.decodeEventLog(parsedLog.eventFragment.name, log.data, log.topics);
+                      if (parsedLog.eventFragment.name == 'OrderExecuted') {
+                        results.push({
+                          logIndex: log.logIndex,
+                          address: log.address,
+                          name: 'OrderExecuted',
+                          description: 'OrderExecuted(' + decodedEventLog[0].substring(0, 10) + '...' +
+                            ', ' + decodedEventLog[1].toNumber() +
+                            ', ' + decodedEventLog[2].toNumber() +
+                            ', [' + decodedEventLog[3].map((x) => { return x.toNumber(); }) +
+                            '])',
+                          token: decodedEventLog[0],
+                          orderIndex: decodedEventLog[1].toNumber(),
+                          tradeIndex: decodedEventLog[2].toNumber(),
+                          tokenIds: decodedEventLog[3].map((x) => { return x.toNumber(); }),
+                        });
+                      } else {
+                        console.log("TODO: " + parsedLog.eventFragment.name);
+                      }
+                    } catch (e) {
+                    }
+                  } else if (log.address == weth.address) {
+                    try {
+                      const parsedLog = weth.interface.parseLog(log);
+                      const decodedEventLog = weth.interface.decodeEventLog(parsedLog.eventFragment.name, log.data, log.topics);
+                      if (parsedLog.eventFragment.name == 'Transfer') {
+                        results.push({
+                          logIndex: log.logIndex,
+                          address: log.address,
+                          name: 'Transfer',
+                          description: 'Transfer(' + decodedEventLog[0].substring(0, 10) + '...' +
+                            ', ' + decodedEventLog[1].substring(0, 10) + '...' +
+                            ', ' + ethers.utils.formatEther(decodedEventLog[2]) +
+                            ')',
+                          from: decodedEventLog[0],
+                          to: decodedEventLog[1],
+                          tokens: decodedEventLog[2].toString(),
+                        });
+                      } else {
+                        console.log("TODO: " + parsedLog.eventFragment.name);
+                      }
+                    } catch (e) {
+                    }
+                  } else {
+                    try {
+                      const parsedLog = testToadz.interface.parseLog(log);
+                      const decodedEventLog = testToadz.interface.decodeEventLog(parsedLog.eventFragment.name, log.data, log.topics);
+                      if (parsedLog.eventFragment.name == 'Transfer') {
+                        results.push({
+                          logIndex: log.logIndex,
+                          address: log.address,
+                          name: 'Transfer',
+                          description: 'Transfer(' + decodedEventLog[0].substring(0, 10) + '...' +
+                            ', ' + decodedEventLog[1].substring(0, 10) + '...' +
+                            ', ' + decodedEventLog[2].toNumber() +
+                            ')',
+                          from: decodedEventLog[0],
+                          to: decodedEventLog[1],
+                          tokenId: decodedEventLog[2].toString(),
+                        });
+                      } else if (parsedLog.eventFragment.name == 'Approval') {
+                        results.push({
+                          logIndex: log.logIndex,
+                          address: log.address,
+                          name: 'Approval',
+                          description: 'Approval(' + decodedEventLog[0].substring(0, 10) + '...' +
+                            ', ' + decodedEventLog[1].substring(0, 10) + '...' +
+                            ', ' + decodedEventLog[2].toNumber() +
+                            ')',
+                          owner: decodedEventLog[0],
+                          approved: decodedEventLog[1],
+                          tokenId: decodedEventLog[2].toString(),
+                        });
+                      } else {
+                        console.log("TODO: " + parsedLog.eventFragment.name);
+                      }
+                    } catch (e) {
+                    }
+                  }
+                }
+                return results;
+              }
               const tx = await getOrderExecutedTransaction(i, blockNumber.toNumber(), nix);
-              // console.log("tx: " + JSON.stringify(tx));
+              const orderExecutedEvents = await getOrderExecutedEvents(tx.txHash);
+              // console.log("orderExecutedEvents: " + JSON.stringify(orderExecutedEvents, null, 2));
               tradeData.push({
                 tradeIndex: i,
                 taker: taker,
                 royaltyFactor: royaltyFactor,
                 blockNumber: blockNumber,
                 orders: orders,
-                txHash: tx.txHash });
-
+                txHash: tx.txHash,
+                events: orderExecutedEvents,
+              });
             }
             commit('updateTradeData', tradeData);
           }
