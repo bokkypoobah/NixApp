@@ -6,8 +6,8 @@ const NixData = {
           Please install the MetaMask extension, connect to the Rinkeby network and refresh this page. Then click the [Power] button on the top right.
         </b-card-text>
       </b-card>
-      <b-button v-b-toggle.contracts size="sm" block variant="outline-info">Contracts</b-button>
-      <b-collapse id="contracts" visible class="my-2">
+      <b-button v-b-toggle.nix_contract size="sm" block variant="outline-info">Nix</b-button>
+      <b-collapse id="nix_contract" visible class="my-2">
         <b-card no-body class="border-0" v-if="network && network.chainId == 4">
           <b-row>
             <b-col cols="4" class="small">Nix</b-col>
@@ -27,13 +27,13 @@ const NixData = {
               <b-link :href="explorer + 'address/' + nixRoyaltyEngine + '#code'" class="card-link" target="_blank">{{ nixRoyaltyEngine == null ? '' : (nixRoyaltyEngine.substring(0, 20) + '...') }}</b-link>
             </b-col>
           </b-row>
-        </b-card>
-      </b-collapse>
-      <b-button v-b-toggle.tokens size="sm" block variant="outline-info">Tokens</b-button>
-      <b-collapse id="tokens" visible class="my-2">
-        <b-card no-body class="border-0">
           <b-row>
-            <b-col cols="4" class="small">Tokens</b-col><b-col class="small truncate" cols="8">{{ Object.keys(tokensData).length }}</b-col>
+            <b-col cols="4" class="small">Tokens</b-col>
+            <b-col class="small truncate" cols="8">{{ Object.keys(tokensData).length }}</b-col>
+          </b-row>
+          <b-row>
+            <b-col cols="4" class="small">Trades</b-col>
+            <b-col class="small truncate" cols="8">{{ Object.keys(tradeData).length }}</b-col>
           </b-row>
         </b-card>
       </b-collapse>
@@ -166,7 +166,7 @@ const nixDataModule = {
       state.tokensData = tokensData;
     },
     updateTradeData(state, tradeData) {
-      logInfo("nixDataModule", "updateTradeData: " + JSON.stringify(tradeData));
+      // logInfo("nixDataModule", "updateTradeData: " + JSON.stringify(tradeData));
       state.tradeData = tradeData;
     },
     // updateAssetsPreparation(state) {
@@ -576,7 +576,7 @@ const nixDataModule = {
             const tradeIndices = range(loaded, parseInt(tradesLength) - 1, 1);
             const trades = await nixHelper.getTrades(tradeIndices);
             for (let i = 0; i < trades[0].length; i++) {
-              console.log("trades[" + i + "]: " + JSON.stringify(trades[i], null, 2));
+              // console.log("trades[" + i + "]: " + JSON.stringify(trades[i], null, 2));
               const taker = trades[0][i];
               const royaltyFactor = trades[1][i];
               const blockNumber = trades[2][i];
