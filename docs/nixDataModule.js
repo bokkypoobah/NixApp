@@ -221,15 +221,49 @@ const nixDataModule = {
             const tradesLength = await nix.tradesLength();
             const loaded = 0;
             var tradeData = [];
+            const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
+            const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
             const tradeIndices = range(loaded, parseInt(tradesLength) - 1, 1);
             const trades = await nixHelper.getTrades(tradeIndices);
             for (let i = 0; i < trades[0].length; i++) {
-              // console.log("trades[" + i + "]: " + JSON.stringify(trades[i], null, 2));
               const taker = trades[0][i];
               const royaltyFactor = trades[1][i];
               const blockNumber = trades[2][i];
               const orders = trades[3][i];
               tradeData.push({ tradeIndex: i, taker: taker, royaltyFactor: royaltyFactor, blockNumber: blockNumber, orders: orders });
+
+              // event OrderExecuted(address indexed token, uint indexed orderIndex, uint indexed tradeIndex, uint[] tokenIds);
+              async function getOrderExecutedTransaction(tradeIndex, blockNumber, nix) {
+                const results = [];
+                let eventFilter = nix.filters.OrderExecuted(null, null, tradeIndex);
+                const timestamp = (await provider.getBlock(blockNumber)).timestamp;
+                let events = await nix.queryFilter(eventFilter, blockNumber, blockNumber);
+                for (let j = 0; j < events.length; j++) {
+                  const event = events[j];
+                  const parsedLog = nix.interface.parseLog(event);
+                  const decodedEventLog = nix.interface.decodeEventLog(parsedLog.eventFragment.name, event.data, event.topics);
+                  results.push({
+                    address: event.address,
+                    transactionHash: event.transactionHash,
+                    transactionIndex: event.transactionIndex,
+                    logIndex: event.logIndex,
+                    blockNumber: event.blockNumber,
+                    timestamp: timestamp,
+                    removed: event.removed,
+                    eventName: parsedLog.eventFragment.name,
+                    token: decodedEventLog[0],
+                    orderIndex: decodedEventLog[1].toNumber(),
+                    tradeIndex: decodedEventLog[2].toNumber(),
+                    tokenIds: decodedEventLog[3].map((x) => { return x.toNumber(); }),
+                  });
+                }
+
+                return results;
+              }
+
+              const tx = await getOrderExecutedTransaction(i, blockNumber.toNumber(), nix);
+              console.log("tx: " + JSON.stringify(tx));
+
             }
             commit('updateTradeData', tradeData);
           }
@@ -245,6 +279,83 @@ const nixDataModule = {
   //   logInfo("nixDataModule", "mounted() $route: " + JSON.stringify(this.$route.params));
   // },
 };
+
+
+// const filter = {
+//   address: NIXADDRESS,
+//   // address: [NIXADDRESS, weth.address],
+//   // fromBlock: blockNumber.sub(1000).toNumber(),
+//   // fromBlock: blockNumber.toNumber(),
+//   fromBlock: 'earliest',
+//   // toBlock: 'latest',
+//   toBlock: blockNumber.toNumber(),
+//   // topics: [[
+//   //   // '0x98294be035c742c5a68ff3c35920bf3c58cba97677569fb8bea1ae14e1e8643d', // OrderAdded(address token, uint256 orderIndex)
+//   //   // '0xf4c563a3ea86ff1f4275e8c207df0375a51963f2b831b7bf4da8be938d92876c', // TokenAdded(address token, uint256 tokenIndex)
+//   //   '0x384bb209f0fe774478cff852a38e0ad1152d763f1a10b696be5b14437e594ef4', // event OrderExecuted(address indexed token, uint indexed orderIndex, uint indexed tradeIndex, uint[] tokenIds);
+//   //   // '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', // Transfer(index_topic_1 address from, index_topic_2 address to, index_topic_3 uint256 tokenId)
+//   // //   // // '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', // Transfer(index_topic_1 address src, index_topic_2 address dst, uint256 wad)
+//   //   // '0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c', // weth Deposit(index_topic_1 address dst, uint256 wad)
+//   // ]],
+// };
+// const timestamp = (await provider.getBlock(blockNumber.toNumber())).timestamp;
+// const logs = await provider.getLogs(filter);
+
+// // console.log("logs: " + JSON.stringify(logs, null, 2));
+// for (let j = 0; j < logs.length; j++) {
+//   const log = logs[j];
+//   console.log("log: " + JSON.stringify(log, null, 2));
+//   try {
+//     let data;
+//     if (log.address == nix.address) {
+//       data = nix.interface.parseLog(log);
+//     } else if (log.address = weth.address) {
+//       data = weth.interface.parseLog(log);
+//     } else if (log.address = testToadz.address) {
+//       data = testToadz.interface.parseLog(log);
+//     } else {
+//       data = weth.interface.parseLog(log);
+//       // data = testToadz.interface.parseLog(log);
+//     }
+//     // const data = nix.interface.parseLog(log);
+//     // if (data.name == 'OrderExecuted') {
+//       // console.log("data: " + JSON.stringify(data, null, 2));
+//       var result = data.name + "(";
+//       let separator = "";
+//       data.eventFragment.inputs.forEach((a) => {
+//         result = result + separator + a.name + ": ";
+//         if (a.type == 'address') {
+//           result = result + data.args[a.name].toString(); // this.getShortAccountName(data.args[a.name].toString());
+//         } else if (a.type == 'uint256' || a.type == 'uint128') {
+//           if (a.name == 'tokens' || a.name == 'amount' || a.name == 'balance' || a.name == 'value') {
+//             result = result + ethers.utils.formatUnits(data.args[a.name], 18);
+//           } else {
+//             result = result + data.args[a.name].toString();
+//           }
+//         } else {
+//           result = result + data.args[a.name].toString();
+//         }
+//         separator = ", ";
+//       });
+//       result = result + ")";
+//       console.log(new Date(timestamp * 1000).toUTCString() + ": address: " + log.address + ", txHash: " + log.transactionHash + ", txIndex: " + log.transactionIndex + ", logIndex: " + log.logIndex + ", blockNumber: " + log.blockNumber + ", removed: " + log.removed + ": " + result);
+//       // console.log("          + " + this.getShortAccountName(log.address) + " " + log.blockNumber + "." + log.logIndex + " " + result);
+//     // }
+//   } catch (e) {
+//   }
+// }
+
+// const decodedEvents = logs.map(log => {
+//         nix.abi.decodeEventLog("Transfer", log.data)
+//     });
+
+// const logs = await provider.getLogs({
+//       fromBlock: process.env.DEPLOYMENT_BLOCK,
+//       toBlock: 'latest',
+//       address: process.env.MY_CONTRACT_ADDRESS,
+//       topic: event
+//     })
+
 
 
 
