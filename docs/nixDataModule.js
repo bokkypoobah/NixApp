@@ -230,11 +230,10 @@ const nixDataModule = {
               const royaltyFactor = trades[1][i];
               const blockNumber = trades[2][i];
               const orders = trades[3][i];
-              tradeData.push({ tradeIndex: i, taker: taker, royaltyFactor: royaltyFactor, blockNumber: blockNumber, orders: orders });
 
               // event OrderExecuted(address indexed token, uint indexed orderIndex, uint indexed tradeIndex, uint[] tokenIds);
+              // TODO - handle removed: true
               async function getOrderExecutedTransaction(tradeIndex, blockNumber, nix) {
-                const results = [];
                 let eventFilter = nix.filters.OrderExecuted(null, null, tradeIndex);
                 const timestamp = (await provider.getBlock(blockNumber)).timestamp;
                 let events = await nix.queryFilter(eventFilter, blockNumber, blockNumber);
@@ -242,10 +241,10 @@ const nixDataModule = {
                   const event = events[j];
                   const parsedLog = nix.interface.parseLog(event);
                   const decodedEventLog = nix.interface.decodeEventLog(parsedLog.eventFragment.name, event.data, event.topics);
-                  results.push({
+                  return {
                     address: event.address,
-                    transactionHash: event.transactionHash,
-                    transactionIndex: event.transactionIndex,
+                    txHash: event.transactionHash,
+                    txIndex: event.transactionIndex,
                     logIndex: event.logIndex,
                     blockNumber: event.blockNumber,
                     timestamp: timestamp,
@@ -255,14 +254,20 @@ const nixDataModule = {
                     orderIndex: decodedEventLog[1].toNumber(),
                     tradeIndex: decodedEventLog[2].toNumber(),
                     tokenIds: decodedEventLog[3].map((x) => { return x.toNumber(); }),
-                  });
+                  };
                 }
-
-                return results;
+                return null;
               }
 
               const tx = await getOrderExecutedTransaction(i, blockNumber.toNumber(), nix);
-              console.log("tx: " + JSON.stringify(tx));
+              // console.log("tx: " + JSON.stringify(tx));
+              tradeData.push({
+                tradeIndex: i,
+                taker: taker,
+                royaltyFactor: royaltyFactor,
+                blockNumber: blockNumber,
+                orders: orders,
+                txHash: tx.txHash });
 
             }
             commit('updateTradeData', tradeData);

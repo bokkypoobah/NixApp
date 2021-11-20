@@ -73,7 +73,7 @@ const Nix = {
 
                   </b-tab>
 
-                  <b-tab title="Trades" class="p-1">
+                  <b-tab active title="Trades" class="p-1">
                     <div v-if="!tradeData || tradeData.length == 0">
                       <b-card>
                         <b-card-text>
@@ -84,10 +84,16 @@ const Nix = {
                     <b-card>
                       <font size="-2">
                         <b-table small fixed striped sticky-header="1000px" :fields="tradeFields" :items="tradeData" head-variant="light" show-empty>
+                          <template #cell(taker)="data">
+                            <b-link :href="explorer + 'address/' + data.item.taker" target="_blank">{{ data.item.taker.substring(0, 10) + '...' }}</b-link>
+                          </template>
                           <template #cell(orders)="data">
                             <div v-for="(token, tokenIndex) in data.item.orders">
-                              {{ token[0] }} {{ token[1].toString() }}
+                              <b-link :href="explorer + 'token/' + token[0]" target="_blank">{{ token[0] }}</b-link>:{{ token[1].toString() }}
                             </div>
+                          </template>
+                          <template #cell(txHash)="data">
+                            <b-link :href="explorer + 'tx/' + data.item.txHash" target="_blank">{{ data.item.txHash.substring(0, 10) + '...' }}</b-link>
                           </template>
                         </b-table>
                       </font>
@@ -480,7 +486,8 @@ const Nix = {
         { key: 'taker', label: 'Taker', thStyle: 'width: 20%;', sortable: true },
         { key: 'royaltyFactor', label: 'Royalty Factor', thStyle: 'width: 10%;', sortable: true },
         { key: 'blockNumber', label: 'Block Number', thStyle: 'width: 10%;', sortable: true },
-        { key: 'orders', label: 'Orders', thStyle: 'width: 40%;', sortable: true },
+        { key: 'orders', label: 'Orders (Token:OrderIndex)', thStyle: 'width: 30%;', sortable: true },
+        { key: 'txHash', label: 'Tx', thStyle: 'width: 10%;', sortable: true },
       ],
     }
   },
