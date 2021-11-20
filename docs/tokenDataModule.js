@@ -6,7 +6,7 @@ const TokenData = {
           Please install the MetaMask extension, connect to the Rinkeby network and refresh this page. Then click the [Power] button on the top right.
         </b-card-text>
       </b-card>
-      <b-button v-b-toggle.token_contract size="sm" block variant="outline-info">Tokens</b-button>
+      <b-button v-b-toggle.token_contract size="sm" block variant="outline-info">ERC-721 Token Collections</b-button>
       <b-collapse id="token_contract" visible class="my-2">
         <b-card no-body class="border-0" v-if="network && network.chainId == 4">
           <b-row>

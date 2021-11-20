@@ -108,7 +108,7 @@ const Connection = {
             </b-col>
           </b-row>
           <b-row>
-            <b-col cols="4" class="small">Wallet</b-col>
+            <b-col cols="4" class="small">Account</b-col>
             <b-col class="small truncate" cols="8">
               <b-link :href="explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ coinbase == null ? '' : (coinbase.substring(0, 20) + '...') }}</b-link><span class="float-right"><b-link v-b-popover.hover="'View on OpenSea.io'" :href="'https://testnets.opensea.io/accounts/'+ coinbase" target="_blank"><img src="images/381114e-opensea-logomark-flat-colored-blue.png" width="20px" /></b-link> <!-- <b-link :href="'https://rarible.com/user/'+ coinbase" v-b-popover.hover="'View on Rarible.com'" target="_blank"><img src="images/rarible_feb7c08ba34c310f059947d23916f76c12314e85.png" height="20px" /></b-link> --></span>
             </b-col>
@@ -120,7 +120,7 @@ const Connection = {
             <b-col cols="4" class="small">WETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'token/' + wethAddress + '?=' + coinbase" class="card-link" target="_blank">{{ wethBalanceString }}</b-link></b-col>
           </b-row>
           <b-row>
-            <b-col cols="4" class="small">WETH Allow Nix</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + wethAddress + '#events'" class="card-link" target="_blank">{{ wethAllowanceToNixString }}</b-link></b-col>
+            <b-col cols="4" class="small">Nix WETH Allow</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + wethAddress + '#events'" class="card-link" target="_blank">{{ wethAllowanceToNixString }}</b-link></b-col>
           </b-row>
           <b-row v-show="Object.keys(faucets).length">
             <b-col cols="4" class="small">Faucet(s)</b-col>
