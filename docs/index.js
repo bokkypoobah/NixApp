@@ -7,6 +7,7 @@ Vue.use(Vuex);
 Vue.component('connection', Connection);
 Vue.component('tokens', Tokens);
 Vue.component('nixdata', NixData);
+Vue.component('tokendata', TokenData);
 // Vue.component('flat-pickr', VueFlatpickr);
 
 // hljs.registerLanguage('solidity', window.hljsDefineSolidity);
@@ -55,6 +56,7 @@ const store = new Vuex.Store({
     connection: connectionModule,
     tokens: tokensModule,
     nixData: nixDataModule,
+    tokenData: tokenDataModule,
     nftPostcard: nftPostcardModule,
     nix: nixModule,
     collections: collectionsModule,
