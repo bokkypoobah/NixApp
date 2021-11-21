@@ -343,7 +343,7 @@ const Nix = {
 
                   </b-tab>
 
-                  <b-tab active title="TestToadz" class="p-1">
+                  <b-tab title="TestToadz" class="p-1">
                     <b-card header="TestToadz" class="mb-2">
                       <b-card-text>
                         <b-form-group label-cols="3" label-size="sm" label="">
@@ -897,7 +897,7 @@ const Nix = {
       }
       this.testToadz.tokenURIs = tokenURIs;
 
-      const BATCHSIZE = 5; // Max 30
+      const BATCHSIZE = 30; // Max 30
       const DELAYINMILLIS = 100;
       const delay = ms => new Promise(res => setTimeout(res, ms));
       const osData = {};
