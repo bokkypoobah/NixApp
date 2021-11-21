@@ -343,7 +343,7 @@ const Nix = {
 
                   </b-tab>
 
-                  <b-tab title="TestToadz" class="p-1">
+                  <b-tab active title="TestToadz" class="p-1">
                     <b-card header="TestToadz" class="mb-2">
                       <b-card-text>
                         <b-form-group label-cols="3" label-size="sm" label="">
@@ -381,6 +381,18 @@ const Nix = {
                           <b-table small fixed striped sticky-header="1000px" :fields="testToadzFields" :items="testToadz.owners" head-variant="light">
                             <template #cell(tokenURI)="data">
                               {{ testToadz.tokenURIs[data.item.tokenId] || '(none)' }}
+                            </template>
+                            <template #cell(image)="data">
+                              <div v-if="testToadz.osData[data.item.tokenId]">
+                                <b-img-lazy :width="'100%'" :src="testToadz.osData[data.item.tokenId].image" />
+                              </div>
+                            </template>
+                            <template #cell(traits)="data">
+                              <div v-if="testToadz.osData[data.item.tokenId]">
+                                <b-row v-for="(attribute, i) in testToadz.osData[data.item.tokenId].traits"  v-bind:key="i" class="m-0 p-0">
+                                  <b-col cols="3" class="m-0 p-0"><font size="-3">{{ attribute.trait_type }}</font></b-col><b-col class="m-0 p-0"><b><font size="-2">{{ attribute.value }}</font></b></b-col>
+                                </b-row>
+                              </div>
                             </template>
                           </b-table>
                         </font>
@@ -544,12 +556,15 @@ const Nix = {
         mintMessage: null,
         owners: [],
         tokenURIs: {},
+        osData: {},
       },
 
       testToadzFields: [
         { key: 'tokenId', label: 'Token Id', sortable: true },
         { key: 'owner', label: 'Owner', sortable: true },
-        { key: 'tokenURI', label: 'TokenURI', sortable: true },
+        // { key: 'tokenURI', label: 'TokenURI', sortable: true },
+        { key: 'image', label: 'Image', sortable: true },
+        { key: 'traits', label: 'Traits', sortable: true },
       ],
 
       order: {
@@ -881,6 +896,34 @@ const Nix = {
         }
       }
       this.testToadz.tokenURIs = tokenURIs;
+
+      const BATCHSIZE = 5; // Max 30
+      const DELAYINMILLIS = 100;
+      const delay = ms => new Promise(res => setTimeout(res, ms));
+      const osData = {};
+      for (let i = 0; i < tokenIds.length; i += BATCHSIZE) {
+        let url = "https://testnets-api.opensea.io/api/v1/assets?asset_contract_address=" + TESTTOADZADDRESS + "\&order_direction=desc\&limit=50\&offset=0";
+        for (let j = i; j < i + BATCHSIZE && j < tokenIds.length; j++) {
+          url = url + "&token_ids=" + tokenIds[j];
+        }
+        console.log("url: " + url);
+        const data = await fetch(url).then(response => response.json());
+        // console.log("data: " + JSON.stringify(data));
+        if (data.assets && data.assets.length > 0) {
+        //   this.settings.contract.loadingOSData += data.assets.length;
+          for (let assetIndex = 0; assetIndex < data.assets.length; assetIndex++) {
+            const asset = data.assets[assetIndex];
+            // console.log("asset: " + JSON.stringify(asset));
+            // console.log("asset - token_id: " + asset.token_id + ", image_url: " + asset.image_url + ", traits: " + JSON.stringify(asset.traits));
+        //     records.push({ contract: contract, tokenId: asset.token_id, asset: asset, timestamp: timestamp });
+            osData[asset.token_id] = { image: asset.image_url, traits: asset.traits };
+          }
+        }
+        await delay(DELAYINMILLIS);
+      }
+      this.testToadz.osData = osData;
+      console.log("osData: " + JSON.stringify(osData));
+
 
       var db0 = new Dexie("NixDB");
       db0.version(1).stores({
