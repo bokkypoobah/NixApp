@@ -326,7 +326,7 @@ const Nix = {
                         <b-form-group label-cols="3" label-size="sm" label="Transfer WETH to" description="e.g. 0x123456...">
                           <b-form-input size="sm" v-model="weth.transferTo" class="w-50"></b-form-input>
                         </b-form-group>
-                        <b-form-group label-cols="3" label-size="sm" label="WETH to approve to Nix" description="e.g. 0.123456789">
+                        <b-form-group label-cols="3" label-size="sm" label="WETH to transfer" description="e.g. 0.123456789">
                           <b-form-input size="sm" v-model="weth.transferAmount" class="w-50"></b-form-input>
                         </b-form-group>
                         <b-form-group label-cols="3" label-size="sm" label="">
@@ -452,8 +452,43 @@ const Nix = {
                         </b-form-group>
                       </b-card-text>
                     </b-card>
-
                   </b-tab>
+
+                  <b-tab title="Admin" class="p-1">
+                    <b-card header="Transfer Nix Ownership" class="mb-2">
+                      <b-card-text>
+                        <b-form-group label-cols="3" label-size="sm" label="Transfer Nix ownership to" description="e.g. 0x123456...">
+                          <b-form-input size="sm" v-model="admin.transferTo" class="w-50"></b-form-input>
+                        </b-form-group>
+                      </b-card-text>
+                      <b-form-group label-cols="3" label-size="sm" label="">
+                        <b-button size="sm" @click="transferOwnership" variant="warning">Transfer Ownership</b-button>
+                      </b-form-group>
+                      <b-card>
+                        {{ admin }}
+                      </b-card>
+                    </b-card>
+                    <b-card header="Withdraw ETH, ERC-20 And ERC-721 Tokens From Nix" class="mb-2">
+                      <b-card-text>
+                        <b-form-group label-cols="3" label-size="sm" label="Token" description="Blank for ETH, address for ERC-20 or ERC-721. e.g., 0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4 for TestToadz">
+                          <b-form-input size="sm" v-model="admin.token" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group label-cols="3" label-size="sm" label="Tokens" description="Tokens in raw format, for ETH and ERC-20. e.g., 3500000000000000000 for 3.5 with 18dp. Set to 0 or null for full balance">
+                          <b-form-input size="sm" v-model="admin.tokens" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group label-cols="3" label-size="sm" label="Token Id" description="ERC-721 Token Id. e.g., 3">
+                          <b-form-input size="sm" v-model="admin.tokenId" class="w-50"></b-form-input>
+                        </b-form-group>
+                      </b-card-text>
+                      <b-form-group label-cols="3" label-size="sm" label="">
+                        <b-button size="sm" @click="withdraw" variant="warning">Withdraw</b-button>
+                      </b-form-group>
+                      <b-card>
+                        {{ admin }}
+                      </b-card>
+                    </b-card>
+                  </b-tab>
+
                   <!--
                   <b-tab title="Approvals" class="p-1">
                     <b-form-group label-cols="3" label-size="sm" label="">
@@ -541,6 +576,14 @@ const Nix = {
         royaltyFactor: "100",
         integrator: null,
         tip: "0.0001",
+      },
+
+      admin: {
+        transferTo: null,
+        transferMessage: null,
+        token: null,
+        tokens: null,
+        tokenId: null,
       },
 
       buyOrSellOptions: [
@@ -1144,6 +1187,73 @@ const Nix = {
             const tip = this.execute.tip == null || this.execute.tip.trim().length == 0 ? 0 : ethers.utils.parseEther(this.execute.tip);
             try {
               const tx = await nixWithSigner.executeOrders([this.execute.token], [this.execute.orderIndex], [tokenIds], netAmount, this.execute.royaltyFactor, integrator, { value: tip });
+              console.log("tx: " + JSON.stringify(tx));
+            } catch (e) {
+              console.log("error: " + e.toString());
+            }
+          }
+        })
+        .catch(err => {
+          // An error occurred
+        });
+    },
+
+    transferOwnership() {
+      console.log("transferOwnership");
+      this.$bvModal.msgBoxConfirm('Transfer Nix Ownership?', {
+          title: 'Please Confirm',
+          size: 'sm',
+          buttonSize: 'sm',
+          okVariant: 'danger',
+          okTitle: 'Yes',
+          cancelTitle: 'No',
+          footerClass: 'p-2',
+          hideHeaderClose: false,
+          centered: true
+        })
+        .then(async value1 => {
+          if (value1) {
+            event.preventDefault();
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
+            const nixWithSigner = nix.connect(provider.getSigner());
+            try {
+              const tx = await nixWithSigner.transferOwnership(this.admin.transferTo);
+              console.log("tx: " + JSON.stringify(tx));
+            } catch (e) {
+              console.log("error: " + e.toString());
+            }
+          }
+        })
+        .catch(err => {
+          // An error occurred
+        });
+    },
+
+    withdraw() {
+      console.log("withdraw");
+      this.$bvModal.msgBoxConfirm('Withdraw?', {
+          title: 'Please Confirm',
+          size: 'sm',
+          buttonSize: 'sm',
+          okVariant: 'danger',
+          okTitle: 'Yes',
+          cancelTitle: 'No',
+          footerClass: 'p-2',
+          hideHeaderClose: false,
+          centered: true
+        })
+        .then(async value1 => {
+          if (value1) {
+            event.preventDefault();
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
+            const nixWithSigner = nix.connect(provider.getSigner());
+            const token = this.admin.token == null || this.admin.token.trim().length == 0 ? ADDRESS0 : this.admin.token;
+            const tokens = this.admin.tokens == null || this.admin.tokens.trim().length == 0 ? "0" : this.admin.tokens;
+            const tokenId = this.admin.tokenId == null || this.admin.tokenId.trim().length == 0 ? "0" : this.admin.tokenId;
+            try {
+              const tx = await nixWithSigner.withdraw(token, tokens, tokenId);
               console.log("tx: " + JSON.stringify(tx));
             } catch (e) {
               console.log("error: " + e.toString());
