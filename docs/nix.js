@@ -70,7 +70,148 @@ const Nix = {
                         </font>
                       </b-card>
                     </div>
+                  </b-tab>
 
+                  <b-tab title="Add Orders" class="p-1">
+                    <b-form-group label-cols="3" label-size="sm" label="Token" description="e.g., 0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4 for TestToadz">
+                      <b-form-input size="sm" v-model="order.token" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Taker" description="e.g., 0x12345...">
+                      <b-form-input size="sm" v-model="order.taker" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Buy or Sell">
+                      <b-form-select size="sm" v-model="order.buyOrSell" :options="buyOrSellOptions" class="w-50"></b-form-select>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Any or All">
+                      <b-form-select size="sm" v-model="order.anyOrAll" :options="anyOrAllOptions" class="w-50"></b-form-select>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Token Ids" description="e.g., 1, 2, 3, 4">
+                      <b-form-input size="sm" v-model="order.tokenIds" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Price" description="e.g., 0.1 for 0.1 WETH">
+                      <b-form-input size="sm" v-model="order.price" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Expiry" description="Unixtime e.g., 1672491599 for 23:59:59 31/12/2022 UTC">
+                      <b-form-input size="sm" v-model="order.expiry" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="TradeMax" description="e.g., 1 for single execution orders">
+                      <b-form-input size="sm" v-model="order.tradeMax" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Royalty Factor" description="0 to 100. e.g., 100">
+                      <b-form-input size="sm" v-model="order.royaltyFactor" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Integrator" description="e.g., 0x2345...">
+                      <b-form-input size="sm" v-model="order.integrator" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Tip" description="ETH, e.g., '0' or '0.0001'">
+                      <b-form-input size="sm" v-model="order.tip" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="">
+                      <b-button size="sm" @click="addOrder" variant="warning">Add Order</b-button>
+                    </b-form-group>
+                    <b-card>
+                      {{ order }}
+                    </b-card>
+                  </b-tab>
+
+                  <b-tab title="Disable Orders" class="p-1">
+                    <b-form-group label-cols="3" label-size="sm" label="Token" description="e.g., 0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4 for TestToadz">
+                      <b-form-input size="sm" v-model="order.token" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Order Index" description="e.g., 12">
+                      <b-form-input size="sm" v-model="order.orderIndex" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Integrator" description="e.g., 0x2345...">
+                      <b-form-input size="sm" v-model="order.integrator" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Tip" description="ETH, e.g., '0' or '0.0001'">
+                      <b-form-input size="sm" v-model="order.tip" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="">
+                      <b-button size="sm" @click="disableOrder" variant="warning">Add Order</b-button>
+                    </b-form-group>
+                    <b-card>
+                      {{ order }}
+                    </b-card>
+                  </b-tab>
+
+                  <b-tab title="Update Orders" class="p-1">
+                    <b-form-group label-cols="3" label-size="sm" label="Token" description="e.g., 0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4 for TestToadz">
+                      <b-form-input size="sm" v-model="order.token" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Order Index" description="e.g., 12">
+                      <b-form-input size="sm" v-model="order.orderIndex" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Taker" description="e.g., 0x12345...">
+                      <b-form-input size="sm" v-model="order.taker" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <!--
+                    <b-form-group label-cols="3" label-size="sm" label="Buy or Sell">
+                      <b-form-select size="sm" v-model="order.buyOrSell" :options="buyOrSellOptions" class="w-50"></b-form-select>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Any or All">
+                      <b-form-select size="sm" v-model="order.anyOrAll" :options="anyOrAllOptions" class="w-50"></b-form-select>
+                    </b-form-group>
+                    -->
+                    <b-form-group label-cols="3" label-size="sm" label="Token Ids" description="e.g., 1, 2, 3, 4">
+                      <b-form-input size="sm" v-model="order.tokenIds" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Price" description="e.g., 0.1 for 0.1 WETH">
+                      <b-form-input size="sm" v-model="order.price" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Expiry" description="Unixtime e.g., 1672491599 for 23:59:59 31/12/2022 UTC">
+                      <b-form-input size="sm" v-model="order.expiry" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="TradeMax Adjustment" description="e.g., 5, -5. Must be 0 or 1 for Buy or Sell All orders">
+                      <b-form-input size="sm" v-model="order.tradeMaxAdjustment" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Royalty Factor" description="0 to 100. e.g., 100">
+                      <b-form-input size="sm" v-model="order.royaltyFactor" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Integrator" description="e.g., 0x2345...">
+                      <b-form-input size="sm" v-model="order.integrator" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Tip" description="ETH, e.g., '0' or '0.0001'">
+                      <b-form-input size="sm" v-model="order.tip" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="">
+                      <b-button size="sm" @click="updateOrder" variant="warning">Update Order</b-button>
+                    </b-form-group>
+                    <b-card>
+                      {{ order }}
+                    </b-card>
+                  </b-tab>
+
+                  <b-tab title="Execute Orders" class="p-1">
+                    <b-card-text>
+                      <b-form-group label-cols="3" label-size="sm" label="Token" description="e.g., 0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4 for TestToadz">
+                        <b-form-input size="sm" v-model="execute.token" class="w-50"></b-form-input>
+                      </b-form-group>
+                      <b-form-group label-cols="3" label-size="sm" label="Order index" description="e.g., 3">
+                        <b-form-input size="sm" v-model="execute.orderIndex" class="w-50"></b-form-input>
+                      </b-form-group>
+                      <b-form-group label-cols="3" label-size="sm" label="Token Ids" description="e.g., 1, 2, 5">
+                        <b-form-input size="sm" v-model="execute.tokenIds" class="w-50"></b-form-input>
+                      </b-form-group>
+                      <b-form-group label-cols="3" label-size="sm" label="Net Amount" description="e.g., -0.1234">
+                        <b-form-input size="sm" v-model="execute.netAmount" class="w-50"></b-form-input>
+                      </b-form-group>
+                      <b-form-group label-cols="3" label-size="sm" label="Royalty Factor" description="0 to 100. e.g., 100">
+                        <b-form-input size="sm" v-model="execute.royaltyFactor" class="w-50"></b-form-input>
+                      </b-form-group>
+                      <b-form-group label-cols="3" label-size="sm" label="Integrator" description="e.g., 0x2345...">
+                        <b-form-input size="sm" v-model="execute.integrator" class="w-50"></b-form-input>
+                      </b-form-group>
+                      <b-form-group label-cols="3" label-size="sm" label="Tip" description="ETH, e.g., '0' or '0.0001'">
+                        <b-form-input size="sm" v-model="execute.tip" class="w-50"></b-form-input>
+                      </b-form-group>
+                      <b-form-group label-cols="3" label-size="sm" label="">
+                        <b-button size="sm" @click="executeOrders" variant="warning">Execute Orders</b-button>
+                      </b-form-group>
+                      <b-card>
+                        {{ execute }}
+                      </b-card>
+                    </b-card-text>
                   </b-tab>
 
                   <b-tab title="Trades" class="p-1">
@@ -320,95 +461,6 @@ const Nix = {
                     </b-form-group>
                   </b-tab>
                   -->
-
-
-                  <b-tab title="Add Orders" class="p-1">
-                    <b-form-group label-cols="3" label-size="sm" label="Token" description="e.g., 0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4 for TestToadz">
-                      <b-form-input size="sm" v-model="order.token" class="w-50"></b-form-input>
-                    </b-form-group>
-
-                    <b-form-group label-cols="3" label-size="sm" label="Taker" description="e.g., 0x12345...">
-                      <b-form-input size="sm" v-model="order.taker" class="w-50"></b-form-input>
-                    </b-form-group>
-
-                    <b-form-group label-cols="3" label-size="sm" label="Buy or Sell">
-                      <b-form-select size="sm" v-model="order.buyOrSell" :options="buyOrSellOptions" class="w-50"></b-form-select>
-                    </b-form-group>
-
-                    <b-form-group label-cols="3" label-size="sm" label="Any or All">
-                      <b-form-select size="sm" v-model="order.anyOrAll" :options="anyOrAllOptions" class="w-50"></b-form-select>
-                    </b-form-group>
-
-                    <b-form-group label-cols="3" label-size="sm" label="Token Ids" description="e.g., 1, 2, 3, 4">
-                      <b-form-input size="sm" v-model="order.tokenIds" class="w-50"></b-form-input>
-                    </b-form-group>
-
-                    <b-form-group label-cols="3" label-size="sm" label="Price" description="e.g., 0.1 for 0.1 WETH">
-                      <b-form-input size="sm" v-model="order.price" class="w-50"></b-form-input>
-                    </b-form-group>
-
-                    <b-form-group label-cols="3" label-size="sm" label="Expiry" description="Unixtime e.g., 1672491599 for 23:59:59 31/12/2022 UTC">
-                      <b-form-input size="sm" v-model="order.expiry" class="w-50"></b-form-input>
-                    </b-form-group>
-
-                    <b-form-group label-cols="3" label-size="sm" label="TradeMax" description="e.g., 1 for single execution orders">
-                      <b-form-input size="sm" v-model="order.tradeMax" class="w-50"></b-form-input>
-                    </b-form-group>
-
-                    <b-form-group label-cols="3" label-size="sm" label="Royalty Factor" description="0 to 100. e.g., 100">
-                      <b-form-input size="sm" v-model="order.royaltyFactor" class="w-50"></b-form-input>
-                    </b-form-group>
-
-                    <b-form-group label-cols="3" label-size="sm" label="Integrator" description="e.g., 0x2345...">
-                      <b-form-input size="sm" v-model="order.integrator" class="w-50"></b-form-input>
-                    </b-form-group>
-
-                    <b-form-group label-cols="3" label-size="sm" label="Tip" description="Optional, in ETH. e.g., 0.1">
-                      <b-form-input size="sm" v-model="order.tip" class="w-50"></b-form-input>
-                    </b-form-group>
-
-                    <b-form-group label-cols="3" label-size="sm" label="">
-                      <b-button size="sm" @click="addOrder" variant="warning">Add Order</b-button>
-                    </b-form-group>
-
-                    <b-card>
-                      {{ order }}
-                    </b-card>
-
-                  </b-tab>
-
-                  <b-tab title="Execute Orders" class="p-1">
-                    <b-card-text>
-                      <b-form-group label-cols="3" label-size="sm" label="Token" description="e.g., 0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4 for TestToadz">
-                        <b-form-input size="sm" v-model="execute.token" class="w-50"></b-form-input>
-                      </b-form-group>
-                      <b-form-group label-cols="3" label-size="sm" label="Order index" description="e.g., 3">
-                        <b-form-input size="sm" v-model="execute.orderIndex" class="w-50"></b-form-input>
-                      </b-form-group>
-                      <b-form-group label-cols="3" label-size="sm" label="Token Ids" description="e.g., 1, 2, 5">
-                        <b-form-input size="sm" v-model="execute.tokenIds" class="w-50"></b-form-input>
-                      </b-form-group>
-                      <b-form-group label-cols="3" label-size="sm" label="Net Amount" description="e.g., -0.1234">
-                        <b-form-input size="sm" v-model="execute.netAmount" class="w-50"></b-form-input>
-                      </b-form-group>
-                      <b-form-group label-cols="3" label-size="sm" label="Royalty Factor" description="0 to 100. e.g., 100">
-                        <b-form-input size="sm" v-model="execute.royaltyFactor" class="w-50"></b-form-input>
-                      </b-form-group>
-                      <b-form-group label-cols="3" label-size="sm" label="Integrator" description="e.g., 0x2345...">
-                        <b-form-input size="sm" v-model="execute.integrator" class="w-50"></b-form-input>
-                      </b-form-group>
-                      <b-form-group label-cols="3" label-size="sm" label="Tip" description="Optional, in ETH. e.g., 0.1">
-                        <b-form-input size="sm" v-model="execute.tip" class="w-50"></b-form-input>
-                      </b-form-group>
-                      <b-form-group label-cols="3" label-size="sm" label="">
-                        <b-button size="sm" @click="executeOrders" variant="warning">Execute Orders</b-button>
-                      </b-form-group>
-                      <b-card>
-                        {{ execute }}
-                      </b-card>
-                    </b-card-text>
-                  </b-tab>
-
                 </b-tabs>
               </b-card>
             </div>
@@ -467,6 +519,7 @@ const Nix = {
 
       order: {
         token: "0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4",
+        orderIndex: null, // Only for disableOrder and updateOrder
         taker: null,
         buyOrSell: 1,
         anyOrAll: 0,
@@ -474,9 +527,10 @@ const Nix = {
         price: "0.01",
         expiry: 1672491599,
         tradeMax: "1",
+        tradeMaxAdjustment: "0", // Only for updateOrder
         royaltyFactor: "100",
         integrator: null,
-        tip: "0.00001",
+        tip: "0.0001",
       },
 
       execute: {
@@ -486,7 +540,7 @@ const Nix = {
         netAmount: null,
         royaltyFactor: "100",
         integrator: null,
-        tip: "0.00001",
+        tip: "0.0001",
       },
 
       buyOrSellOptions: [
@@ -977,10 +1031,82 @@ const Nix = {
             const taker = this.order.taker == null || this.order.taker.trim().length == 0 ? ADDRESS0 : taker;
             const tokenIds = this.order.tokenIds == null || this.order.tokenIds.trim().length == 0 ? [] : this.order.tokenIds.split(",").map(function(item) { return item.trim(); });
             const price = ethers.utils.parseEther(this.order.price);
-            const integrator = this.order.integrator == null || this.order.integrator.trim().length == 0 ? ADDRESS0 : integrator;
+            const integrator = this.order.integrator == null || this.order.integrator.trim().length == 0 ? ADDRESS0 : this.order.integrator;
             const tip = this.order.tip == null || this.order.tip.trim().length == 0 ? 0 : ethers.utils.parseEther(this.order.tip);
             try {
               const tx = await nixWithSigner.addOrder(this.order.token, taker, this.order.buyOrSell, this.order.anyOrAll, tokenIds, price, this.order.expiry, this.order.tradeMax, this.order.royaltyFactor, integrator, { value: tip });
+              console.log("tx: " + JSON.stringify(tx));
+            } catch (e) {
+              console.log("error: " + e.toString());
+            }
+          }
+        })
+        .catch(err => {
+          // An error occurred
+        });
+    },
+
+    disableOrder() {
+      console.log("disableOrder");
+      this.$bvModal.msgBoxConfirm('Disable Order?', {
+          title: 'Please Confirm',
+          size: 'sm',
+          buttonSize: 'sm',
+          okVariant: 'danger',
+          okTitle: 'Yes',
+          cancelTitle: 'No',
+          footerClass: 'p-2',
+          hideHeaderClose: false,
+          centered: true
+        })
+        .then(async value1 => {
+          if (value1) {
+            event.preventDefault();
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
+            const nixWithSigner = nix.connect(provider.getSigner());
+            const integrator = this.order.integrator == null || this.order.integrator.trim().length == 0 ? ADDRESS0 : this.order.integrator;
+            const tip = this.order.tip == null || this.order.tip.trim().length == 0 ? 0 : ethers.utils.parseEther(this.order.tip);
+            try {
+              const tx = await nixWithSigner.disableOrder(this.order.token, this.order.orderIndex, integrator, { value: tip });
+              console.log("tx: " + JSON.stringify(tx));
+            } catch (e) {
+              console.log("error: " + e.toString());
+            }
+          }
+        })
+        .catch(err => {
+          // An error occurred
+        });
+    },
+
+    updateOrder() {
+      console.log("updateOrder");
+      this.$bvModal.msgBoxConfirm('Update Order?', {
+          title: 'Please Confirm',
+          size: 'sm',
+          buttonSize: 'sm',
+          okVariant: 'danger',
+          okTitle: 'Yes',
+          cancelTitle: 'No',
+          footerClass: 'p-2',
+          hideHeaderClose: false,
+          centered: true
+        })
+        .then(async value1 => {
+          if (value1) {
+            event.preventDefault();
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
+            const nixWithSigner = nix.connect(provider.getSigner());
+            const weth = await nix.weth();
+            const taker = this.order.taker == null || this.order.taker.trim().length == 0 ? ADDRESS0 : taker;
+            const tokenIds = this.order.tokenIds == null || this.order.tokenIds.trim().length == 0 ? [] : this.order.tokenIds.split(",").map(function(item) { return item.trim(); });
+            const price = ethers.utils.parseEther(this.order.price);
+            const integrator = this.order.integrator == null || this.order.integrator.trim().length == 0 ? ADDRESS0 : this.order.integrator;
+            const tip = this.order.tip == null || this.order.tip.trim().length == 0 ? 0 : ethers.utils.parseEther(this.order.tip);
+            try {
+              const tx = await nixWithSigner.updateOrder(this.order.token, this.order.orderIndex, taker, tokenIds, price, this.order.expiry, this.order.tradeMaxAdjustment, this.order.royaltyFactor, integrator, { value: tip });
               console.log("tx: " + JSON.stringify(tx));
             } catch (e) {
               console.log("error: " + e.toString());
@@ -1014,7 +1140,7 @@ const Nix = {
             const weth = await nix.weth();
             const tokenIds = this.execute.tokenIds.split(",").map(function(item) { return item.trim(); });
             const netAmount = ethers.utils.parseEther(this.execute.netAmount);
-            const integrator = this.execute.integrator == null || this.execute.integrator.trim().length == 0 ? ADDRESS0 : integrator;
+            const integrator = this.execute.integrator == null || this.execute.integrator.trim().length == 0 ? ADDRESS0 : this.execute.integrator;
             const tip = this.execute.tip == null || this.execute.tip.trim().length == 0 ? 0 : ethers.utils.parseEther(this.execute.tip);
             try {
               const tx = await nixWithSigner.executeOrders([this.execute.token], [this.execute.orderIndex], [tokenIds], netAmount, this.execute.royaltyFactor, integrator, { value: tip });
