@@ -73,7 +73,7 @@ const Nix = {
 
                   </b-tab>
 
-                  <b-tab active title="Trades" class="p-1">
+                  <b-tab title="Trades" class="p-1">
                     <div v-if="!tradeData || tradeData.length == 0">
                       <b-card>
                         <b-card-text>

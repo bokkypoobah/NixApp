@@ -273,7 +273,7 @@ const nixDataModule = {
                           logIndex: log.logIndex,
                           address: log.address,
                           name: 'OrderExecuted',
-                          description: 'OrderExecuted(' + decodedEventLog[0].substring(0, 10) + '...' +
+                          description: 'Nix.OrderExecuted(' + decodedEventLog[0].substring(0, 10) + '...' +
                             ', ' + decodedEventLog[1].toNumber() +
                             ', ' + decodedEventLog[2].toNumber() +
                             ', [' + decodedEventLog[3].map((x) => { return x.toNumber(); }) +
@@ -297,7 +297,7 @@ const nixDataModule = {
                           logIndex: log.logIndex,
                           address: log.address,
                           name: 'Transfer',
-                          description: 'Transfer(' + decodedEventLog[0].substring(0, 10) + '...' +
+                          description: 'WETH.Transfer(' + decodedEventLog[0].substring(0, 10) + '...' +
                             ', ' + decodedEventLog[1].substring(0, 10) + '...' +
                             ', ' + ethers.utils.formatEther(decodedEventLog[2]) +
                             ')',
@@ -319,7 +319,7 @@ const nixDataModule = {
                           logIndex: log.logIndex,
                           address: log.address,
                           name: 'Transfer',
-                          description: 'Transfer(' + decodedEventLog[0].substring(0, 10) + '...' +
+                          description: log.address.substring(0, 10) + '.Transfer(' + decodedEventLog[0].substring(0, 10) + '...' +
                             ', ' + decodedEventLog[1].substring(0, 10) + '...' +
                             ', ' + decodedEventLog[2].toNumber() +
                             ')',
@@ -332,7 +332,7 @@ const nixDataModule = {
                           logIndex: log.logIndex,
                           address: log.address,
                           name: 'Approval',
-                          description: 'Approval(' + decodedEventLog[0].substring(0, 10) + '...' +
+                          description: log.address.substring(0, 10) + '.Approval(' + decodedEventLog[0].substring(0, 10) + '...' +
                             ', ' + decodedEventLog[1].substring(0, 10) + '...' +
                             ', ' + decodedEventLog[2].toNumber() +
                             ')',
