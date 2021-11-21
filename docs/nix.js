@@ -72,7 +72,7 @@ const Nix = {
                     </div>
                   </b-tab>
 
-                  <b-tab title="Add Orders" class="p-1">
+                  <b-tab title="Add Order" class="p-1">
                     <b-form-group label-cols="3" label-size="sm" label="Token" description="e.g., 0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4 for TestToadz">
                       <b-form-input size="sm" v-model="order.token" class="w-50"></b-form-input>
                     </b-form-group>
@@ -114,7 +114,7 @@ const Nix = {
                     </b-card>
                   </b-tab>
 
-                  <b-tab title="Disable Orders" class="p-1">
+                  <b-tab title="Disable Order" class="p-1">
                     <b-form-group label-cols="3" label-size="sm" label="Token" description="e.g., 0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4 for TestToadz">
                       <b-form-input size="sm" v-model="order.token" class="w-50"></b-form-input>
                     </b-form-group>
@@ -135,7 +135,7 @@ const Nix = {
                     </b-card>
                   </b-tab>
 
-                  <b-tab title="Update Orders" class="p-1">
+                  <b-tab title="Update Order" class="p-1">
                     <b-form-group label-cols="3" label-size="sm" label="Token" description="e.g., 0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4 for TestToadz">
                       <b-form-input size="sm" v-model="order.token" class="w-50"></b-form-input>
                     </b-form-group>
