@@ -283,6 +283,14 @@ const nixDataModule = {
                           tradeIndex: decodedEventLog[2].toNumber(),
                           tokenIds: decodedEventLog[3].map((x) => { return x.toNumber(); }),
                         });
+                      } else if (parsedLog.eventFragment.name == 'ThankYou') {
+                        results.push({
+                          logIndex: log.logIndex,
+                          address: log.address,
+                          name: 'ThankYou',
+                          description: 'Nix.ThankYou(' + ethers.utils.formatEther(decodedEventLog[0]) + ')',
+                          tip: ethers.utils.formatEther(decodedEventLog[0]),
+                        });
                       } else {
                         console.log("TODO: " + parsedLog.eventFragment.name);
                       }

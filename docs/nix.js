@@ -351,7 +351,7 @@ const Nix = {
                       <b-form-input size="sm" v-model="order.expiry" class="w-50"></b-form-input>
                     </b-form-group>
 
-                    <b-form-group label-cols="3" label-size="sm" label="TradeMax" description="e.g., 5">
+                    <b-form-group label-cols="3" label-size="sm" label="TradeMax" description="e.g., 1 for single execution orders">
                       <b-form-input size="sm" v-model="order.tradeMax" class="w-50"></b-form-input>
                     </b-form-group>
 
@@ -361,6 +361,10 @@ const Nix = {
 
                     <b-form-group label-cols="3" label-size="sm" label="Integrator" description="e.g., 0x2345...">
                       <b-form-input size="sm" v-model="order.integrator" class="w-50"></b-form-input>
+                    </b-form-group>
+
+                    <b-form-group label-cols="3" label-size="sm" label="Tip" description="Optional, in ETH. e.g., 0.1">
+                      <b-form-input size="sm" v-model="order.tip" class="w-50"></b-form-input>
                     </b-form-group>
 
                     <b-form-group label-cols="3" label-size="sm" label="">
@@ -389,6 +393,12 @@ const Nix = {
                       </b-form-group>
                       <b-form-group label-cols="3" label-size="sm" label="Royalty Factor" description="0 to 100. e.g., 100">
                         <b-form-input size="sm" v-model="execute.royaltyFactor" class="w-50"></b-form-input>
+                      </b-form-group>
+                      <b-form-group label-cols="3" label-size="sm" label="Integrator" description="e.g., 0x2345...">
+                        <b-form-input size="sm" v-model="execute.integrator" class="w-50"></b-form-input>
+                      </b-form-group>
+                      <b-form-group label-cols="3" label-size="sm" label="Tip" description="Optional, in ETH. e.g., 0.1">
+                        <b-form-input size="sm" v-model="execute.tip" class="w-50"></b-form-input>
                       </b-form-group>
                       <b-form-group label-cols="3" label-size="sm" label="">
                         <b-button size="sm" @click="executeOrders" variant="warning">Execute Orders</b-button>
@@ -463,9 +473,10 @@ const Nix = {
         tokenIds: "2075, 1479, 881, 18",
         price: "0.01",
         expiry: 1672491599,
-        tradeMax: "5",
+        tradeMax: "1",
         royaltyFactor: "100",
         integrator: null,
+        tip: "0.00001",
       },
 
       execute: {
@@ -475,6 +486,7 @@ const Nix = {
         netAmount: null,
         royaltyFactor: "100",
         integrator: null,
+        tip: "0.00001",
       },
 
       buyOrSellOptions: [
@@ -966,8 +978,9 @@ const Nix = {
             const tokenIds = this.order.tokenIds == null || this.order.tokenIds.trim().length == 0 ? [] : this.order.tokenIds.split(",").map(function(item) { return item.trim(); });
             const price = ethers.utils.parseEther(this.order.price);
             const integrator = this.order.integrator == null || this.order.integrator.trim().length == 0 ? ADDRESS0 : integrator;
+            const tip = this.order.tip == null || this.order.tip.trim().length == 0 ? 0 : ethers.utils.parseEther(this.order.tip);
             try {
-              const tx = await nixWithSigner.addOrder(this.order.token, taker, this.order.buyOrSell, this.order.anyOrAll, tokenIds, price, this.order.expiry, this.order.tradeMax, this.order.royaltyFactor, integrator);
+              const tx = await nixWithSigner.addOrder(this.order.token, taker, this.order.buyOrSell, this.order.anyOrAll, tokenIds, price, this.order.expiry, this.order.tradeMax, this.order.royaltyFactor, integrator, { value: tip });
               console.log("tx: " + JSON.stringify(tx));
             } catch (e) {
               console.log("error: " + e.toString());
@@ -1002,8 +1015,9 @@ const Nix = {
             const tokenIds = this.execute.tokenIds.split(",").map(function(item) { return item.trim(); });
             const netAmount = ethers.utils.parseEther(this.execute.netAmount);
             const integrator = this.execute.integrator == null || this.execute.integrator.trim().length == 0 ? ADDRESS0 : integrator;
+            const tip = this.execute.tip == null || this.execute.tip.trim().length == 0 ? 0 : ethers.utils.parseEther(this.execute.tip);
             try {
-              const tx = await nixWithSigner.executeOrders([this.execute.token], [this.execute.orderIndex], [tokenIds], netAmount, this.execute.royaltyFactor, integrator);
+              const tx = await nixWithSigner.executeOrders([this.execute.token], [this.execute.orderIndex], [tokenIds], netAmount, this.execute.royaltyFactor, integrator, { value: tip });
               console.log("tx: " + JSON.stringify(tx));
             } catch (e) {
               console.log("error: " + e.toString());
