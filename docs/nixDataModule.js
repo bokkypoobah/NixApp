@@ -193,6 +193,7 @@ const nixDataModule = {
               const executed = tokens[2][i];
               const volumeToken = tokens[3][i];
               const volumeWeth = tokens[4][i];
+              const averageWeth = volumeWeth  > 0 ? volumeWeth.div(volumeToken) : null;
               var ordersData = [];
               var orderIndices = range(0, ordersLength - 1, 1);
               const orders = await nixHelper.getOrders(token, orderIndices);
@@ -214,7 +215,7 @@ const nixDataModule = {
                   anyOrAll: anyOrAll, expiry: expiry, tradeCount: tradeCount, tradeMax: tradeMax, royaltyFactor: royaltyFactor,
                   orderStatus: orderStatus });
               }
-              tokensData.push({ token: token, ordersLength: ordersLength, executed: executed, volumeToken: volumeToken, volumeWeth: volumeWeth, ordersData: ordersData });
+              tokensData.push({ token: token, ordersLength: ordersLength, executed: executed, volumeToken: volumeToken, volumeWeth: volumeWeth, averageWeth: averageWeth, ordersData: ordersData });
             }
             commit('updateTokensData', tokensData);
 

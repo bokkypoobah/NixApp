@@ -34,7 +34,7 @@ const Nix = {
                       <b-card body-class="p-0" header-class="m-0 p-0 pl-2" footer-class="p-1" class="m-3 p-0">
                         <template #header>
                           <span variant="secondary" class="small truncate">
-                            {{ tokensDataIndex }}. ERC-721 Token <b-link :href="explorer + 'token/' + tokensDataItem.token" target="_blank">{{ tokensDataItem.token }}</b-link> - ordersLength: {{ tokensDataItem.ordersLength }}, executed: {{ tokensDataItem.executed }}, volumeToken: {{ tokensDataItem.volumeToken }}, volumeWeth: {{ formatETH(tokensDataItem.volumeWeth) }}
+                            {{ tokensDataIndex }}. ERC-721 Token <b-link :href="explorer + 'token/' + tokensDataItem.token" target="_blank">{{ tokensDataItem.token }}</b-link> - ordersLength: {{ tokensDataItem.ordersLength }}, executed: {{ tokensDataItem.executed }}, volumeToken: {{ tokensDataItem.volumeToken }}, volumeWeth: {{ formatETH(tokensDataItem.volumeWeth) }}, averageWeth: {{ formatETH(tokensDataItem.averageWeth) }}
                           </span>
                         </template>
                         <font size="-2">
@@ -634,13 +634,6 @@ const Nix = {
     network() {
       return store.getters['connection/network'];
     },
-    networkName() {
-      return store.getters['connection/networkName'];
-    },
-    accounts() {
-      return [ store.getters['connection/coinbase'], "0xBeeef66749B64Afe43Bbc9475635Eb510cFE4922" ];
-      // return [ "0x000001f568875F378Bf6d170B790967FE429C81A", "0x00000217d2795F1Da57e392D2a5bC87125BAA38D", "0x000003e1E88A1110E961f135dF8cdEa4b1FFA81a", "0x07fb31ff47Dc15f78C5261EEb3D711fb6eA985D1" ];
-    },
     tokensData() {
       return store.getters['nixData/tokensData'];
     },
@@ -1059,6 +1052,7 @@ const Nix = {
           const executed = tokens[2][i];
           const volumeToken = tokens[3][i];
           const volumeWeth = tokens[4][i];
+          const averageWeth = volumeWeth; //  > 0 ? volumeWeth.div(volumeToken) : null;
           console.log("token: " + token + ", ordersLength: " + ordersLength + ", executed: " + executed + ", volumeToken: " + volumeToken + ", volumeWeth: " + volumeWeth);
           var ordersData = [];
           var orderIndices = [...Array(parseInt(ordersLength)).keys()];
@@ -1087,7 +1081,7 @@ const Nix = {
             //   ", orderStatus: " + ORDERSTATUSSTRING[orderStatus]);
           }
           console.log("ordersData: " + JSON.stringify(ordersData));
-          tokensData.push({ token: token, ordersLength: ordersLength, executed: executed, volumeToken: volumeToken, volumeWeth: volumeWeth, ordersData: ordersData });
+          tokensData.push({ token: token, ordersLength: ordersLength, executed: executed, volumeToken: volumeToken, volumeWeth: volumeWeth, averageWeth: volumeWeth, ordersData: ordersData });
         }
         console.log("tokensData: " + JSON.stringify(tokensData, null, 2));
         this.tokensData = tokensData;

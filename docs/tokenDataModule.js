@@ -7,7 +7,7 @@ const TokenData = {
         </b-card-text>
       </b-card>
       <b-button v-b-toggle.token_contract size="sm" block variant="outline-info">ERC-721 Token Collections</b-button>
-      <b-collapse id="token_contract" visible class="my-2">
+      <b-collapse id="token_contract" class="my-2">
         <b-card no-body class="border-0" v-if="network && network.chainId == 4">
           <b-row>
             <b-col cols="4" class="small">Nix</b-col>
@@ -65,13 +65,13 @@ const TokenData = {
       return NIXHELPERADDRESS;
     },
     nixRoyaltyEngine() {
-      return store.getters['nixData/nixRoyaltyEngine'];
+      return store.getters['tokenData/nixRoyaltyEngine'];
     },
     tokensData() {
-      return store.getters['nixData/tokensData'];
+      return store.getters['tokenData/tokensData'];
     },
     tradeData() {
-      return store.getters['nixData/tradeData'];
+      return store.getters['tokenData/tradeData'];
     },
   },
   methods: {
@@ -183,7 +183,7 @@ const tokenDataModule = {
 
           var tokensData = [];
           const tokensLength = await nix.tokensLength();
-          if (tokensLength > 0) {
+          if (false && tokensLength > 0) {
             var tokenIndices = range(0, tokensLength - 1, 1);
             const tokens = await nixHelper.getTokens(tokenIndices);
             for (let i = 0; i < tokens[0].length; i++) {
@@ -215,7 +215,7 @@ const tokenDataModule = {
               }
               tokensData.push({ token: token, ordersLength: ordersLength, executed: executed, volumeToken: volumeToken, volumeWeth: volumeWeth, ordersData: ordersData });
             }
-            commit('updateTokensData', tokensData);
+            // commit('updateTokensData', tokensData);
 
             const tradesLength = await nix.tradesLength();
             const loaded = 0;
@@ -230,7 +230,7 @@ const tokenDataModule = {
               const orders = trades[3][i];
               tradeData.push({ tradeIndex: i, taker: taker, royaltyFactor: royaltyFactor, blockNumber: blockNumber, orders: orders });
             }
-            commit('updateTradeData', tradeData);
+            // commit('updateTradeData', tradeData);
           }
         }
 
