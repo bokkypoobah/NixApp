@@ -71,7 +71,8 @@
     <script src="connectionModule.js"></script>
     <script src="nixDataModule.js"></script>
     <script src="tokenDataModule.js"></script>
-    <script src="tokensModule.js"></script>
+    <script src="tokens.js"></script>
+    <script src="admin.js"></script>
     <script src="zombieBabiesAdoption.js"></script>
     <script src="collections.js"></script>
     <script src="nftPostcard.js"></script>
@@ -111,6 +112,8 @@
               nix.app
             </b-navbar-brand>
             <b-navbar-nav class="ml-auto">
+              <b-nav-item size="sm" to="/tokens" active-class="active" v-b-popover.hover="'ERC-721 Token Collections'">Tokens</b-nav-item>
+              <b-nav-item size="sm" to="/admin" active-class="active" v-b-popover.hover="'Admin Functions'">Admin</b-nav-item>
               <!--
               <b-nav-item size="sm" to="/collections" active-class="active" v-b-popover.hover="'Collections'">Collections</b-nav-item>
               <b-nav-item size="sm" to="/beeefLibrary" active-class="active" v-b-popover.hover="'Public PNGs BeeefLibrary'">BeeefLibrary</b-nav-item>

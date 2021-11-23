@@ -5,7 +5,7 @@ Vue.use(Vuex);
 
 // Vue.component('apexchart', VueApexCharts);
 Vue.component('connection', Connection);
-Vue.component('tokens', Tokens);
+// Vue.component('tokens', Tokens);
 Vue.component('nixdata', NixData);
 Vue.component('tokendata', TokenData);
 // Vue.component('flat-pickr', VueFlatpickr);
@@ -59,6 +59,7 @@ const store = new Vuex.Store({
     tokenData: tokenDataModule,
     nftPostcard: nftPostcardModule,
     nix: nixModule,
+    tokens: tokensModule,
     collections: collectionsModule,
     beeefLibrary: beeefLibraryModule,
   }
@@ -116,7 +117,7 @@ const app = new Vue({
   },
   mounted() {
     logInfo("app", "mounted() Called");
-    this.loadNFTData("config.json");
+    // this.loadNFTData("config.json");
     // logInfo("app", "mounted() $route: " + JSON.stringify(this.$route.params));
     if (this.$route.params["id"] != null) {
       // function pad3Zeroes(s) {
@@ -144,16 +145,16 @@ const app = new Vue({
     this.reschedule = false;
   },
   methods: {
-    loadNFTData(url) {
-      var req = new XMLHttpRequest();
-      req.overrideMimeType("application/json");
-      req.open('GET', url, true);
-      req.onload  = function() {
-         var nftData = JSON.parse(req.responseText);
-         store.dispatch('tokens/updateNFTData', nftData);
-      };
-      req.send(null);
-    },
+    // loadNFTData(url) {
+    //   var req = new XMLHttpRequest();
+    //   req.overrideMimeType("application/json");
+    //   req.open('GET', url, true);
+    //   req.onload  = function() {
+    //      var nftData = JSON.parse(req.responseText);
+    //      store.dispatch('tokens/updateNFTData', nftData);
+    //   };
+    //   req.send(null);
+    // },
     setPowerOn() {
       store.dispatch('connection/setPowerOn', true);
       localStorage.setItem('powerOn', true);

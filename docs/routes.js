@@ -7,6 +7,14 @@ const routes = [{
     component: BeeefLibrary,
     name: 'BeeefLibrary',
   }, {
+    path: '/tokens',
+    component: Tokens,
+    name: 'Tokens',
+  }, {
+    path: '/admin',
+    component: Admin,
+    name: 'Admin',
+  }, {
     path: '/collections',
     component: Collections,
     name: 'Collections',
