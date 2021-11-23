@@ -114,13 +114,13 @@ const Connection = {
             </b-col>
           </b-row>
           <b-row>
-            <b-col cols="4" class="small">ETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ balanceString }}</b-link></b-col>
+            <b-col cols="4" class="small">ETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ formatETH(balance) }}</b-link></b-col>
           </b-row>
           <b-row>
-            <b-col cols="4" class="small">WETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'token/' + wethAddress + '?=' + coinbase" class="card-link" target="_blank">{{ wethBalanceString }}</b-link></b-col>
+            <b-col cols="4" class="small">WETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'token/' + wethAddress + '?=' + coinbase" class="card-link" target="_blank">{{ formatETH(wethBalance) }}</b-link></b-col>
           </b-row>
           <b-row>
-            <b-col cols="4" class="small">Nix WETH Allow</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + wethAddress + '#events'" class="card-link" target="_blank">{{ wethAllowanceToNixString }}</b-link></b-col>
+            <b-col cols="4" class="small">Nix WETH Allow</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + wethAddress + '#events'" class="card-link" target="_blank">{{ formatETH(wethAllowanceToNix) }}</b-link></b-col>
           </b-row>
           <b-row v-show="Object.keys(faucets).length">
             <b-col cols="4" class="small">Faucet(s)</b-col>
@@ -209,10 +209,10 @@ const Connection = {
     wethAddress() {
       return WETHADDRESS;
     },
-    wethBalanceString() {
+    wethBalance() {
       return store.getters['connection/wethBalance']; //  == null ? "" : ethers.utils.formatEther(store.getters['connection/wethBalance']);
     },
-    wethAllowanceToNixString() {
+    wethAllowanceToNix() {
       return store.getters['connection/wethAllowanceToNix']; //  == null ? "" : new BigNumber(store.getters['connection/wethAllowanceToNix']).shift(-18).toString();
     },
     block() {
@@ -235,6 +235,13 @@ const Connection = {
     },
   },
   methods: {
+    formatETH(e) {
+      try {
+        return e ? ethers.utils.commify(ethers.utils.formatEther(e)) : null;
+      } catch (err) {
+      }
+      return e.toFixed(9);
+    },
     removeTx(tx) {
       logDebug("Connection", "removeTx");
       store.dispatch('connection/removeTx', tx);
@@ -308,7 +315,7 @@ const Connection = {
             const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
             const wethBalance = await weth.balanceOf(this.coinbase);
             const wethAllowanceToNix = await weth.allowance(this.coinbase, NIXADDRESS);
-            store.dispatch('connection/setWethInfo', { wethBalance: ethers.utils.formatEther(wethBalance), wethAllowanceToNix: ethers.utils.formatEther(wethAllowanceToNix) });
+            store.dispatch('connection/setWethInfo', { wethBalance: wethBalance, wethAllowanceToNix: wethAllowanceToNix });
 
           } catch (e) {
             store.dispatch('connection/setConnectionError', 'Cannot retrieve data from web3 provider');
