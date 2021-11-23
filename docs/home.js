@@ -1,4 +1,4 @@
-const Admin = {
+const Home = {
   template: `
     <div class="mt-5 pt-3">
       <b-card class="mt-5" header-class="warningheader" header="Web3 Connection And/Or Incorrect Network Detected" v-if="!powerOn || network == null || network.chainId != 4">
@@ -7,7 +7,7 @@ const Admin = {
         </b-card-text>
       </b-card>
 
-      <b-card no-body header="Admin" class="border-0" header-class="p-1" v-if="network && network.chainId == 4">
+      <b-card no-body header="Home" class="border-0" header-class="p-1" v-if="network && network.chainId == 4">
         <b-card no-body class="border-0 m-0 mt-2">
           <b-card-body class="p-0">
 
@@ -194,7 +194,7 @@ const Admin = {
     },
 
     async timeoutCallback() {
-      logDebug("Admin", "timeoutCallback() count: " + this.count);
+      logDebug("Home", "timeoutCallback() count: " + this.count);
 
       this.count++;
       var t = this;
@@ -206,12 +206,12 @@ const Admin = {
     },
   },
   beforeDestroy() {
-    logDebug("Admin", "beforeDestroy()");
+    logDebug("Home", "beforeDestroy()");
   },
   mounted() {
-    logDebug("Admin", "mounted() $route: " + JSON.stringify(this.$route.params));
+    logDebug("Home", "mounted() $route: " + JSON.stringify(this.$route.params));
     this.reschedule = true;
-    logDebug("Admin", "Calling timeoutCallback()");
+    logDebug("Home", "Calling timeoutCallback()");
     this.timeoutCallback();
     // this.loadNFTs();
   },
@@ -220,7 +220,7 @@ const Admin = {
   },
 };
 
-const adminModule = {
+const homeModule = {
   namespaced: true,
   state: {
     canvas: null,
@@ -235,20 +235,20 @@ const adminModule = {
   },
   mutations: {
     setCanvas(state, c) {
-      logDebug("adminModule", "mutations.setCanvas('" + c + "')")
+      logDebug("homeModule", "mutations.setCanvas('" + c + "')")
       state.canvas = c;
     },
     deQueue(state) {
-      logDebug("adminModule", "deQueue(" + JSON.stringify(state.executionQueue) + ")");
+      logDebug("homeModule", "deQueue(" + JSON.stringify(state.executionQueue) + ")");
       state.executionQueue.shift();
     },
     updateParams(state, params) {
       state.params = params;
-      logDebug("adminModule", "updateParams('" + params + "')")
+      logDebug("homeModule", "updateParams('" + params + "')")
     },
     updateExecuting(state, executing) {
       state.executing = executing;
-      logDebug("adminModule", "updateExecuting(" + executing + ")")
+      logDebug("homeModule", "updateExecuting(" + executing + ")")
     },
   },
   actions: {

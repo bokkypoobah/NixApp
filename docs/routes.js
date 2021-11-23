@@ -15,6 +15,10 @@ const routes = [{
     component: Admin,
     name: 'Admin',
   }, {
+    path: '/nix',
+    component: Nix,
+    name: 'Nix',
+  }, {
     path: '/collections',
     component: Collections,
     name: 'Collections',
@@ -40,7 +44,7 @@ const routes = [{
     name: '',
   }, {
     path: '*',
-    component: Nix,
+    component: Home,
     name: ''
   }
 ];
