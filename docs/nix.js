@@ -109,9 +109,15 @@ const Nix = {
                     <b-form-group label-cols="3" label-size="sm" label="">
                       <b-button size="sm" @click="addOrder" variant="warning">Add Order</b-button>
                     </b-form-group>
-                    <b-card>
-                      {{ order }}
-                    </b-card>
+                    <b-form-group v-if="order.txMessage.addOrder && order.txMessage.addOrder.substring(0, 2) != '0x'" label-cols="3" label-size="sm" label="">
+                      <b-form-textarea size="sm" rows="10" v-model="order.txMessage.addOrder" class="w-50"></b-form-textarea>
+                    </b-form-group>
+                    <b-form-group v-if="order.txMessage.addOrder && order.txMessage.addOrder.substring(0, 2) == '0x'" label-cols="3" label-size="sm" label="">
+                      Tx <b-link :href="explorer + 'tx/' + order.txMessage.addOrder" class="card-link" target="_blank">{{ order.txMessage.addOrder }}</b-link>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Data">
+                      <b-form-textarea size="sm" rows="10" v-model="JSON.stringify(order, null, 2)" class="w-50"></b-form-textarea>
+                    </b-form-group>
                   </b-tab>
 
                   <b-tab title="Disable Order" class="p-1">
@@ -128,11 +134,17 @@ const Nix = {
                       <b-form-input size="sm" v-model="order.tip" class="w-50"></b-form-input>
                     </b-form-group>
                     <b-form-group label-cols="3" label-size="sm" label="">
-                      <b-button size="sm" @click="disableOrder" variant="warning">Add Order</b-button>
+                      <b-button size="sm" @click="disableOrder" variant="warning">Disable Order</b-button>
                     </b-form-group>
-                    <b-card>
-                      {{ order }}
-                    </b-card>
+                    <b-form-group v-if="order.txMessage.disableOrder && order.txMessage.disableOrder.substring(0, 2) != '0x'" label-cols="3" label-size="sm" label="">
+                      <b-form-textarea size="sm" rows="10" v-model="order.txMessage.disableOrder" class="w-50"></b-form-textarea>
+                    </b-form-group>
+                    <b-form-group v-if="order.txMessage.disableOrder && order.txMessage.disableOrder.substring(0, 2) == '0x'" label-cols="3" label-size="sm" label="">
+                      Tx <b-link :href="explorer + 'tx/' + order.txMessage.disableOrder" class="card-link" target="_blank">{{ order.txMessage.disableOrder }}</b-link>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Data">
+                      <b-form-textarea size="sm" rows="10" v-model="JSON.stringify(order, null, 2)" class="w-50"></b-form-textarea>
+                    </b-form-group>
                   </b-tab>
 
                   <b-tab title="Update Order" class="p-1">
@@ -177,9 +189,15 @@ const Nix = {
                     <b-form-group label-cols="3" label-size="sm" label="">
                       <b-button size="sm" @click="updateOrder" variant="warning">Update Order</b-button>
                     </b-form-group>
-                    <b-card>
-                      {{ order }}
-                    </b-card>
+                    <b-form-group v-if="order.txMessage.updateOrder && order.txMessage.updateOrder.substring(0, 2) != '0x'" label-cols="3" label-size="sm" label="">
+                      <b-form-textarea size="sm" rows="10" v-model="order.txMessage.updateOrder" class="w-50"></b-form-textarea>
+                    </b-form-group>
+                    <b-form-group v-if="order.txMessage.updateOrder && order.txMessage.updateOrder.substring(0, 2) == '0x'" label-cols="3" label-size="sm" label="">
+                      Tx <b-link :href="explorer + 'tx/' + order.txMessage.updateOrder" class="card-link" target="_blank">{{ order.txMessage.updateOrder }}</b-link>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Data">
+                      <b-form-textarea size="sm" rows="10" v-model="JSON.stringify(order, null, 2)" class="w-50"></b-form-textarea>
+                    </b-form-group>
                   </b-tab>
 
                   <b-tab title="Execute Orders" class="p-1">
@@ -208,9 +226,15 @@ const Nix = {
                       <b-form-group label-cols="3" label-size="sm" label="">
                         <b-button size="sm" @click="executeOrders" variant="warning">Execute Orders</b-button>
                       </b-form-group>
-                      <b-card>
-                        {{ execute }}
-                      </b-card>
+                      <b-form-group v-if="execute.txMessage && execute.txMessage.substring(0, 2) != '0x'" label-cols="3" label-size="sm" label="">
+                        <b-form-textarea size="sm" rows="10" v-model="execute.txMessage" class="w-50"></b-form-textarea>
+                      </b-form-group>
+                      <b-form-group v-if="execute.txMessage && execute.txMessage.substring(0, 2) == '0x'" label-cols="3" label-size="sm" label="">
+                        Tx <b-link :href="explorer + 'tx/' + execute.txMessage" class="card-link" target="_blank">{{ execute.txMessage }}</b-link>
+                      </b-form-group>
+                      <b-form-group label-cols="3" label-size="sm" label="Data">
+                        <b-form-textarea size="sm" rows="10" v-model="JSON.stringify(execute, null, 2)" class="w-50"></b-form-textarea>
+                      </b-form-group>
                     </b-card-text>
                   </b-tab>
 
@@ -279,7 +303,7 @@ const Nix = {
                           <b-button size="sm" @click="wrapEth" variant="warning">Wrap</b-button>
                         </b-form-group>
                         <b-form-group v-if="weth.wrapMessage && weth.wrapMessage.substring(0, 2) != '0x'" label-cols="3" label-size="sm" label="">
-                          <b-form-input size="sm" readonly v-model="weth.wrapMessage" class="w-50"></b-form-input>
+                          <b-form-textarea size="sm" rows="10" v-model="weth.wrapMessage" class="w-50"></b-form-textarea>
                         </b-form-group>
                         <b-form-group v-if="weth.wrapMessage && weth.wrapMessage.substring(0, 2) == '0x'" label-cols="3" label-size="sm" label="">
                           Tx <b-link :href="explorer + 'tx/' + weth.wrapMessage" class="card-link" target="_blank">{{ weth.wrapMessage }}</b-link>
@@ -296,7 +320,7 @@ const Nix = {
                           <b-button size="sm" @click="unwrapWeth" variant="warning">Unwrap</b-button>
                         </b-form-group>
                         <b-form-group v-if="weth.unwrapMessage && weth.unwrapMessage.substring(0, 2) != '0x'" label-cols="3" label-size="sm" label="">
-                          <b-form-input size="sm" readonly v-model="weth.unwrapMessage" class="w-50"></b-form-input>
+                          <b-form-textarea size="sm" rows="10" v-model="weth.unwrapMessage" class="w-50"></b-form-textarea>
                         </b-form-group>
                         <b-form-group v-if="weth.unwrapMessage && weth.unwrapMessage.substring(0, 2) == '0x'" label-cols="3" label-size="sm" label="">
                           Tx <b-link :href="explorer + 'tx/' + weth.unwrapMessage" class="card-link" target="_blank">{{ weth.unwrapMessage }}</b-link>
@@ -313,7 +337,7 @@ const Nix = {
                           <b-button size="sm" @click="approveWeth" variant="warning">Approve</b-button>
                         </b-form-group>
                         <b-form-group v-if="weth.approvalMessage && weth.approvalMessage.substring(0, 2) != '0x'" label-cols="3" label-size="sm" label="">
-                          <b-form-input size="sm" readonly v-model="weth.approvalMessage" class="w-50"></b-form-input>
+                          <b-form-textarea size="sm" rows="10" v-model="weth.approvalMessage" class="w-50"></b-form-textarea>
                         </b-form-group>
                         <b-form-group v-if="weth.approvalMessage && weth.approvalMessage.substring(0, 2) == '0x'" label-cols="3" label-size="sm" label="">
                           Tx <b-link :href="explorer + 'tx/' + weth.approvalMessage" class="card-link" target="_blank">{{ weth.approvalMessage }}</b-link>
@@ -333,7 +357,7 @@ const Nix = {
                           <b-button size="sm" @click="transferWeth" variant="warning">Transfer</b-button>
                         </b-form-group>
                         <b-form-group v-if="weth.transferMessage && weth.transferMessage.substring(0, 2) != '0x'" label-cols="3" label-size="sm" label="">
-                          <b-form-input size="sm" readonly v-model="weth.transferMessage" class="w-50"></b-form-input>
+                          <b-form-textarea size="sm" rows="10" v-model="weth.transferMessage" class="w-50"></b-form-textarea>
                         </b-form-group>
                         <b-form-group v-if="weth.transferMessage && weth.transferMessage.substring(0, 2) == '0x'" label-cols="3" label-size="sm" label="">
                           Tx <b-link :href="explorer + 'tx/' + weth.transferMessage" class="card-link" target="_blank">{{ weth.transferMessage }}</b-link>
@@ -440,7 +464,7 @@ const Nix = {
                           <b-button size="sm" @click="mintTestToadz" variant="warning">Mint</b-button>
                         </b-form-group>
                         <b-form-group v-if="testToadz.mintMessage && testToadz.mintMessage.substring(0, 2) != '0x'" label-cols="3" label-size="sm" label="">
-                          <b-form-input size="sm" readonly v-model="testToadz.mintMessage" class="w-50"></b-form-input>
+                          <b-form-textarea size="sm" rows="10" v-model="testToadz.mintMessage" class="w-50"></b-form-textarea>
                         </b-form-group>
                         <b-form-group v-if="testToadz.mintMessage && testToadz.mintMessage.substring(0, 2) == '0x'" label-cols="3" label-size="sm" label="">
                           Tx <b-link :href="explorer + 'tx/' + testToadz.mintMessage" class="card-link" target="_blank">{{ testToadz.mintMessage }}</b-link>
@@ -457,7 +481,7 @@ const Nix = {
                           <b-button size="sm" @click="approveTestToadzToNix(false)" variant="warning">Revoke Approval</b-button>
                         </b-form-group>
                         <b-form-group v-if="testToadz.approvalMessage && testToadz.approvalMessage.substring(0, 2) != '0x'" label-cols="3" label-size="sm" label="">
-                          <b-form-input size="sm" readonly v-model="testToadz.approvalMessage" class="w-50"></b-form-input>
+                          <b-form-textarea size="sm" rows="10" v-model="testToadz.approvalMessage" class="w-50"></b-form-textarea>
                         </b-form-group>
                         <b-form-group v-if="testToadz.approvalMessage && testToadz.approvalMessage.substring(0, 2) == '0x'" label-cols="3" label-size="sm" label="">
                           Tx <b-link :href="explorer + 'tx/' + testToadz.approvalMessage" class="card-link" target="_blank">{{ testToadz.approvalMessage }}</b-link>
@@ -476,9 +500,9 @@ const Nix = {
                       <b-form-group label-cols="3" label-size="sm" label="">
                         <b-button size="sm" @click="transferOwnership" variant="warning">Transfer Ownership</b-button>
                       </b-form-group>
-                      <b-card>
-                        {{ admin }}
-                      </b-card>
+                      <b-form-group label-cols="3" label-size="sm" label="Data">
+                        <b-form-textarea size="sm" rows="10" v-model="JSON.stringify(admin, null, 2)" class="w-50"></b-form-textarea>
+                      </b-form-group>
                     </b-card>
                     <b-card header="Withdraw ETH, ERC-20 And ERC-721 Tokens From Nix" class="mb-2">
                       <b-card-text>
@@ -495,9 +519,9 @@ const Nix = {
                       <b-form-group label-cols="3" label-size="sm" label="">
                         <b-button size="sm" @click="withdraw" variant="warning">Withdraw</b-button>
                       </b-form-group>
-                      <b-card>
-                        {{ admin }}
-                      </b-card>
+                      <b-form-group label-cols="3" label-size="sm" label="Data">
+                        <b-form-textarea size="sm" rows="10" v-model="JSON.stringify(admin, null, 2)" class="w-50"></b-form-textarea>
+                      </b-form-group>
                     </b-card>
                   </b-tab>
 
@@ -581,6 +605,12 @@ const Nix = {
         royaltyFactor: "100",
         integrator: null,
         tip: "0.0001",
+        txMessage: {
+          addOrder: null,
+          disableOrder: null,
+          updateOrder: null,
+          executeOrders: null,
+        },
       },
 
       execute: {
@@ -591,6 +621,7 @@ const Nix = {
         royaltyFactor: "100",
         integrator: null,
         tip: "0.0001",
+        txMessage: null,
       },
 
       admin: {
@@ -738,7 +769,7 @@ const Nix = {
               this.weth.wrapMessage = tx.hash;
               console.log("tx: " + JSON.stringify(tx));
             } catch (e) {
-              this.weth.wrapMessage = e.toString();
+              this.weth.wrapMessage = e.message.toString();
               console.log("error: " + e.toString());
             }
           }
@@ -772,7 +803,7 @@ const Nix = {
               this.weth.unwrapMessage = tx.hash;
               console.log("tx: " + JSON.stringify(tx));
             } catch (e) {
-              this.weth.unwrapMessage = e.toString();
+              this.weth.unwrapMessage = e.message.toString();
               console.log("error: " + e.toString());
             }
           }
@@ -806,7 +837,7 @@ const Nix = {
               this.weth.approvalMessage = tx.hash;
               console.log("tx: " + JSON.stringify(tx));
             } catch (e) {
-              this.weth.approvalMessage = e.toString();
+              this.weth.approvalMessage = e.message.toString();
               console.log("error: " + e.toString());
             }
           }
@@ -840,7 +871,7 @@ const Nix = {
               this.weth.transferMessage = tx.hash;
               console.log("tx: " + JSON.stringify(tx));
             } catch (e) {
-              this.weth.transferMessage = e.toString();
+              this.weth.transferMessage = e.message.toString();
               console.log("error: " + e.toString());
             }
           }
@@ -988,7 +1019,7 @@ const Nix = {
               this.testToadz.approvalMessage = tx.hash;
               console.log("tx: " + JSON.stringify(tx));
             } catch (e) {
-              this.testToadz.approvalMessage = e.toString();
+              this.testToadz.approvalMessage = e.message.toString();
               console.log("error: " + e.toString());
             }
           }
@@ -1022,7 +1053,7 @@ const Nix = {
               this.testToadz.mintMessage = tx.hash;
               console.log("tx: " + JSON.stringify(tx));
             } catch (e) {
-              this.testToadz.mintMessage = e.toString();
+              this.testToadz.mintMessage = e.message.toString();
               console.log("error: " + e.toString());
             }
           }
@@ -1115,8 +1146,10 @@ const Nix = {
             const tip = this.order.tip == null || this.order.tip.trim().length == 0 ? 0 : ethers.utils.parseEther(this.order.tip);
             try {
               const tx = await nixWithSigner.addOrder(this.order.token, taker, this.order.buyOrSell, this.order.anyOrAll, tokenIds, price, this.order.expiry, this.order.tradeMax, this.order.royaltyFactor, integrator, { value: tip });
+              this.order.txMessage.addOrder = tx.hash;
               console.log("tx: " + JSON.stringify(tx));
             } catch (e) {
+              this.order.txMessage.addOrder = e.message.toString();
               console.log("error: " + e.toString());
             }
           }
@@ -1149,8 +1182,10 @@ const Nix = {
             const tip = this.order.tip == null || this.order.tip.trim().length == 0 ? 0 : ethers.utils.parseEther(this.order.tip);
             try {
               const tx = await nixWithSigner.disableOrder(this.order.token, this.order.orderIndex, integrator, { value: tip });
+              this.order.txMessage.disableOrder = tx.hash;
               console.log("tx: " + JSON.stringify(tx));
             } catch (e) {
+              this.order.txMessage.disableOrder = e.message.toString();
               console.log("error: " + e.toString());
             }
           }
@@ -1187,8 +1222,10 @@ const Nix = {
             const tip = this.order.tip == null || this.order.tip.trim().length == 0 ? 0 : ethers.utils.parseEther(this.order.tip);
             try {
               const tx = await nixWithSigner.updateOrder(this.order.token, this.order.orderIndex, taker, tokenIds, price, this.order.expiry, this.order.tradeMaxAdjustment, this.order.royaltyFactor, integrator, { value: tip });
+              this.order.txMessage.updateOrder = tx.hash;
               console.log("tx: " + JSON.stringify(tx));
             } catch (e) {
+              this.order.txMessage.updateOrder = e.message.toString();
               console.log("error: " + e.toString());
             }
           }
@@ -1224,8 +1261,10 @@ const Nix = {
             const tip = this.execute.tip == null || this.execute.tip.trim().length == 0 ? 0 : ethers.utils.parseEther(this.execute.tip);
             try {
               const tx = await nixWithSigner.executeOrders([this.execute.token], [this.execute.orderIndex], [tokenIds], netAmount, this.execute.royaltyFactor, integrator, { value: tip });
+              this.execute.txMessage = tx.hash;
               console.log("tx: " + JSON.stringify(tx));
             } catch (e) {
+              this.execute.txMessage = e.message.toString();
               console.log("error: " + e.toString());
             }
           }
