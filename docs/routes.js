@@ -19,9 +19,9 @@ const routes = [{
     component: WETH,
     name: 'WETH',
   }, {
-    path: '/nix',
-    component: Nix,
-    name: 'Nix',
+    path: '/exchange',
+    component: Exchange,
+    name: 'Exchange',
   }, {
     path: '/collections',
     component: Collections,
