@@ -61,6 +61,8 @@ const store = new Vuex.Store({
     home: homeModule,
     nix: nixModule,
     tokens: tokensModule,
+    weth: wethModule,
+    admin: adminModule,
     collections: collectionsModule,
     beeefLibrary: beeefLibraryModule,
   }

@@ -11,6 +11,18 @@ const Home = {
         <b-card no-body class="border-0 m-0 mt-2">
           <b-card-body class="p-0">
 
+            <b-card header="Welcome" class="mb-2">
+              <b-card-text>
+                Welcome to the Nix Decentralised ERC-721 Exchange. Check out the menus on the top right.
+              </b-card-text>
+
+              <b-card-text class="mt-5 mb-2">
+                <h4>How This Works</h4>
+                Exchange ERC-721 NFTs against WETH. Makers add buy and/or sell orders to the Nix exchange smart contract. Takers execute one or more orders.
+              </b-card-text>
+            </b-card>
+
+            <!--
             <div>
               <b-card no-body class="mt-2">
                 <b-card header="Transfer Nix Ownership" class="mb-2">
@@ -47,6 +59,7 @@ const Home = {
                 </b-card>
               </b-card>
             </div>
+            -->
 
           </b-card-body>
         </b-card>

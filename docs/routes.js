@@ -15,6 +15,10 @@ const routes = [{
     component: Admin,
     name: 'Admin',
   }, {
+    path: '/weth',
+    component: WETH,
+    name: 'WETH',
+  }, {
     path: '/nix',
     component: Nix,
     name: 'Nix',
