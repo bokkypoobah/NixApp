@@ -58,7 +58,7 @@ const store = new Vuex.Store({
     nixData: nixDataModule,
     tokenData: tokenDataModule,
     nftPostcard: nftPostcardModule,
-    home: homeModule,
+    welcome: welcomeModule,
     nix: nixModule,
     tokens: tokensModule,
     weth: wethModule,

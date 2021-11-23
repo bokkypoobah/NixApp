@@ -1,4 +1,4 @@
-const Home = {
+const Welcome = {
   template: `
     <div class="mt-5 pt-3">
       <b-card class="mt-5" header-class="warningheader" header="Web3 Connection And/Or Incorrect Network Detected" v-if="!powerOn || network == null || network.chainId != 4">
@@ -7,7 +7,7 @@ const Home = {
         </b-card-text>
       </b-card>
 
-      <b-card no-body header="Home" class="border-0" header-class="p-1" v-if="network && network.chainId == 4">
+      <b-card no-body header="Welcome" class="border-0" header-class="p-1" v-if="network && network.chainId == 4">
         <b-card no-body class="border-0 m-0 mt-2">
           <b-card-body class="p-0">
 
@@ -207,7 +207,7 @@ const Home = {
     },
 
     async timeoutCallback() {
-      logDebug("Home", "timeoutCallback() count: " + this.count);
+      logDebug("Welcome", "timeoutCallback() count: " + this.count);
 
       this.count++;
       var t = this;
@@ -219,12 +219,12 @@ const Home = {
     },
   },
   beforeDestroy() {
-    logDebug("Home", "beforeDestroy()");
+    logDebug("Welcome", "beforeDestroy()");
   },
   mounted() {
-    logDebug("Home", "mounted() $route: " + JSON.stringify(this.$route.params));
+    logDebug("Welcome", "mounted() $route: " + JSON.stringify(this.$route.params));
     this.reschedule = true;
-    logDebug("Home", "Calling timeoutCallback()");
+    logDebug("Welcome", "Calling timeoutCallback()");
     this.timeoutCallback();
     // this.loadNFTs();
   },
@@ -233,7 +233,7 @@ const Home = {
   },
 };
 
-const homeModule = {
+const welcomeModule = {
   namespaced: true,
   state: {
     canvas: null,
@@ -248,20 +248,20 @@ const homeModule = {
   },
   mutations: {
     setCanvas(state, c) {
-      logDebug("homeModule", "mutations.setCanvas('" + c + "')")
+      logDebug("welcomeModule", "mutations.setCanvas('" + c + "')")
       state.canvas = c;
     },
     deQueue(state) {
-      logDebug("homeModule", "deQueue(" + JSON.stringify(state.executionQueue) + ")");
+      logDebug("welcomeModule", "deQueue(" + JSON.stringify(state.executionQueue) + ")");
       state.executionQueue.shift();
     },
     updateParams(state, params) {
       state.params = params;
-      logDebug("homeModule", "updateParams('" + params + "')")
+      logDebug("welcomeModule", "updateParams('" + params + "')")
     },
     updateExecuting(state, executing) {
       state.executing = executing;
-      logDebug("homeModule", "updateExecuting(" + executing + ")")
+      logDebug("welcomeModule", "updateExecuting(" + executing + ")")
     },
   },
   actions: {

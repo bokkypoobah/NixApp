@@ -48,7 +48,7 @@ const routes = [{
     name: '',
   }, {
     path: '*',
-    component: Home,
+    component: Welcome,
     name: ''
   }
 ];
