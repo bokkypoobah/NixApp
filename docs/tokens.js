@@ -14,21 +14,33 @@ const Tokens = {
             <div>
               <b-card no-body class="mt-2">
 
-                <b-tabs vertical pills card end nav-class="p-2" active-tab-class="p-2">
+                <b-tabs v-model="tabIndex" vertical pills card end nav-class="p-2" active-tab-class="p-2">
 
-                  <b-tab title="Search OS" class="p-1">
-                    <b-form-group label-cols="3" label-size="sm" label="OS ERC-721 Collections">
+                  <b-tab title="Search OS Tokens" class="p-1">
+                    <b-form-group label-cols="3" label-size="sm" label="OS ERC-721 Token Collections">
                       <b-button size="sm" @click="loadOSCollections" variant="primary">Load</b-button>
                     </b-form-group>
                     <b-form-group label-cols="3" label-size="sm" label="Filter">
-                      <b-form-input type="text" size="sm" @change="recalculateOSFilter()" v-model.trim="osCollection.filter" debounce="600" placeholder="🔍 0x1234..., Symbol or Name" class="w-50 mb-2"></b-form-input>
+                      <b-form-input type="text" size="sm" @change="recalculateOSFilter()" v-model.trim="osCollection.filter" debounce="600" placeholder="🔍 0x1234..., Symbol or Name" class="w-50"></b-form-input>
                     </b-form-group>
                     <b-card-text>
                       <font size="-2">
                         <b-table small fixed striped sticky-header="1000px" :items="osCollection.filtered" head-variant="light">
+                          <template #cell(address)="data">
+                            {{ data.item.address }}
+                            <b-link size="sm" @click="inspect.address = data.item.address; tabIndex = 1;" v-b-popover.hover="'Inspect'" variant="link">
+                              <b-icon-search shift-v="+1" font-scale="0.8"></b-icon-search>
+                            </b-link>
+                          </template>
                         </b-table>
                       </font>
                     </b-card-text>
+                  </b-tab>
+
+                  <b-tab title="Inspect Token" class="p-1">
+                    <b-form-group label-cols="3" label-size="sm" label="Address">
+                      <b-form-input type="text" size="sm" v-model.trim="inspect.address" class="w-50"></b-form-input>
+                    </b-form-group>
                   </b-tab>
 
                   <b-tab title="TestToadz" class="p-1">
@@ -175,10 +187,16 @@ const Tokens = {
       count: 0,
       reschedule: true,
 
+      tabIndex: 0,
+
       osCollection: {
         data: [],
         filter: null,
         filtered: [],
+      },
+
+      inspect: {
+        address: null,
       },
 
       testToadz: {
@@ -230,49 +248,6 @@ const Tokens = {
     },
     tradeData() {
       return store.getters['nixData/tradeData'];
-    },
-    osCollectionFiltered() {
-      if (this.osCollection.filter && this.osCollection.filter.length > 0) {
-        const results = [];
-        const filter = this.osCollection.filter.toLowerCase();
-        for (const item of this.osCollection.data) {
-          // console.log(JSON.stringify(item));
-          const address = item.address.toLowerCase();
-          const symbol = item.symbol.toLowerCase();
-          const name = item.symbol.toLowerCase();
-          if (address.includes(filter) || symbol.includes(filter) || name.includes(filter)) {
-            results.push(item);
-          }
-        }
-        return results;
-      } else {
-        return this.osCollection.data;
-      }
-
-      // let stage5Data = stage4Data;
-      // if (this.settings.searchAccount != null && this.settings.searchAccount.length > 0) {
-      //   const searchAccounts = this.settings.searchAccount.split(",");
-      //   stage5Data = [];
-      //   for (let i in stage4Data) {
-      //     const d = stage4Data[i];
-      //     const owner = this.owners[d.tokenId] ? this.owners[d.tokenId].toLowerCase() : null;
-      //     const ensName = owner == null ? null : this.ensMap[owner];
-      //     for (searchAccount of searchAccounts) {
-      //       const s = searchAccount.toLowerCase();
-      //       if (owner != null && owner.includes(s)) {
-      //         stage5Data.push(d);
-      //         break;
-      //       } else if (ensName != null && ensName.includes(s)) {
-      //         stage5Data.push(d);
-      //         break;
-      //       }
-      //     }
-      //   }
-      // }
-      // console.log("stage5Data.length: " + stage5Data.length);
-
-
-      // return this.osCollection.data;
     },
   },
   methods: {
@@ -342,8 +317,9 @@ const Tokens = {
               const collection = data.collections[i];
               const info = collection.primary_asset_contracts.length > 0 ? collection.primary_asset_contracts[0] : null;
               if (info && info.schema_name == 'ERC721') {
-                console.log((offset + i) + " " + info.address + " " + info.symbol + " " + info.name + " " + info.schema_name);
-                osCollectionData.push({ address: info.address, symbol: info.symbol, name: info.name, total_supply: info.total_supply });
+                const address = ethers.utils.getAddress(info.address);
+                console.log((offset + i) + " " + address + " " + info.symbol + " " + info.name + " " + info.schema_name);
+                osCollectionData.push({ address: address, symbol: info.symbol, name: info.name, total_supply: info.total_supply });
               }
             }
             this.osCollection.data = osCollectionData;
