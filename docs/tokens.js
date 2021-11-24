@@ -16,6 +16,21 @@ const Tokens = {
 
                 <b-tabs vertical pills card end nav-class="p-2" active-tab-class="p-2">
 
+                  <b-tab title="Search OS" class="p-1">
+                    <b-form-group label-cols="3" label-size="sm" label="OS ERC-721 Collections">
+                      <b-button size="sm" @click="loadOSCollections" variant="primary">Load</b-button>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Filter">
+                      <b-form-input type="text" size="sm" @change="recalculateOSFilter()" v-model.trim="osCollection.filter" debounce="600" placeholder="🔍 0x1234..., Symbol or Name" class="w-50 mb-2"></b-form-input>
+                    </b-form-group>
+                    <b-card-text>
+                      <font size="-2">
+                        <b-table small fixed striped sticky-header="1000px" :items="osCollection.filtered" head-variant="light">
+                        </b-table>
+                      </font>
+                    </b-card-text>
+                  </b-tab>
+
                   <b-tab title="TestToadz" class="p-1">
                     <b-card header="TestToadz" class="mb-2">
                       <b-card-text>
@@ -160,6 +175,12 @@ const Tokens = {
       count: 0,
       reschedule: true,
 
+      osCollection: {
+        data: [],
+        filter: null,
+        filtered: [],
+      },
+
       testToadz: {
         address: TESTTOADZADDRESS,
         supportsERC721: null,
@@ -210,6 +231,49 @@ const Tokens = {
     tradeData() {
       return store.getters['nixData/tradeData'];
     },
+    osCollectionFiltered() {
+      if (this.osCollection.filter && this.osCollection.filter.length > 0) {
+        const results = [];
+        const filter = this.osCollection.filter.toLowerCase();
+        for (const item of this.osCollection.data) {
+          // console.log(JSON.stringify(item));
+          const address = item.address.toLowerCase();
+          const symbol = item.symbol.toLowerCase();
+          const name = item.symbol.toLowerCase();
+          if (address.includes(filter) || symbol.includes(filter) || name.includes(filter)) {
+            results.push(item);
+          }
+        }
+        return results;
+      } else {
+        return this.osCollection.data;
+      }
+
+      // let stage5Data = stage4Data;
+      // if (this.settings.searchAccount != null && this.settings.searchAccount.length > 0) {
+      //   const searchAccounts = this.settings.searchAccount.split(",");
+      //   stage5Data = [];
+      //   for (let i in stage4Data) {
+      //     const d = stage4Data[i];
+      //     const owner = this.owners[d.tokenId] ? this.owners[d.tokenId].toLowerCase() : null;
+      //     const ensName = owner == null ? null : this.ensMap[owner];
+      //     for (searchAccount of searchAccounts) {
+      //       const s = searchAccount.toLowerCase();
+      //       if (owner != null && owner.includes(s)) {
+      //         stage5Data.push(d);
+      //         break;
+      //       } else if (ensName != null && ensName.includes(s)) {
+      //         stage5Data.push(d);
+      //         break;
+      //       }
+      //     }
+      //   }
+      // }
+      // console.log("stage5Data.length: " + stage5Data.length);
+
+
+      // return this.osCollection.data;
+    },
   },
   methods: {
     formatETH(e) {
@@ -238,6 +302,86 @@ const Tokens = {
           return new Date(d).toDateString().substring(4);
         }
       }
+    },
+
+    async recalculateOSFilter() {
+      let results = [];
+      if (this.osCollection.filter && this.osCollection.filter.length > 0) {
+        const filter = this.osCollection.filter.toLowerCase();
+        for (const item of this.osCollection.data) {
+          const address = item.address.toLowerCase();
+          const symbol = item.symbol.toLowerCase();
+          const name = item.symbol.toLowerCase();
+          if (address.includes(filter) || symbol.includes(filter) || name.includes(filter)) {
+            results.push(item);
+          }
+        }
+      } else {
+        results = this.osCollection.data;
+      }
+      this.osCollection.filtered = results;
+    },
+
+    async loadOSCollections() {
+      console.log("loadOSCollections");
+      const BATCHSIZE = 300; // Max 30
+      const DELAYINMILLIS = 500;
+      const delay = ms => new Promise(res => setTimeout(res, ms));
+
+      let offset = 0;
+      let done = false;
+      const osCollectionData = [];
+      while (!done) {
+        try {
+          let url = "https://testnets-api.opensea.io/api/v1/collections?offset=" + offset + "\&limit=" + BATCHSIZE;
+          console.log("Processing " + offset + ": " + url);
+          const data = await fetch(url).then(response => response.json());
+          if (data && data.collections && data.collections.length > 0) {
+            // console.log("data: " + JSON.stringify(data.collections.length));
+            for (let i = 0; i < data.collections.length; i++) {
+              const collection = data.collections[i];
+              const info = collection.primary_asset_contracts.length > 0 ? collection.primary_asset_contracts[0] : null;
+              if (info && info.schema_name == 'ERC721') {
+                console.log((offset + i) + " " + info.address + " " + info.symbol + " " + info.name + " " + info.schema_name);
+                osCollectionData.push({ address: info.address, symbol: info.symbol, name: info.name, total_supply: info.total_supply });
+              }
+            }
+            this.osCollection.data = osCollectionData;
+            this.recalculateOSFilter();
+            await delay(DELAYINMILLIS);
+          } else {
+            done = true;
+          }
+          offset = offset + BATCHSIZE;
+        } catch (e) {
+          done = true;
+        }
+      }
+      this.osCollection.data = osCollectionData;
+
+      // const osData = {};
+      // for (let i = 0; i < tokenIds.length; i += BATCHSIZE) {
+      //   let url = "https://testnets-api.opensea.io/api/v1/assets?asset_contract_address=" + TESTTOADZADDRESS + "\&order_direction=desc\&limit=50\&offset=0";
+      //   for (let j = i; j < i + BATCHSIZE && j < tokenIds.length; j++) {
+      //     url = url + "&token_ids=" + tokenIds[j];
+      //   }
+      //   console.log("url: " + url);
+      //   const data = await fetch(url).then(response => response.json());
+      //   // console.log("data: " + JSON.stringify(data));
+      //   if (data.assets && data.assets.length > 0) {
+      //   //   this.settings.contract.loadingOSData += data.assets.length;
+      //     for (let assetIndex = 0; assetIndex < data.assets.length; assetIndex++) {
+      //       const asset = data.assets[assetIndex];
+      //       // console.log("asset: " + JSON.stringify(asset));
+      //       // console.log("asset - token_id: " + asset.token_id + ", image_url: " + asset.image_url + ", traits: " + JSON.stringify(asset.traits));
+      //   //     records.push({ contract: contract, tokenId: asset.token_id, asset: asset, timestamp: timestamp });
+      //       osData[asset.token_id] = { image: asset.image_url, traits: asset.traits };
+      //     }
+      //   }
+      //   await delay(DELAYINMILLIS);
+      // }
+      // this.testToadz.osData = osData;
+      // console.log("osData: " + JSON.stringify(osData));
     },
 
     async loadTestToadz() {
