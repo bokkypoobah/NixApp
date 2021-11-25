@@ -440,7 +440,8 @@ const Tokens = {
     },
 
     async scanForOwners() {
-      console.log("scanForOwners");
+      event.preventDefault();
+      console.log("scanForOwners - scanOwners: " + JSON.stringify(this.scanOwners));
 
     },
 
