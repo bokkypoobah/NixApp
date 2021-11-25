@@ -77,6 +77,10 @@ const Tokens = {
                         <b-form-group label-cols="3" label-size="sm" label="">
                           <b-button size="sm" @click="scanForOwners" variant="primary">Scan</b-button>
                         </b-form-group>
+                        <font size="-2">
+                          <b-table small fixed striped sticky-header="1000px" :items="scanOwners.results" head-variant="light">
+                          </b-table>
+                        </font>
                       </b-card>
                     </div>
                   </b-tab>
@@ -250,6 +254,7 @@ const Tokens = {
         from: 0,
         to: 6969,
         batchSize: 300,
+        results: [],
       },
 
       testToadz: {
@@ -442,27 +447,35 @@ const Tokens = {
       const tokenInfo = await erc721Helper.tokenInfo([this.inspect.address]);
       console.log(JSON.stringify(tokenInfo, null, 2));
       const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
+      const timestamp = parseInt(new Date() / 1000);
       if (this.inspect.erc721Types.includes('ERC721Enumerable')) {
         var tokenIndices = range(0, (parseInt(this.inspect.totalSupply) - 1), 1);
         console.log("Scan by ERC721Enumerable - tokenIndices: " + JSON.stringify(tokenIndices));
-
+        const ownersInfo = await erc721Helper.ownersByEnumerableIndex(this.inspect.address, 0, parseInt(this.inspect.totalSupply));
+        console.log("Scan by ownerOf(tokenId) - ownersInfo: " + JSON.stringify(ownersInfo).substring(0, 1000));
+        const owners = [];
+        for (let i = 0; i < ownersInfo[0].length; i++) {
+          owners.push({ chainId: this.network.chainId, contract: this.inspect.address, tokenId: ownersInfo[0][i], owner: ownersInfo[1][i], timestamp: timestamp });
+        }
+        console.log(JSON.stringify(owners, null, 2));
+        this.scanOwners.results = owners;
       } else {
         var tokenIds = range(parseInt(this.scanOwners.from), (parseInt(this.scanOwners.to) - 1), 1);
         console.log("Scan by ownerOf(tokenId) - tokenIds: " + JSON.stringify(tokenIds).substring(0, 1000));
-        const ownersInfo = await erc721Helper.ownersByTokenIds(TESTTOADZADDRESS, tokenIds);
+        const ownersInfo = await erc721Helper.ownersByTokenIds(this.inspect.address, tokenIds);
         console.log("Scan by ownerOf(tokenId) - ownersInfo: " + JSON.stringify(ownersInfo).substring(0, 1000));
         const owners = [];
         const validTokenIds = [];
         const ownerRecords = [];
-        const timestamp = parseInt(new Date() / 1000);
         for (let i = 0; i < ownersInfo[0].length; i++) {
           if (ownersInfo[0][i]) {
             console.log(ownersInfo[1][i]);
             owners.push({ tokenId: tokenIds[i], owner: ownersInfo[1][i] });
             validTokenIds.push(tokenIds[i]);
-            ownerRecords.push({ chainId: this.network.chainId, contract: TESTTOADZADDRESS, tokenId: tokenIds[i], owner: ownersInfo[1][i], timestamp: timestamp });
+            ownerRecords.push({ chainId: this.network.chainId, contract: this.inspect.address, tokenId: tokenIds[i], owner: ownersInfo[1][i], timestamp: timestamp });
           }
         }
+        this.scanOwners.results = ownerRecords;
         console.log("End: " + new Date().toString());
         // console.log(JSON.stringify(owners, null, 2));
         console.log(JSON.stringify(ownerRecords, null, 2));
