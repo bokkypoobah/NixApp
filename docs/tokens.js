@@ -238,7 +238,8 @@ const Tokens = {
       },
 
       inspect: {
-        address: "0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4",
+        // address: "0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4",
+        address: "0xab04795fa12aCe45Dd2A2E4A132e4E46B2d4D1B8",
         symbol: null,
         name: null,
         totalSupply: null,
@@ -445,59 +446,34 @@ const Tokens = {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const erc721Helper = new ethers.Contract(ERC721HELPERADDRESS, ERC721HELPERABI, provider);
       const tokenInfo = await erc721Helper.tokenInfo([this.inspect.address]);
-      console.log(JSON.stringify(tokenInfo, null, 2));
       const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
       const timestamp = parseInt(new Date() / 1000);
+      const batchSize = parseInt(this.scanOwners.batchSize);
       if (this.inspect.erc721Types.includes('ERC721Enumerable')) {
-        var tokenIndices = range(0, (parseInt(this.inspect.totalSupply) - 1), 1);
-        console.log("Scan by ERC721Enumerable - tokenIndices: " + JSON.stringify(tokenIndices));
-
-        const owners = [];
-        const ownersInfo = await erc721Helper.ownersByEnumerableIndex(this.inspect.address, 0, parseInt(this.inspect.totalSupply));
-        console.log("Scan by ownerOf(tokenId) - ownersInfo: " + JSON.stringify(ownersInfo).substring(0, 1000));
-        for (let i = 0; i < ownersInfo[0].length; i++) {
-          owners.push({ chainId: this.network.chainId, contract: this.inspect.address, tokenId: ownersInfo[0][i], owner: ownersInfo[1][i], timestamp: timestamp });
+        const totalSupply = parseInt(this.inspect.totalSupply);
+        const ownerRecords = [];
+        for (let i = 0; i < totalSupply; i += batchSize) {
+          const to = (i + batchSize > totalSupply) ? totalSupply : i + batchSize;
+          const ownersInfo = await erc721Helper.ownersByEnumerableIndex(this.inspect.address, i, to);
+          for (let j = 0; j < ownersInfo[0].length; j++) {
+            ownerRecords.push({ chainId: this.network.chainId, contract: this.inspect.address, tokenId: ownersInfo[0][j], owner: ownersInfo[1][j], timestamp: timestamp });
+          }
+          this.scanOwners.results = ownerRecords;
         }
 
-        console.log(JSON.stringify(owners, null, 2));
-        this.scanOwners.results = owners;
       } else {
-        const batchSize = parseInt(this.scanOwners.batchSize);
         var tokenIds = range(parseInt(this.scanOwners.from), (parseInt(this.scanOwners.to) - 1), 1);
-        // const owners = [];
         const ownerRecords = [];
         for (let i = 0; i < tokenIds.length; i += batchSize) {
           const batch = tokenIds.slice(i, parseInt(i) + batchSize);
-          console.log("batch: " + JSON.stringify(batch).substring(0, 1000));
           const ownersInfo = await erc721Helper.ownersByTokenIds(this.inspect.address, batch);
-          console.log("ownersInfo: " + JSON.stringify(ownersInfo).substring(0, 1000));
           for (let j = 0; j < ownersInfo[0].length; j++) {
             if (ownersInfo[0][j]) {
-              console.log(ownersInfo[1][j]);
-              // owners.push({ tokenId: tokenIds[i], owner: ownersInfo[1][i] });
-              // validTokenIds.push(tokenIds[i]);
               ownerRecords.push({ chainId: this.network.chainId, contract: this.inspect.address, tokenId: batch[j], owner: ownersInfo[1][j], timestamp: timestamp });
             }
           }
+          this.scanOwners.results = ownerRecords;
         }
-        // console.log("Scan by ownerOf(tokenId) - tokenIds: " + JSON.stringify(tokenIds).substring(0, 1000));
-        // const ownersInfo = await erc721Helper.ownersByTokenIds(this.inspect.address, tokenIds);
-        // console.log("Scan by ownerOf(tokenId) - ownersInfo: " + JSON.stringify(ownersInfo).substring(0, 1000));
-        // // const validTokenIds = [];
-        // const ownerRecords = [];
-        // for (let i = 0; i < ownersInfo[0].length; i++) {
-        //   if (ownersInfo[0][i]) {
-        //     console.log(ownersInfo[1][i]);
-        //     // owners.push({ tokenId: tokenIds[i], owner: ownersInfo[1][i] });
-        //     // validTokenIds.push(tokenIds[i]);
-        //     ownerRecords.push({ chainId: this.network.chainId, contract: this.inspect.address, tokenId: tokenIds[i], owner: ownersInfo[1][i], timestamp: timestamp });
-        //   }
-        // }
-        this.scanOwners.results = ownerRecords;
-        console.log("End: " + new Date().toString());
-        // console.log(JSON.stringify(owners, null, 2));
-        console.log(JSON.stringify(ownerRecords, null, 2));
-
       }
     },
 
