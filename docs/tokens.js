@@ -56,6 +56,34 @@ const Tokens = {
                     <b-form-group label-cols="3" label-size="sm" label="Total Supply">
                       <b-form-input type="text" size="sm" readonly v-model.trim="inspect.totalSupply" class="w-50"></b-form-input>
                     </b-form-group>
+                    <div v-if="inspect.erc721Types.includes('ERC721')">
+                      <b-card header="Scan ERC721Enumerable.tokenByIndex(index), then ERC721.ownerOf(tokenId)" class="mb-2">
+                        <template #header>
+                          <span variant="secondary">
+                            {{ inspect.erc721Types.includes('ERC721Enumerable') ? 'Scan ERC721Enumerable.tokenByIndex(index), then ERC721.ownerOf(tokenId)' : 'Scan ERC721.ownerOf(tokenId)' }}
+                          </span>
+                        </template>
+                        <div v-if="!inspect.erc721Types.includes('ERC721Enumerable')">
+                          <b-form-group label-cols="3" label-size="sm" label="Scan from">
+                            <b-form-input type="text"  size="sm" v-model.trim="scanOwners.from" class="w-50"></b-form-input>
+                          </b-form-group>
+                          <b-form-group label-cols="3" label-size="sm" label="Scan to">
+                            <b-form-input type="text" size="sm" v-model.trim="scanOwners.to" class="w-50"></b-form-input>
+                          </b-form-group>
+                        </div>
+                        <div v-else>
+                          <b-form-group label-cols="3" label-size="sm" label="Total Supply">
+                            <b-form-input type="text" readonly size="sm" v-model.trim="inspect.totalSupply" class="w-50"></b-form-input>
+                          </b-form-group>
+                        </div>
+                        <b-form-group label-cols="3" label-size="sm" label="Batch size">
+                          <b-form-input type="text" size="sm" v-model.trim="scanOwners.batchSize" class="w-50"></b-form-input>
+                        </b-form-group>
+                        <b-form-group label-cols="3" label-size="sm" label="">
+                          <b-button size="sm" @click="scanForOwners" variant="primary">Scan</b-button>
+                        </b-form-group>
+                      </b-card>
+                    </div>
                   </b-tab>
 
                   <b-tab title="TestToadz" class="p-1">
@@ -221,6 +249,12 @@ const Tokens = {
           { text: 'ERC-721 Metadata', value: 'ERC721Metadata', disabled: true },
           { text: 'ERC-721 Enumerable', value: 'ERC721Enumerable', disabled: true },
         ],
+      },
+
+      scanOwners: {
+        from: 0,
+        to: 6969,
+        batchSize: 300,
       },
 
       testToadz: {
@@ -403,6 +437,11 @@ const Tokens = {
         this.inspect.name = tokenInfo[2][0];
         this.inspect.totalSupply = (!((tokenType & MASK_ERC721ENUMERABLE) == MASK_ERC721ENUMERABLE) || tokenInfo[3][0] == null) ? "n/a" : tokenInfo[3][0].toString();
       }
+    },
+
+    async scanForOwners() {
+      console.log("scanForOwners");
+
     },
 
     async loadTestToadz() {
