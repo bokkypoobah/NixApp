@@ -75,10 +75,32 @@ const Tokens = {
                           <b-form-input type="text" size="sm" v-model.trim="scanOwners.batchSize" class="w-50"></b-form-input>
                         </b-form-group>
                         <b-form-group label-cols="3" label-size="sm" label="">
-                          <b-button size="sm" @click="scanForOwners" variant="primary">Scan</b-button>
+                          <b-button size="sm" @click="scanForOwners" variant="primary">Scan for owners and tokenURI</b-button>
                         </b-form-group>
+                        <div v-if="Object.keys(scanOwners.tokenURIs).length > 0">
+                          <b-form-group label-cols="3" label-size="sm" label="">
+                            <b-button size="sm" @click="retrieveTraitsAndImages" variant="primary">Retrieve traits and images</b-button>
+                          </b-form-group>
+                        </div>
+                      </b-card>
+                      <b-card>
                         <font size="-2">
-                          <b-table small fixed striped sticky-header="1000px" :items="scanOwners.results" head-variant="light">
+                          <b-table small fixed striped sticky-header="1000px" :fields="scanOwners.fields" :items="scanOwners.owners" head-variant="light">
+                            <template #cell(tokenURI)="data">
+                              {{ scanOwners.tokenURIs[data.item.tokenId] || '(none)' }}
+                            </template>
+                            <template #cell(image)="data">
+                              <div v-if="scanOwners.traitsAndImages[data.item.tokenId]">
+                                <b-img-lazy :width="'100%'" :src="scanOwners.traitsAndImages[data.item.tokenId].image.replace('ipfs://', 'https://ipfs.io/ipfs/')" />
+                              </div>
+                            </template>
+                            <template #cell(traits)="data">
+                              <div v-if="scanOwners.traitsAndImages[data.item.tokenId]">
+                                <b-row v-for="(attribute, i) in scanOwners.traitsAndImages[data.item.tokenId].traits"  v-bind:key="i" class="m-0 p-0">
+                                  <b-col cols="3" class="m-0 p-0"><font size="-3">{{ attribute.trait_type }}</font></b-col><b-col class="m-0 p-0"><b><font size="-2">{{ attribute.value }}</font></b></b-col>
+                                </b-row>
+                              </div>
+                            </template>
                           </b-table>
                         </font>
                       </b-card>
@@ -255,7 +277,16 @@ const Tokens = {
         from: 0,
         to: 6969,
         batchSize: 1000,
-        results: [],
+        owners: [],
+        tokenURIs: {},
+        traitsAndImages: {},
+        fields: [
+          { key: 'tokenId', label: 'Token Id', thStyle: 'width: 10%;', sortable: true },
+          { key: 'owner', label: 'Owner', thStyle: 'width: 20%;', sortable: true },
+          { key: 'tokenURI', label: 'TokenURI', thStyle: 'width: 20%;', sortable: true },
+          { key: 'traits', label: 'Traits', thStyle: 'width: 30%;', sortable: true },
+          { key: 'image', label: 'Image', thStyle: 'width: 20%;', sortable: true },
+        ],
       },
 
       testToadz: {
@@ -283,8 +314,8 @@ const Tokens = {
         { key: 'tokenId', label: 'Token Id', sortable: true },
         { key: 'owner', label: 'Owner', sortable: true },
         // { key: 'tokenURI', label: 'TokenURI', sortable: true },
-        { key: 'image', label: 'Image', sortable: true },
         { key: 'traits', label: 'Traits', sortable: true },
+        { key: 'image', label: 'Image', sortable: true },
       ],
 
     }
@@ -437,6 +468,9 @@ const Tokens = {
         this.inspect.symbol = tokenInfo[1][0];
         this.inspect.name = tokenInfo[2][0];
         this.inspect.totalSupply = (!((tokenType & MASK_ERC721ENUMERABLE) == MASK_ERC721ENUMERABLE) || tokenInfo[3][0] == null) ? "n/a" : tokenInfo[3][0].toString();
+        this.scanOwners.owners = [];
+        this.scanOwners.tokenURIs = {};
+        this.scanOwners.traitsAndImages = {};
       }
     },
 
@@ -451,30 +485,67 @@ const Tokens = {
       const batchSize = parseInt(this.scanOwners.batchSize);
       if (this.inspect.erc721Types.includes('ERC721Enumerable')) {
         const totalSupply = parseInt(this.inspect.totalSupply);
-        const ownerRecords = [];
+        const owners = [];
         for (let i = 0; i < totalSupply; i += batchSize) {
           const to = (i + batchSize > totalSupply) ? totalSupply : i + batchSize;
           const ownersInfo = await erc721Helper.ownersByEnumerableIndex(this.inspect.address, i, to);
           for (let j = 0; j < ownersInfo[0].length; j++) {
-            ownerRecords.push({ chainId: this.network.chainId, contract: this.inspect.address, tokenId: ownersInfo[0][j], owner: ownersInfo[1][j], timestamp: timestamp });
+            owners.push({ chainId: this.network.chainId, contract: this.inspect.address, tokenId: ownersInfo[0][j].toString(), owner: ownersInfo[1][j], timestamp: timestamp });
           }
-          this.scanOwners.results = ownerRecords;
+          this.scanOwners.owners = owners;
         }
 
       } else {
-        var tokenIds = range(parseInt(this.scanOwners.from), (parseInt(this.scanOwners.to) - 1), 1);
-        const ownerRecords = [];
-        for (let i = 0; i < tokenIds.length; i += batchSize) {
-          const batch = tokenIds.slice(i, parseInt(i) + batchSize);
+        var searchTokenIds = range(parseInt(this.scanOwners.from), (parseInt(this.scanOwners.to) - 1), 1);
+        const owners = [];
+        for (let i = 0; i < searchTokenIds.length; i += batchSize) {
+          const batch = searchTokenIds.slice(i, parseInt(i) + batchSize);
           const ownersInfo = await erc721Helper.ownersByTokenIds(this.inspect.address, batch);
           for (let j = 0; j < ownersInfo[0].length; j++) {
             if (ownersInfo[0][j]) {
-              ownerRecords.push({ chainId: this.network.chainId, contract: this.inspect.address, tokenId: batch[j], owner: ownersInfo[1][j], timestamp: timestamp });
+              owners.push({ chainId: this.network.chainId, contract: this.inspect.address, tokenId: batch[j].toString(), owner: ownersInfo[1][j], timestamp: timestamp });
             }
           }
-          this.scanOwners.results = ownerRecords;
+          this.scanOwners.owners = owners;
         }
       }
+
+      const tokenIds = this.scanOwners.owners.map(a => a.tokenId);
+      // console.log("tokenIds: " + JSON.stringify(tokenIds));
+
+      const tokenURIsInfo = await erc721Helper.tokenURIsByTokenIds(this.inspect.address, tokenIds);
+      // console.log(JSON.stringify(tokenURIsInfo, null, 2));
+      const tokenURIRecords = [];
+      const tokenURIs = {};
+      for (let i = 0; i < tokenURIsInfo[0].length; i++) {
+        if (tokenURIsInfo[0][i]) {
+          // console.log(tokenURIsInfo[1][i]);
+          // tokenURIRecords.push({ chainId: this.network.chainId, contract: TESTTOADZADDRESS, tokenId: tokenIds[i], tokenURI: tokenURIsInfo[1][i], timestamp: timestamp });
+          tokenURIs[tokenIds[i]] = tokenURIsInfo[1][i];
+        }
+      }
+      this.scanOwners.tokenURIs = tokenURIs;
+      console.log("tokenURIs: " + JSON.stringify(tokenURIs));
+
+    },
+
+    async retrieveTraitsAndImages() {
+      console.log("retrieveTraitsAndImages");
+      event.preventDefault();
+      const traitsAndImages = {};
+      for (owner of this.scanOwners.owners) {
+        const tokenURI = this.scanOwners.tokenURIs[owner.tokenId].replace('ipfs://', 'https://ipfs.io/ipfs/');
+        console.log(owner.tokenId + " " + tokenURI);
+        const data = await fetch(tokenURI).then(response => response.json());
+        console.log(JSON.stringify(data));
+        const image = data.image;
+        console.log(image);
+        const traits = data.attributes;
+        console.log(JSON.stringify(traits));
+        traitsAndImages[owner.tokenId] = { traits: traits, image: image };
+      }
+      console.log(JSON.stringify(traitsAndImages, null, 2));
+      this.scanOwners.traitsAndImages = traitsAndImages;
     },
 
     async loadTestToadz() {
