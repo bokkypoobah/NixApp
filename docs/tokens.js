@@ -64,16 +64,11 @@ const Tokens = {
                           </span>
                         </template>
                         <div v-if="!inspect.erc721Types.includes('ERC721Enumerable')">
-                          <b-form-group label-cols="3" label-size="sm" label="Scan from">
+                          <b-form-group label-cols="3" label-size="sm" label="Scan from (inclusive)">
                             <b-form-input type="text"  size="sm" v-model.trim="scanOwners.from" class="w-50"></b-form-input>
                           </b-form-group>
-                          <b-form-group label-cols="3" label-size="sm" label="Scan to">
+                          <b-form-group label-cols="3" label-size="sm" label="Scan to (exclusive)">
                             <b-form-input type="text" size="sm" v-model.trim="scanOwners.to" class="w-50"></b-form-input>
-                          </b-form-group>
-                        </div>
-                        <div v-else>
-                          <b-form-group label-cols="3" label-size="sm" label="Total Supply">
-                            <b-form-input type="text" readonly size="sm" v-model.trim="inspect.totalSupply" class="w-50"></b-form-input>
                           </b-form-group>
                         </div>
                         <b-form-group label-cols="3" label-size="sm" label="Batch size">
@@ -440,9 +435,39 @@ const Tokens = {
     },
 
     async scanForOwners() {
-      event.preventDefault();
       console.log("scanForOwners - scanOwners: " + JSON.stringify(this.scanOwners));
+      event.preventDefault();
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const erc721Helper = new ethers.Contract(ERC721HELPERADDRESS, ERC721HELPERABI, provider);
+      const tokenInfo = await erc721Helper.tokenInfo([this.inspect.address]);
+      console.log(JSON.stringify(tokenInfo, null, 2));
+      const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
+      if (this.inspect.erc721Types.includes('ERC721Enumerable')) {
+        var tokenIndices = range(0, (parseInt(this.inspect.totalSupply) - 1), 1);
+        console.log("Scan by ERC721Enumerable - tokenIndices: " + JSON.stringify(tokenIndices));
 
+      } else {
+        var tokenIds = range(parseInt(this.scanOwners.from), (parseInt(this.scanOwners.to) - 1), 1);
+        console.log("Scan by ownerOf(tokenId) - tokenIds: " + JSON.stringify(tokenIds).substring(0, 1000));
+        const ownersInfo = await erc721Helper.ownersByTokenIds(TESTTOADZADDRESS, tokenIds);
+        console.log("Scan by ownerOf(tokenId) - ownersInfo: " + JSON.stringify(ownersInfo).substring(0, 1000));
+        const owners = [];
+        const validTokenIds = [];
+        const ownerRecords = [];
+        const timestamp = parseInt(new Date() / 1000);
+        for (let i = 0; i < ownersInfo[0].length; i++) {
+          if (ownersInfo[0][i]) {
+            console.log(ownersInfo[1][i]);
+            owners.push({ tokenId: tokenIds[i], owner: ownersInfo[1][i] });
+            validTokenIds.push(tokenIds[i]);
+            ownerRecords.push({ chainId: this.network.chainId, contract: TESTTOADZADDRESS, tokenId: tokenIds[i], owner: ownersInfo[1][i], timestamp: timestamp });
+          }
+        }
+        console.log("End: " + new Date().toString());
+        // console.log(JSON.stringify(owners, null, 2));
+        console.log(JSON.stringify(ownerRecords, null, 2));
+
+      }
     },
 
     async loadTestToadz() {
