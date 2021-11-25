@@ -28,8 +28,8 @@ const Tokens = {
                         <b-table small fixed striped sticky-header="1000px" :items="osCollection.filtered" head-variant="light">
                           <template #cell(address)="data">
                             {{ data.item.address }}
-                            <b-link size="sm" @click="inspect.address = data.item.address; tabIndex = 1;" v-b-popover.hover="'Inspect'" variant="link">
-                              <b-icon-search shift-v="+1" font-scale="0.8"></b-icon-search>
+                            <b-link size="sm" @click="selectInspectAddress(data.item.address);" v-b-popover.hover="'Inspect'" variant="link">
+                              <b-icon-search shift-v="+1" font-scale="1.0"></b-icon-search>
                             </b-link>
                           </template>
                         </b-table>
@@ -37,9 +37,24 @@ const Tokens = {
                     </b-card-text>
                   </b-tab>
 
-                  <b-tab title="Inspect Token" class="p-1">
+                  <b-tab active title="Inspect Token" class="p-1">
                     <b-form-group label-cols="3" label-size="sm" label="Address">
-                      <b-form-input type="text" size="sm" v-model.trim="inspect.address" class="w-50"></b-form-input>
+                      <b-form-input type="text" size="sm" v-model.trim="inspect.address" placeholder="0x1234..." class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="">
+                      <b-button size="sm" @click="inspectAddress" variant="primary">Inspect</b-button>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Type">
+                      <b-form-checkbox-group size="sm" v-model="inspect.erc721Types" :options="inspect.erc721TypesOptions"></b-form-checkbox-group>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Symbol">
+                      <b-form-input type="text" size="sm" readonly v-model.trim="inspect.symbol" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Name">
+                      <b-form-input type="text" size="sm" readonly v-model.trim="inspect.name" class="w-50"></b-form-input>
+                    </b-form-group>
+                    <b-form-group label-cols="3" label-size="sm" label="Total Supply">
+                      <b-form-input type="text" size="sm" readonly v-model.trim="inspect.totalSupply" class="w-50"></b-form-input>
                     </b-form-group>
                   </b-tab>
 
@@ -196,7 +211,16 @@ const Tokens = {
       },
 
       inspect: {
-        address: null,
+        address: "0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4",
+        symbol: null,
+        name: null,
+        totalSupply: null,
+        erc721Types: [],
+        erc721TypesOptions: [
+          { text: 'ERC-721', value: 'ERC721', disabled: true },
+          { text: 'ERC-721 Metadata', value: 'ERC721Metadata', disabled: true },
+          { text: 'ERC-721 Enumerable', value: 'ERC721Enumerable', disabled: true },
+        ],
       },
 
       testToadz: {
@@ -334,30 +358,51 @@ const Tokens = {
         }
       }
       this.osCollection.data = osCollectionData;
+    },
 
-      // const osData = {};
-      // for (let i = 0; i < tokenIds.length; i += BATCHSIZE) {
-      //   let url = "https://testnets-api.opensea.io/api/v1/assets?asset_contract_address=" + TESTTOADZADDRESS + "\&order_direction=desc\&limit=50\&offset=0";
-      //   for (let j = i; j < i + BATCHSIZE && j < tokenIds.length; j++) {
-      //     url = url + "&token_ids=" + tokenIds[j];
-      //   }
-      //   console.log("url: " + url);
-      //   const data = await fetch(url).then(response => response.json());
-      //   // console.log("data: " + JSON.stringify(data));
-      //   if (data.assets && data.assets.length > 0) {
-      //   //   this.settings.contract.loadingOSData += data.assets.length;
-      //     for (let assetIndex = 0; assetIndex < data.assets.length; assetIndex++) {
-      //       const asset = data.assets[assetIndex];
-      //       // console.log("asset: " + JSON.stringify(asset));
-      //       // console.log("asset - token_id: " + asset.token_id + ", image_url: " + asset.image_url + ", traits: " + JSON.stringify(asset.traits));
-      //   //     records.push({ contract: contract, tokenId: asset.token_id, asset: asset, timestamp: timestamp });
-      //       osData[asset.token_id] = { image: asset.image_url, traits: asset.traits };
-      //     }
-      //   }
-      //   await delay(DELAYINMILLIS);
-      // }
-      // this.testToadz.osData = osData;
-      // console.log("osData: " + JSON.stringify(osData));
+    selectInspectAddress(a) {
+      this.inspect.address = a;
+      this.inspect.erc721Types = [];
+      this.inspect.symbol = "?";
+      this.inspect.name = "?";
+      this.inspect.totalSupply = "?";
+      this.tabIndex = 1;
+    },
+
+    async inspectAddress() {
+      event.preventDefault();
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const erc721Helper = new ethers.Contract(ERC721HELPERADDRESS, ERC721HELPERABI, provider);
+      console.log("Start: " + new Date().toString());
+      this.inspect.erc721Types = [];
+      this.inspect.symbol = "?";
+      this.inspect.name = "?";
+      this.inspect.totalSupply = "?";
+      let tokenInfo = null;
+      try {
+        tokenInfo = await erc721Helper.tokenInfo([this.inspect.address]);
+        console.log(JSON.stringify(tokenInfo, null, 2));
+      } catch (e) {
+        this.inspect.symbol = "ERROR - May not be ERC-721";
+      }
+      if (tokenInfo && tokenInfo.length == 4 && tokenInfo[0].length == 1) {
+        let tokenType = tokenInfo[0][0].toNumber();
+        const MASK_ERC721 = 2**0;
+        const MASK_ERC721METADATA = 2**1;
+        const MASK_ERC721ENUMERABLE = 2**2;
+        if ((tokenType & MASK_ERC721) == MASK_ERC721) {
+          this.inspect.erc721Types.push("ERC721");
+        }
+        if ((tokenType & MASK_ERC721METADATA) == MASK_ERC721METADATA) {
+          this.inspect.erc721Types.push("ERC721Metadata");
+        }
+        if ((tokenType & MASK_ERC721ENUMERABLE) == MASK_ERC721ENUMERABLE) {
+          this.inspect.erc721Types.push("ERC721Enumerable");
+        }
+        this.inspect.symbol = tokenInfo[1][0];
+        this.inspect.name = tokenInfo[2][0];
+        this.inspect.totalSupply = (!((tokenType & MASK_ERC721ENUMERABLE) == MASK_ERC721ENUMERABLE) || tokenInfo[3][0] == null) ? "n/a" : tokenInfo[3][0].toString();
+      }
     },
 
     async loadTestToadz() {
