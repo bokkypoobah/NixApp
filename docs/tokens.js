@@ -38,7 +38,7 @@ const Tokens = {
                   </b-tab>
 
                   <b-tab active title="Inspect Token" class="p-1">
-                    <b-form-group label-cols="3" label-size="sm" label="Address">
+                    <b-form-group label-cols="3" label-size="sm" label="Address" description="'0xab04795fa12aCe45Dd2A2E4A132e4E46B2d4D1B8' for 'TTT', '0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4' for 'TESTTOADZ'">
                       <b-form-input type="text" size="sm" v-model.trim="inspect.address" placeholder="0x1234..." class="w-50"></b-form-input>
                     </b-form-group>
                     <b-form-group label-cols="3" label-size="sm" label="">
