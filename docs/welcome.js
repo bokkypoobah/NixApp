@@ -14,12 +14,49 @@ const Welcome = {
           <b-card-body class="p-0">
             <b-card header="Welcome" class="mb-2">
               <b-card-text>
-                Welcome to the Nix Decentralised ERC-721 Exchange. Check out the menus on the top right.
+                <b>Status: WIP</b>
+              </b-card-text>
+              <b-card-text>
+                Welcome to the Nix Decentralised ERC-721 Exchange. Check out the menus on the top right. Click on the top left icon to get back here.
               </b-card-text>
 
               <b-card-text class="mt-5 mb-2">
                 <h4>How This Works</h4>
-                Exchange ERC-721 NFTs against WETH. Makers add buy and/or sell orders to the Nix exchange smart contract. Takers execute one or more orders.
+                <ul>
+                  <li>
+                    <b>Makers</b> add orders to buy or sell NFTs in the Nix exchange at <b-link :href="explorer + 'address/' + nixAddress + '#code'" target="_blank">{{ nixAddress.substring(0, 20) + '...' }}</b-link>. (Exchange -> Orders)
+                  </li>
+                  <li>
+                    <b>Takers</b> execute against one or more orders. (Exchange -> Trades)
+                  </li>
+                  <li>
+                    Payments are made in <b-link :href="explorer + 'token/' + wethAddress" target="_blank">WETH</b-link> and are netted, so no fancy flash loans are required for complicated buy/sell bulk trades. The taker pays the <b>netAmount</b> in WETH if negative, or receives if positive.
+                  </li>
+                  <li>
+                    The Nix exchange must be approved to transfer the WETH and/or the NFT. (Tokens -> Approval and WETH -> Approval)
+                  </li>
+                  <li>
+                    The NixHelper contract at <b-link :href="explorer + 'address/' + nixHelperAddress + '#code'" target="_blank">{{ nixHelperAddress.substring(0, 20) + '...' }}</b-link> allows this Web3 UI to retrieve the order and trade information in bulk, via the web3 connection.
+                  </li>
+                  <li>
+                    The ERC721Helper contract at <b-link :href="explorer + 'address/' + erc721HelperAddress + '#code'" target="_blank">{{ erc721HelperAddress.substring(0, 20) + '...' }}</b-link> allows this Web3 UI to retrieve the token ownership and tokenURI information for ERC-721 NFT collections in bulk, via the web3 connection.
+                  </li>
+                </ul>
+              </b-card-text>
+
+              <b-card-text class="mt-5 mb-2">
+                <h4>Royalties</h4>
+                <ul>
+                  <li>
+                    This exchange uses <b-link href="https://royaltyregistry.xyz/lookup" target="_blank">Manifold's Royalty Engine</b-link> at <b-link :href="explorer + 'address/' + nixRoyaltyEngine + '#code'" target="_blank">{{ nixRoyaltyEngine == null ? '' : (nixRoyaltyEngine.substring(0, 20) + '...') }}</b-link> to compute the royalty payments on NFT sales. Note that there can be different royalty payment rates for different tokenIds within the same collection.
+                  </li>
+                  <li>
+                    Deployers of ERC-721 token collection configure the royalty payment information in the <b-link href="https://royaltyregistry.xyz/configure" target="_blank">Royalty Registry</b-link>.
+                  </li>
+                  <li>
+                    Makers specify a <b>royaltyFactor</b> (in percent, 0 to 1000, or 0x to 10x) when adding orders. Takers specify a royaltyFactor when executing against the orders. The NFT seller's royaltyFactor is multiplied by the royalty payments computed by the Royalty Engine. i.e., sellers pay 0x to 10x the royalty payment recommended by the Royalty Engine configuration.
+                  </li>
+                </ul>
               </b-card-text>
             </b-card>
 
@@ -71,15 +108,6 @@ const Welcome = {
     return {
       count: 0,
       reschedule: true,
-
-      admin: {
-        transferTo: null,
-        transferMessage: null,
-        token: null,
-        tokens: null,
-        tokenId: null,
-      },
-
     }
   },
   computed: {
@@ -95,118 +123,23 @@ const Welcome = {
     network() {
       return store.getters['connection/network'];
     },
-    tokensData() {
-      return store.getters['nixData/tokensData'];
+    nixAddress() {
+      return NIXADDRESS;
     },
-    tradeData() {
-      return store.getters['nixData/tradeData'];
+    nixHelperAddress() {
+      return NIXHELPERADDRESS;
+    },
+    nixRoyaltyEngine() {
+      return store.getters['nixData/nixRoyaltyEngine'];
+    },
+    erc721HelperAddress() {
+      return ERC721HELPERADDRESS;
+    },
+    wethAddress() {
+      return WETHADDRESS;
     },
   },
   methods: {
-    formatETH(e) {
-      try {
-        return e ? ethers.utils.commify(ethers.utils.formatEther(e)) : null;
-      } catch (err) {
-      }
-      return e.toFixed(9);
-    },
-    formatBuyOrSell(buyOrSell) {
-      return BUYORSELLSTRING[buyOrSell];
-    },
-    formatAnyOrAll(anyOrAll) {
-      return ANYORALLSTRING[anyOrAll];
-    },
-    formatOrderStatus(orderStatus) {
-      return ORDERSTATUSSTRING[orderStatus];
-    },
-    formatDate(d) {
-      if (d == 0) {
-        return "(no expiry)";
-      } else {
-        if (new RegExp('^[0-9]+$').test(d)) {
-          return new Date(parseInt(d) * 1000).toISOString(); // .substring(4);
-        } else {
-          return new Date(d).toDateString().substring(4);
-        }
-      }
-    },
-
-    setPowerOn() {
-      store.dispatch('connection/setPowerOn', true);
-      localStorage.setItem('powerOn', true);
-      var t = this;
-      setTimeout(function() {
-        t.statusSidebar = true;
-      }, 1500);
-    },
-
-    transferOwnership() {
-      console.log("transferOwnership");
-      this.$bvModal.msgBoxConfirm('Transfer Nix Ownership?', {
-          title: 'Please Confirm',
-          size: 'sm',
-          buttonSize: 'sm',
-          okVariant: 'danger',
-          okTitle: 'Yes',
-          cancelTitle: 'No',
-          footerClass: 'p-2',
-          hideHeaderClose: false,
-          centered: true
-        })
-        .then(async value1 => {
-          if (value1) {
-            event.preventDefault();
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
-            const nixWithSigner = nix.connect(provider.getSigner());
-            try {
-              const tx = await nixWithSigner.transferOwnership(this.admin.transferTo);
-              console.log("tx: " + JSON.stringify(tx));
-            } catch (e) {
-              console.log("error: " + e.toString());
-            }
-          }
-        })
-        .catch(err => {
-          // An error occurred
-        });
-    },
-
-    withdraw() {
-      console.log("withdraw");
-      this.$bvModal.msgBoxConfirm('Withdraw?', {
-          title: 'Please Confirm',
-          size: 'sm',
-          buttonSize: 'sm',
-          okVariant: 'danger',
-          okTitle: 'Yes',
-          cancelTitle: 'No',
-          footerClass: 'p-2',
-          hideHeaderClose: false,
-          centered: true
-        })
-        .then(async value1 => {
-          if (value1) {
-            event.preventDefault();
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
-            const nixWithSigner = nix.connect(provider.getSigner());
-            const token = this.admin.token == null || this.admin.token.trim().length == 0 ? ADDRESS0 : this.admin.token;
-            const tokens = this.admin.tokens == null || this.admin.tokens.trim().length == 0 ? "0" : this.admin.tokens;
-            const tokenId = this.admin.tokenId == null || this.admin.tokenId.trim().length == 0 ? "0" : this.admin.tokenId;
-            try {
-              const tx = await nixWithSigner.withdraw(token, tokens, tokenId);
-              console.log("tx: " + JSON.stringify(tx));
-            } catch (e) {
-              console.log("error: " + e.toString());
-            }
-          }
-        })
-        .catch(err => {
-          // An error occurred
-        });
-    },
-
     async timeoutCallback() {
       logDebug("Welcome", "timeoutCallback() count: " + this.count);
 
