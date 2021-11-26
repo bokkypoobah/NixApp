@@ -12,12 +12,10 @@ const Welcome = {
           </b-card>
 
           <b-card-body class="p-0">
-            <b-card header="Welcome" class="mb-2">
+            <b-card class="mb-2">
+
               <b-card-text>
-                <b>Status: WIP</b>
-              </b-card-text>
-              <b-card-text>
-                Welcome to the Nix Decentralised ERC-721 Exchange. Check out the menus on the top right. Click on the top left icon to get back here.
+                Welcome to the Nix Decentralised ERC-721 Exchange. Check out the menus on the top right. Click on the top left icon to get back here. <b>Status: WIP</b>
               </b-card-text>
 
               <b-card-text class="mt-5 mb-2">
@@ -126,48 +124,19 @@ const Welcome = {
                 </ul>
               </b-card-text>
 
+              <b-card-text class="mt-5 mb-2">
+                <h5>Repos</h5>
+                <ul>
+                  <li>
+                    <b-link href="https://github.com/bokkypoobah/Nix" target="_blank">https://github.com/bokkypoobah/Nix</b-link> - smart contracts.
+                  </li>
+                  <li>
+                    <b-link href="https://github.com/bokkypoobah/NixApp" target="_blank">https://github.com/bokkypoobah/NixApp</b-link> - this web3 dapp.
+                  </li>
+                </ul>
+              </b-card-text>
+
             </b-card>
-
-
-            <!--
-            <div>
-              <b-card no-body class="mt-2">
-                <b-card header="Transfer Nix Ownership" class="mb-2">
-                  <b-card-text>
-                    <b-form-group label-cols="3" label-size="sm" label="Transfer Nix ownership to" description="e.g. 0x123456...">
-                      <b-form-input size="sm" v-model="admin.transferTo" class="w-50"></b-form-input>
-                    </b-form-group>
-                  </b-card-text>
-                  <b-form-group label-cols="3" label-size="sm" label="">
-                    <b-button size="sm" @click="transferOwnership" variant="warning">Transfer Ownership</b-button>
-                  </b-form-group>
-                  <b-form-group label-cols="3" label-size="sm" label="Data">
-                    <b-form-textarea size="sm" rows="10" v-model="JSON.stringify(admin, null, 2)" class="w-50"></b-form-textarea>
-                  </b-form-group>
-                </b-card>
-                <b-card header="Withdraw ETH, ERC-20 And ERC-721 Tokens From Nix" class="mb-2">
-                  <b-card-text>
-                    <b-form-group label-cols="3" label-size="sm" label="Token" description="Blank for ETH, address for ERC-20 or ERC-721. e.g., 0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4 for TestToadz">
-                      <b-form-input size="sm" v-model="admin.token" class="w-50"></b-form-input>
-                    </b-form-group>
-                    <b-form-group label-cols="3" label-size="sm" label="Tokens" description="Tokens in raw format, for ETH and ERC-20. e.g., 3500000000000000000 for 3.5 with 18dp. Set to 0 or null for full balance">
-                      <b-form-input size="sm" v-model="admin.tokens" class="w-50"></b-form-input>
-                    </b-form-group>
-                    <b-form-group label-cols="3" label-size="sm" label="Token Id" description="ERC-721 Token Id. e.g., 3">
-                      <b-form-input size="sm" v-model="admin.tokenId" class="w-50"></b-form-input>
-                    </b-form-group>
-                  </b-card-text>
-                  <b-form-group label-cols="3" label-size="sm" label="">
-                    <b-button size="sm" @click="withdraw" variant="warning">Withdraw</b-button>
-                  </b-form-group>
-                  <b-form-group label-cols="3" label-size="sm" label="Data">
-                    <b-form-textarea size="sm" rows="10" v-model="JSON.stringify(admin, null, 2)" class="w-50"></b-form-textarea>
-                  </b-form-group>
-                </b-card>
-              </b-card>
-            </div>
-            -->
-
           </b-card-body>
         </b-card>
       </b-card>
@@ -239,21 +208,15 @@ const Welcome = {
 const welcomeModule = {
   namespaced: true,
   state: {
-    canvas: null,
     params: null,
     executing: false,
     executionQueue: [],
   },
   getters: {
-    canvas: state => state.canvas,
     params: state => state.params,
     executionQueue: state => state.executionQueue,
   },
   mutations: {
-    setCanvas(state, c) {
-      logDebug("welcomeModule", "mutations.setCanvas('" + c + "')")
-      state.canvas = c;
-    },
     deQueue(state) {
       logDebug("welcomeModule", "deQueue(" + JSON.stringify(state.executionQueue) + ")");
       state.executionQueue.shift();
@@ -268,9 +231,5 @@ const welcomeModule = {
     },
   },
   actions: {
-    setCanvas(context, c) {
-      logDebug("connectionModule", "actions.setCanvas(" + JSON.stringify(c) + ")");
-      // context.commit('setCanvas', c);
-    },
   },
 };

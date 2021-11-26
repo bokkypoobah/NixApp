@@ -1,4 +1,4 @@
-const TokenData = {
+const CollectionData = {
   template: `
     <div>
       <b-card header-class="warningheader" header="Incorrect Network Detected" v-if="!powerOn || network == null || network.chainId != 4">
@@ -6,8 +6,9 @@ const TokenData = {
           Please install the MetaMask extension, connect to the Rinkeby network and refresh this page. Then click the [Power] button on the top right.
         </b-card-text>
       </b-card>
-      <b-button v-b-toggle.token_contract size="sm" block variant="outline-info">ERC-721 Token Collections</b-button>
-      <b-collapse id="token_contract" class="my-2">
+      <b-button v-b-toggle.collections size="sm" block variant="outline-info">ERC-721 Token Collections</b-button>
+      <b-collapse id="collections" class="my-2">
+        <!--
         <b-card no-body class="border-0" v-if="network && network.chainId == 4">
           <b-row>
             <b-col cols="4" class="small">Nix</b-col>
@@ -36,6 +37,7 @@ const TokenData = {
             <b-col class="small truncate" cols="8">{{ Object.keys(tradeData).length }}</b-col>
           </b-row>
         </b-card>
+        -->
       </b-collapse>
     </div>
   `,
@@ -76,7 +78,7 @@ const TokenData = {
   },
   methods: {
     async timeoutCallback() {
-      logInfo("TokenData", "timeoutCallback() count: " + this.count);
+      logInfo("CollectionData", "timeoutCallback() count: " + this.count);
       this.count++;
       var t = this;
       if (this.reschedule) {
@@ -87,18 +89,18 @@ const TokenData = {
     },
   },
   beforeDestroy() {
-    logInfo("TokenData", "beforeDestroy()");
+    logInfo("CollectionData", "beforeDestroy()");
   },
   mounted() {
-    logInfo("TokenData", "mounted()");
+    logInfo("CollectionData", "mounted()");
     this.reschedule = true;
-    logInfo("TokenData", "Calling timeoutCallback()");
+    logInfo("CollectionData", "Calling timeoutCallback()");
     this.timeoutCallback();
   },
 };
 
 
-const tokenDataModule = {
+const collectionDataModule = {
   namespaced: true,
   state: {
     nixRoyaltyEngine: null,
@@ -116,40 +118,40 @@ const tokenDataModule = {
   },
   mutations: {
     updateNixRoyaltyEngine(state, nixRoyaltyEngine) {
-      // logInfo("tokenDataModule", "updateNixRoyaltyEngine: " + nixRoyaltyEngine);
+      // logInfo("collectionDataModule", "updateNixRoyaltyEngine: " + nixRoyaltyEngine);
       state.nixRoyaltyEngine = nixRoyaltyEngine;
     },
     updateTokensData(state, tokensData) {
-      // logInfo("tokenDataModule", "updateTokensData: " + JSON.stringify(tokensData));
+      // logInfo("collectionDataModule", "updateTokensData: " + JSON.stringify(tokensData));
       state.tokensData = tokensData;
     },
     updateTradeData(state, tradeData) {
-      // logInfo("tokenDataModule", "updateTradeData: " + JSON.stringify(tradeData));
+      // logInfo("collectionDataModule", "updateTradeData: " + JSON.stringify(tradeData));
       state.tradeData = tradeData;
     },
     updateBalances(state, balances) {
       state.balances = balances;
-      logDebug("tokenDataModule", "updateBalances('" + JSON.stringify(balances) + "')")
+      logDebug("collectionDataModule", "updateBalances('" + JSON.stringify(balances) + "')")
     },
     updateParams(state, params) {
       state.params = params;
-      logDebug("tokenDataModule", "updateParams('" + params + "')")
+      logDebug("collectionDataModule", "updateParams('" + params + "')")
     },
     updateExecuting(state, executing) {
       state.executing = executing;
-      logDebug("tokenDataModule", "updateExecuting(" + executing + ")")
+      logDebug("collectionDataModule", "updateExecuting(" + executing + ")")
     },
   },
   actions: {
     async execWeb3({ state, commit, rootState }, { count, listenersInstalled }) {
-      logDebug("tokenDataModule", "execWeb3() start[" + count + ", " + listenersInstalled + ", " + JSON.stringify(rootState.route.params) + "]");
+      logDebug("collectionDataModule", "execWeb3() start[" + count + ", " + listenersInstalled + ", " + JSON.stringify(rootState.route.params) + "]");
       if (!state.executing) {
         commit('updateExecuting', true);
-        logDebug("tokenDataModule", "execWeb3() executing[" + count + ", " + JSON.stringify(rootState.route.params) + "]");
+        logDebug("collectionDataModule", "execWeb3() executing[" + count + ", " + JSON.stringify(rootState.route.params) + "]");
 
         var paramsChanged = false;
         if (state.params != rootState.route.params.param) {
-          logDebug("tokenDataModule", "execWeb3() params changed from " + state.params + " to " + JSON.stringify(rootState.route.params.param));
+          logDebug("collectionDataModule", "execWeb3() params changed from " + state.params + " to " + JSON.stringify(rootState.route.params.param));
           paramsChanged = true;
           commit('updateParams', rootState.route.params.param);
         }
@@ -160,7 +162,7 @@ const tokenDataModule = {
         if (connected && blockUpdated) {
           const provider = new ethers.providers.Web3Provider(window.ethereum);
           const blockNumber = block ? block.number : await provider.getBlockNumber();
-          logInfo("tokenDataModule", "execWeb3() count: " + count + ", blockUpdated: " + blockUpdated + ", blockNumber: " + blockNumber + ", listenersInstalled: " + listenersInstalled + ", rootState.route.params: " + JSON.stringify(rootState.route.params) + "]");
+          logInfo("collectionDataModule", "execWeb3() count: " + count + ", blockUpdated: " + blockUpdated + ", blockNumber: " + blockNumber + ", listenersInstalled: " + listenersInstalled + ", rootState.route.params: " + JSON.stringify(rootState.route.params) + "]");
           const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
           const nixHelper = new ethers.Contract(NIXHELPERADDRESS, NIXHELPERABI, provider);
 
@@ -172,10 +174,10 @@ const tokenDataModule = {
           // TODO - Capture relevant events, and refresh only the updated orders & trades data
           // Install listeners
           if (!listenersInstalled) {
-            logInfo("tokenDataModule", "execWeb3() installing listener");
+            logInfo("collectionDataModule", "execWeb3() installing listener");
             nix.on("*", (event) => {
               // console.log("nix - event: ", JSON.stringify(event));
-              logInfo("tokenDataModule", "nix - event: " + JSON.stringify(event));
+              logInfo("collectionDataModule", "nix - event: " + JSON.stringify(event));
             });
           }
 
@@ -235,13 +237,13 @@ const tokenDataModule = {
         }
 
         commit('updateExecuting', false);
-        logDebug("tokenDataModule", "execWeb3() end[" + count + "]");
+        logDebug("collectionDataModule", "execWeb3() end[" + count + "]");
       } else {
-        logDebug("tokenDataModule", "execWeb3() already executing[" + count + "]");
+        logDebug("collectionDataModule", "execWeb3() already executing[" + count + "]");
       }
     },
   },
   // mounted() {
-  //   logInfo("tokenDataModule", "mounted() $route: " + JSON.stringify(this.$route.params));
+  //   logInfo("collectionDataModule", "mounted() $route: " + JSON.stringify(this.$route.params));
   // },
 };

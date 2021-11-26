@@ -334,7 +334,7 @@ const Connection = {
       }
 
       store.dispatch('nixData/execWeb3', { count: this.count, listenersInstalled: this.listenersInstalled });
-      store.dispatch('tokenData/execWeb3', { count: this.count, listenersInstalled: this.listenersInstalled });
+      store.dispatch('collectionData/execWeb3', { count: this.count, listenersInstalled: this.listenersInstalled });
 
       if (!this.listenersInstalled) {
         this.listenersInstalled = true;
