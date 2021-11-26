@@ -7,37 +7,13 @@ const CollectionData = {
         </b-card-text>
       </b-card>
       <b-button v-b-toggle.collections size="sm" block variant="outline-info">ERC-721 Token Collections</b-button>
-      <b-collapse id="collections" class="my-2">
-        <!--
+      <b-collapse id="collections" visible class="my-2">
         <b-card no-body class="border-0" v-if="network && network.chainId == 4">
           <b-row>
-            <b-col cols="4" class="small">Nix</b-col>
-            <b-col class="small truncate" cols="8">
-              <b-link :href="explorer + 'address/' + nixAddress + '#code'" class="card-link" target="_blank">{{ nixAddress == null ? '' : (nixAddress.substring(0, 20) + '...') }}</b-link>
-            </b-col>
-          </b-row>
-          <b-row>
-            <b-col cols="4" class="small">Nix Helper</b-col>
-            <b-col class="small truncate" cols="8">
-              <b-link :href="explorer + 'address/' + nixHelperAddress + '#code'" class="card-link" target="_blank">{{ nixHelperAddress == null ? '' : (nixHelperAddress.substring(0, 20) + '...') }}</b-link>
-            </b-col>
-          </b-row>
-          <b-row>
-            <b-col cols="4" class="small">Royalty Engine</b-col>
-            <b-col class="small truncate" cols="8">
-              <b-link :href="explorer + 'address/' + nixRoyaltyEngine + '#code'" class="card-link" target="_blank">{{ nixRoyaltyEngine == null ? '' : (nixRoyaltyEngine.substring(0, 20) + '...') }}</b-link>
-            </b-col>
-          </b-row>
-          <b-row>
-            <b-col cols="4" class="small">Tokens</b-col>
-            <b-col class="small truncate" cols="8">{{ Object.keys(tokensData).length }}</b-col>
-          </b-row>
-          <b-row>
-            <b-col cols="4" class="small">Trades</b-col>
-            <b-col class="small truncate" cols="8">{{ Object.keys(tradeData).length }}</b-col>
+            <b-col cols="4" class="small">Collections</b-col>
+            <b-col class="small truncate" cols="8">{{ collectionData.length }}</b-col>
           </b-row>
         </b-card>
-        -->
       </b-collapse>
     </div>
   `,
@@ -59,6 +35,9 @@ const CollectionData = {
     },
     coinbase() {
       return store.getters['connection/coinbase'];
+    },
+    collectionData() {
+      return store.getters['collectionData/collectionData'];
     },
     nixAddress() {
       return NIXADDRESS;
@@ -103,6 +82,14 @@ const CollectionData = {
 const collectionDataModule = {
   namespaced: true,
   state: {
+    collectionData: [
+      {
+        address: "0x1234",
+        symbol: "SYM",
+        name: "Name",
+      }
+
+    ],
     nixRoyaltyEngine: null,
     tokensData: [],
     tradeData: [],
@@ -110,6 +97,7 @@ const collectionDataModule = {
     executing: false,
   },
   getters: {
+    collectionData: state => state.collectionData,
     nixRoyaltyEngine: state => state.nixRoyaltyEngine,
     tokensData: state => state.tokensData,
     tradeData: state => state.tradeData,
