@@ -21,7 +21,7 @@ const Welcome = {
               </b-card-text>
 
               <b-card-text class="mt-5 mb-2">
-                <h4>How This Works</h4>
+                <h5>How This Works</h5>
                 <ul>
                   <li>
                     <b>Makers</b> add orders to buy or sell NFTs in the Nix exchange at <b-link :href="explorer + 'address/' + nixAddress + '#code'" target="_blank">{{ nixAddress.substring(0, 20) + '...' }}</b-link>. (Exchange -> Orders)
@@ -39,13 +39,71 @@ const Welcome = {
                     The NixHelper contract at <b-link :href="explorer + 'address/' + nixHelperAddress + '#code'" target="_blank">{{ nixHelperAddress.substring(0, 20) + '...' }}</b-link> allows this Web3 UI to retrieve the order and trade information in bulk, via the web3 connection.
                   </li>
                   <li>
-                    The ERC721Helper contract at <b-link :href="explorer + 'address/' + erc721HelperAddress + '#code'" target="_blank">{{ erc721HelperAddress.substring(0, 20) + '...' }}</b-link> allows this Web3 UI to retrieve the token ownership and tokenURI information for ERC-721 NFT collections in bulk, via the web3 connection.
+                    There are no fees on this exchange.
+                  </li>
+                  <li>
+                    Makers and takers are encouraged to add a tip for this developer (in ETH) when executing Nix transactions.
+                  </li>
+                  <li>
+                    There is a parameter when executing Nix transactions for 3rd party integrators to receive a portion of ETH tips sent by makers and takers.
+                  </li>
+                  <li>
+                    There is no backend server for this application to work. Data retrieval is through the web3 connection, and will take time to update.
                   </li>
                 </ul>
               </b-card-text>
 
               <b-card-text class="mt-5 mb-2">
-                <h4>Royalties</h4>
+                <h5>Order Type Examples</h5>
+                (Buy/Sell, Any/All, [tokenIds], price, tradeMax)
+                <ul>
+                  <li>
+                    Buy up to 5 NFTs from a collection for 0.1 WETH each. (Buy, Any, [], 0.1, 5)
+                  </li>
+                  <li>
+                    Buy up to 2 NFTs with tokenIds [1, 2, 3 or 4] from a collection for 0.1 WETH each. (Buy, Any, [1, 2, 3, 4], 0.1, 2)
+                  </li>
+                  <li>
+                    Buy a bundle of NFTs with tokenIds [1, 2, 3 and 4] from a collection for 0.1 WETH in total. (Buy, All, [1, 2, 3, 4], 0.1, 1)
+                  </li>
+                  <li>
+                    Sell any NFT owned by the seller for 0.1 WETH each. (Sell, Any, [], 0.1, 1)
+                  </li>
+                  <li>
+                    Sell up to 2 of NFTs [1, 2, 3, or 4] for 0.1 WETH each. (Sell, Any, [1, 2, 3, 4], 0.1, 2)
+                  </li>
+                  <li>
+                    Sell a bundle of NFTs with tokenIds [1, 2, 3 and 4] from a collection for 0.1 WETH in total. (Sell, All, [1, 2, 3, 4], 0.1, 1)
+                  </li>
+                </ul>
+              </b-card-text>
+
+              <b-card-text class="mt-5 mb-2">
+                <h5>Other Order Details</h5>
+                <ul>
+                  <li>
+                    Orders can only be executed if the <b>expiry</b> is set to 0, or is after than the current time.
+                  </li>
+                  <li>
+                    Orders depend on ownership and approval of the NFTs and WETH, and can become active (and inactive) when these are updated.
+                  </li>
+                </ul>
+              </b-card-text>
+
+              <b-card-text class="mt-5 mb-2">
+                <h5>ERC-721 Token Collection Data Retrieval</h5>
+                <ul>
+                  <li>
+                    The ERC721Helper contract at <b-link :href="explorer + 'address/' + erc721HelperAddress + '#code'" target="_blank">{{ erc721HelperAddress.substring(0, 20) + '...' }}</b-link> allows this Web3 UI to retrieve the token ownership and tokenURI information for ERC-721 NFT collections in bulk, via the web3 connection.
+                  </li>
+                  <li>
+                    The tokenURI information for each tokenId within an NFT collection may have an image and/or traits. This can be parsed and used for displaying and filtering.
+                  </li>
+                </ul>
+              </b-card-text>
+
+              <b-card-text class="mt-5 mb-2">
+                <h5>Royalties</h5>
                 <ul>
                   <li>
                     This exchange uses <b-link href="https://royaltyregistry.xyz/lookup" target="_blank">Manifold's Royalty Engine</b-link> at <b-link :href="explorer + 'address/' + nixRoyaltyEngine + '#code'" target="_blank">{{ nixRoyaltyEngine == null ? '' : (nixRoyaltyEngine.substring(0, 20) + '...') }}</b-link> to compute the royalty payments on NFT sales. Note that there can be different royalty payment rates for different tokenIds within the same collection.
@@ -58,7 +116,18 @@ const Welcome = {
                   </li>
                 </ul>
               </b-card-text>
+
+              <b-card-text class="mt-5 mb-2">
+                <h5>Calculating NetAmount</h5>
+                <ul>
+                  <li>
+                    As a taker, if you are selling an NFT, you will receive WETH minus any royalty payments. So selling an NFT for 0.1 WETH with a 1% royalty payment and 100% royaltyFactor will result in a netAmount of 0.0099 WETH. 0.0001 WETH will be paid to the collection owner address.
+                  </li>
+                </ul>
+              </b-card-text>
+
             </b-card>
+
 
             <!--
             <div>
