@@ -38,7 +38,7 @@ const Tokens = {
                   </b-tab>
 
                   <b-tab active title="Inspect Token" class="p-1">
-                    <b-form-group label-cols="3" label-size="sm" label="Address" description="'0xab04795fa12aCe45Dd2A2E4A132e4E46B2d4D1B8' for 'TTT', '0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4' for 'TESTTOADZ'">
+                    <b-form-group label-cols="3" label-size="sm" label="Address" description="'0xab04795fa12aCe45Dd2A2E4A132e4E46B2d4D1B8' for 'TTT', '0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4' for 'TESTTOADZ', '0x652dc3aa8e1d18a8cc19aef62cf4f03c4d50b2b5' for 'TESTS'">
                       <b-form-input type="text" size="sm" v-model.trim="inspect.address" placeholder="0x1234..." class="w-50"></b-form-input>
                     </b-form-group>
                     <b-form-group label-cols="3" label-size="sm" label="">
@@ -265,7 +265,8 @@ const Tokens = {
 
       inspect: {
         // address: "0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4",
-        address: "0xab04795fa12aCe45Dd2A2E4A132e4E46B2d4D1B8",
+        // address: "0xab04795fa12aCe45Dd2A2E4A132e4E46B2d4D1B8",
+        address: "0x652dc3aa8e1d18a8cc19aef62cf4f03c4d50b2b5",
         symbol: null,
         name: null,
         totalSupply: null,
@@ -443,7 +444,6 @@ const Tokens = {
       event.preventDefault();
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const erc721Helper = new ethers.Contract(ERC721HELPERADDRESS, ERC721HELPERABI, provider);
-      console.log("Start: " + new Date().toString());
       this.inspect.erc721Types = [];
       this.inspect.symbol = "?";
       this.inspect.name = "?";
@@ -451,7 +451,6 @@ const Tokens = {
       let tokenInfo = null;
       try {
         tokenInfo = await erc721Helper.tokenInfo([this.inspect.address]);
-        console.log(JSON.stringify(tokenInfo, null, 2));
       } catch (e) {
         this.inspect.symbol = "ERROR - May not be ERC-721";
       }
@@ -530,14 +529,26 @@ const Tokens = {
       event.preventDefault();
       const traitsAndImages = {};
       for (owner of this.scanOwners.owners) {
-        const tokenURI = this.scanOwners.tokenURIs[owner.tokenId].replace('ipfs://', 'https://ipfs.io/ipfs/');
-        // TODO: handle parsing of e.g. base64, SVG
-        const data = await fetch(tokenURI).then(response => response.json());
-        const image = data.image;
-        const traits = data.attributes;
-        traitsAndImages[owner.tokenId] = { traits: traits, image: image };
+        const tokenURI = this.scanOwners.tokenURIs[owner.tokenId];
+        if (tokenURI.substring(0, 4) == 'ipfs') {
+          const expandedTokenURI = tokenURI.replace('ipfs://', 'https://ipfs.io/ipfs/');
+          // TODO: handle parsing of e.g. base64, SVG
+          const data = await fetch(expandedTokenURI).then(response => response.json());
+          const image = data.image;
+          const traits = data.attributes;
+          traitsAndImages[owner.tokenId] = { traits: traits, image: image };
+        } else if (tokenURI.substring(0, 29) == 'data:application/json;base64,') {
+          const base64data = tokenURI.substring(29);
+          console.log("base64data: " + base64data);
+          const data = JSON.parse(atob(base64data));
+          console.log("data: " + JSON.stringify(data));
+          if (data.image) {
+            traitsAndImages[owner.tokenId] = { traits: [], image: data.image };
+          }
+        }
       }
       this.scanOwners.traitsAndImages = traitsAndImages;
+      console.log("traitsAndImages: " + JSON.stringify(traitsAndImages));
     },
 
     async retrieveTraitsAndImagesFromOS() {
@@ -552,24 +563,16 @@ const Tokens = {
         for (let j = i; j < i + BATCHSIZE && j < tokenIds.length; j++) {
           url = url + "&token_ids=" + tokenIds[j];
         }
-        // console.log("url: " + url);
         const data = await fetch(url).then(response => response.json());
-        // console.log("data: " + JSON.stringify(data));
         if (data.assets && data.assets.length > 0) {
-        //   this.settings.contract.loadingOSData += data.assets.length;
           for (let assetIndex = 0; assetIndex < data.assets.length; assetIndex++) {
             const asset = data.assets[assetIndex];
-            // console.log("asset: " + JSON.stringify(asset));
-            // console.log("asset - token_id: " + asset.token_id + ", image_url: " + asset.image_url + ", traits: " + JSON.stringify(asset.traits));
-        //     records.push({ contract: contract, tokenId: asset.token_id, asset: asset, timestamp: timestamp });
             traitsAndImages[asset.token_id] = { image: asset.image_url, traits: asset.traits };
           }
         }
         await delay(DELAYINMILLIS);
-        this.scanOwners.traitsAndImages = traitsAndImages;
       }
       this.scanOwners.traitsAndImages = traitsAndImages;
-      console.log("traitsAndImages: " + JSON.stringify(traitsAndImages));
     },
 
     async loadTestToadz() {
