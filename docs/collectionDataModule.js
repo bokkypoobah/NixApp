@@ -84,11 +84,23 @@ const collectionDataModule = {
   state: {
     collectionData: [
       {
-        address: "0x1234",
-        symbol: "SYM",
-        name: "Name",
-      }
-
+        address: "0x652dc3aa8e1d18a8cc19aef62cf4f03c4d50b2b5",
+        symbol: "TESTS",
+        name: "Tests for Devolution",
+        status: null,
+      },
+      {
+        address: "0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4",
+        symbol: "TESTTOADZ",
+        name: "TestToadz",
+        status: null,
+      },
+      {
+        address: "0xab04795fa12aCe45Dd2A2E4A132e4E46B2d4D1B8",
+        symbol: "TTTT",
+        name: "TTTT",
+        status: null,
+      },
     ],
     nixRoyaltyEngine: null,
     tokensData: [],
