@@ -481,7 +481,7 @@ const Tokens = {
     },
 
     async scanForOwners() {
-      console.log("scanForOwners - scanOwners: " + JSON.stringify(this.scanOwners));
+      // console.log("scanForOwners - scanOwners: " + JSON.stringify(this.scanOwners));
       event.preventDefault();
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const erc721Helper = new ethers.Contract(ERC721HELPERADDRESS, ERC721HELPERABI, provider);
@@ -528,7 +528,7 @@ const Tokens = {
     },
 
     async retrieveTraitsAndImagesFromTokenURI() {
-      console.log("retrieveTraitsAndImagesFromTokenURI");
+      // console.log("retrieveTraitsAndImagesFromTokenURI");
       event.preventDefault();
       const traitsAndImages = {};
       for (owner of this.scanOwners.owners) {
@@ -542,20 +542,20 @@ const Tokens = {
           traitsAndImages[owner.tokenId] = { traits: traits, image: image };
         } else if (tokenURI.substring(0, 29) == 'data:application/json;base64,') {
           const base64data = tokenURI.substring(29);
-          console.log("base64data: " + base64data);
+          // console.log("base64data: " + base64data);
           const data = JSON.parse(atob(base64data));
-          console.log("data: " + JSON.stringify(data));
+          // console.log("data: " + JSON.stringify(data));
           if (data.image) {
             traitsAndImages[owner.tokenId] = { traits: [], image: data.image };
           }
         }
       }
       this.scanOwners.traitsAndImages = traitsAndImages;
-      console.log("traitsAndImages: " + JSON.stringify(traitsAndImages));
+      // console.log("traitsAndImages: " + JSON.stringify(traitsAndImages));
     },
 
     async retrieveTraitsAndImagesFromOS() {
-      console.log("retrieveTraitsAndImagesFromOS");
+      // console.log("retrieveTraitsAndImagesFromOS");
       const tokenIds = this.scanOwners.owners.map(a => a.tokenId);
       const BATCHSIZE = 30; // Max 30
       const DELAYINMILLIS = 500;
@@ -582,7 +582,7 @@ const Tokens = {
       event.preventDefault();
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const erc721Helper = new ethers.Contract(ERC721HELPERADDRESS, ERC721HELPERABI, provider);
-      console.log("Start: " + new Date().toString());
+      // console.log("Start: " + new Date().toString());
       const tokenInfo = await erc721Helper.tokenInfo([TESTTOADZADDRESS]);
       // console.log(JSON.stringify(tokenInfo, null, 2));
       const totalSupply = 6969; // TestToadz
