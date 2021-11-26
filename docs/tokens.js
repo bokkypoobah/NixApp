@@ -79,7 +79,9 @@ const Tokens = {
                         </b-form-group>
                         <div v-if="Object.keys(scanOwners.tokenURIs).length > 0">
                           <b-form-group label-cols="3" label-size="sm" label="">
-                            <b-button size="sm" @click="retrieveTraitsAndImages" variant="primary">Retrieve traits and images</b-button>
+                            <b-button size="sm" @click="retrieveTraitsAndImagesFromTokenURI" variant="primary">Retrieve traits and images from tokenURI</b-button>
+                            or
+                            <b-button size="sm" @click="retrieveTraitsAndImagesFromOS" variant="primary">Retrieve traits and images from OS</b-button>
                           </b-form-group>
                         </div>
                       </b-card>
@@ -494,7 +496,6 @@ const Tokens = {
           }
           this.scanOwners.owners = owners;
         }
-
       } else {
         var searchTokenIds = range(parseInt(this.scanOwners.from), (parseInt(this.scanOwners.to) - 1), 1);
         const owners = [];
@@ -509,43 +510,64 @@ const Tokens = {
           this.scanOwners.owners = owners;
         }
       }
-
       const tokenIds = this.scanOwners.owners.map(a => a.tokenId);
-      // console.log("tokenIds: " + JSON.stringify(tokenIds));
-
       const tokenURIsInfo = await erc721Helper.tokenURIsByTokenIds(this.inspect.address, tokenIds);
-      // console.log(JSON.stringify(tokenURIsInfo, null, 2));
       const tokenURIRecords = [];
       const tokenURIs = {};
       for (let i = 0; i < tokenURIsInfo[0].length; i++) {
         if (tokenURIsInfo[0][i]) {
-          // console.log(tokenURIsInfo[1][i]);
-          // tokenURIRecords.push({ chainId: this.network.chainId, contract: TESTTOADZADDRESS, tokenId: tokenIds[i], tokenURI: tokenURIsInfo[1][i], timestamp: timestamp });
           tokenURIs[tokenIds[i]] = tokenURIsInfo[1][i];
         }
       }
       this.scanOwners.tokenURIs = tokenURIs;
-      console.log("tokenURIs: " + JSON.stringify(tokenURIs));
-
+      this.scanOwners.traitsAndImages = {};
     },
 
-    async retrieveTraitsAndImages() {
-      console.log("retrieveTraitsAndImages");
+    async retrieveTraitsAndImagesFromTokenURI() {
+      console.log("retrieveTraitsAndImagesFromTokenURI");
       event.preventDefault();
       const traitsAndImages = {};
       for (owner of this.scanOwners.owners) {
         const tokenURI = this.scanOwners.tokenURIs[owner.tokenId].replace('ipfs://', 'https://ipfs.io/ipfs/');
-        console.log(owner.tokenId + " " + tokenURI);
+        // TODO: handle parsing of e.g. base64, SVG
         const data = await fetch(tokenURI).then(response => response.json());
-        console.log(JSON.stringify(data));
         const image = data.image;
-        console.log(image);
         const traits = data.attributes;
-        console.log(JSON.stringify(traits));
         traitsAndImages[owner.tokenId] = { traits: traits, image: image };
       }
-      console.log(JSON.stringify(traitsAndImages, null, 2));
       this.scanOwners.traitsAndImages = traitsAndImages;
+    },
+
+    async retrieveTraitsAndImagesFromOS() {
+      console.log("retrieveTraitsAndImagesFromOS");
+      const tokenIds = this.scanOwners.owners.map(a => a.tokenId);
+      const BATCHSIZE = 30; // Max 30
+      const DELAYINMILLIS = 500;
+      const delay = ms => new Promise(res => setTimeout(res, ms));
+      const traitsAndImages = {};
+      for (let i = 0; i < tokenIds.length; i += BATCHSIZE) {
+        let url = "https://testnets-api.opensea.io/api/v1/assets?asset_contract_address=" + this.inspect.address + "\&order_direction=desc\&limit=50\&offset=0";
+        for (let j = i; j < i + BATCHSIZE && j < tokenIds.length; j++) {
+          url = url + "&token_ids=" + tokenIds[j];
+        }
+        // console.log("url: " + url);
+        const data = await fetch(url).then(response => response.json());
+        // console.log("data: " + JSON.stringify(data));
+        if (data.assets && data.assets.length > 0) {
+        //   this.settings.contract.loadingOSData += data.assets.length;
+          for (let assetIndex = 0; assetIndex < data.assets.length; assetIndex++) {
+            const asset = data.assets[assetIndex];
+            // console.log("asset: " + JSON.stringify(asset));
+            // console.log("asset - token_id: " + asset.token_id + ", image_url: " + asset.image_url + ", traits: " + JSON.stringify(asset.traits));
+        //     records.push({ contract: contract, tokenId: asset.token_id, asset: asset, timestamp: timestamp });
+            traitsAndImages[asset.token_id] = { image: asset.image_url, traits: asset.traits };
+          }
+        }
+        await delay(DELAYINMILLIS);
+        this.scanOwners.traitsAndImages = traitsAndImages;
+      }
+      this.scanOwners.traitsAndImages = traitsAndImages;
+      console.log("traitsAndImages: " + JSON.stringify(traitsAndImages));
     },
 
     async loadTestToadz() {
