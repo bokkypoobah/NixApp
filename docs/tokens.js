@@ -89,7 +89,9 @@ const Tokens = {
                         <font size="-2">
                           <b-table small fixed striped sticky-header="1000px" :fields="scanOwners.fields" :items="scanOwners.owners" head-variant="light">
                             <template #cell(tokenURI)="data">
-                              {{ scanOwners.tokenURIs[data.item.tokenId] || '(none)' }}
+                              <div v-if="scanOwners.tokenURIs[data.item.tokenId]">
+                                <b-link :href="scanOwners.tokenURIs[data.item.tokenId].replace('ipfs://', 'https://ipfs.io/ipfs/')" class="card-link" target="_blank">{{ scanOwners.tokenURIs[data.item.tokenId] }}</b-link>
+                              </div>
                             </template>
                             <template #cell(image)="data">
                               <div v-if="scanOwners.traitsAndImages[data.item.tokenId]">
