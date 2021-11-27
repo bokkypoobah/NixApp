@@ -146,12 +146,15 @@ const collectionDataModule = {
           blockNumber: data.blockNumber,
           timestamp: data.timestamp,
           tokens: data.tokens,
+          totalSupply: Object.keys(data.tokens).length,
         });
         collection = state.collections[collectionKey];
       } else {
         collection.blockNumber = data.blockNumber;
         collection.timestamp = data.timestamp;
+        // TODO Sync new token info
         Vue.set(collection, 'tokens', data.tokens);
+        collection.totalSupply = Object.keys(data.tokens).length;
       }
       const collectionList = [];
       for (const [key, collection] of Object.entries(state.collections)) {

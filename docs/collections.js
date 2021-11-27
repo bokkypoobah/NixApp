@@ -18,10 +18,13 @@ const Collections = {
 
                   <b-tab active title="Collections" class="p-1">
                     <b-card-text>
-                      <font size="-2">
-                        <b-table small fixed striped sticky-header="1000px" :items="collectionList" head-variant="light">
+                      <font size="-1">
+                        <b-table small fixed striped sticky-header="1000px" :fields="collectionFields" :items="collectionList" head-variant="light">
                           <template #cell(address)="data">
                             <b-link :href="explorer + 'token/' + data.item.address" class="card-link truncate" target="_blank">{{ data.item.address }}</b-link>
+                          </template>
+                          <template #cell(timestamp)="data">
+                            {{ formatDate(data.item.timestamp) }}
                           </template>
                         </b-table>
                       </font>
@@ -271,6 +274,16 @@ const Collections = {
       reschedule: true,
 
       tabIndex: 0,
+
+      collectionFields: [
+        { key: 'chainId', label: 'Chain Id', thStyle: 'width: 10%;', sortable: true },
+        { key: 'address', label: 'Address', thStyle: 'width: 20%;', sortable: true },
+        { key: 'symbol', label: 'Symbol', thStyle: 'width: 10%;', sortable: true },
+        { key: 'name', label: 'Name', thStyle: 'width: 20%;', sortable: true },
+        { key: 'totalSupply', label: 'Total Supply', thStyle: 'width: 10%;', thClass: 'text-right', tdClass: 'text-right', sortable: true },
+        { key: 'blockNumber', label: 'Block Number', thStyle: 'width: 10%;', thClass: 'text-right', tdClass: 'text-right', sortable: true },
+        { key: 'timestamp', label: 'Timestamp', thStyle: 'width: 20%;', sortable: true },
+      ],
 
       osCollection: {
         data: [],
