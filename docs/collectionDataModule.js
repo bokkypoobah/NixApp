@@ -134,7 +134,7 @@ const collectionDataModule = {
   },
   mutations: {
     updateCollection(state, data) {
-      // logInfo("collectionDataModule", "updateCollection: " + JSON.stringify(data.address));
+      logInfo("collectionDataModule", "updateCollection: " + JSON.stringify(data.address));
       const collectionKey = data.chainId + '.' + data.address;
       let collection = state.collections[collectionKey];
       if (collection == null) {
@@ -153,8 +153,8 @@ const collectionDataModule = {
         collection.blockNumber = data.blockNumber;
         collection.timestamp = data.timestamp;
         // TODO Sync new token info
-        Vue.set(collection, 'tokens', data.tokens);
-        collection.totalSupply = Object.keys(data.tokens).length;
+        // Vue.set(collection, 'tokens', data.tokens);
+        // collection.totalSupply = Object.keys(data.tokens).length;
       }
       const collectionList = [];
       for (const [key, collection] of Object.entries(state.collections)) {
@@ -215,85 +215,99 @@ const collectionDataModule = {
           for (const [key, collection] of Object.entries(state.collectionConfig)) {
             const collectionKey = collection.chainId + '.' + collection.address;
             let existingCollection = state.collections[collectionKey];
-            if (collection.chainId == store.getters['connection/network'].chainId && existingCollection == null) {
-              logInfo("collectionDataModule", "execWeb3() - processing chainId: " + collection.chainId + ", address: " + collection.address);
-              let tokenInfo = null;
-              try {
-                tokenInfo = await erc721Helper.tokenInfo([collection.address]);
-              } catch (e) {
-                console.log("ERROR - Not ERC-721");
-              }
-              if (tokenInfo && tokenInfo.length == 4 && tokenInfo[0].length == 1) {
-                let tokenType = tokenInfo[0][0].toNumber();
-                const MASK_ERC721 = 2**0;
-                const MASK_ERC721METADATA = 2**1;
-                const MASK_ERC721ENUMERABLE = 2**2;
-                let symbol = null;
-                let name = null;
-                let contractTotalSupply = null;
-                const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
-                const enumerableBatchSize = 1000;
-                const scanBatchSize = 5000;
-                if ((tokenType & MASK_ERC721) == MASK_ERC721) {
-                  if ((tokenType & MASK_ERC721METADATA) == MASK_ERC721METADATA) {
-                    symbol = tokenInfo[1][0];
-                    name = tokenInfo[2][0];
-                  }
-                  const owners = {};
-                  if ((tokenType & MASK_ERC721ENUMERABLE) == MASK_ERC721ENUMERABLE) {
-                    contractTotalSupply = tokenInfo[3][0].toString();
-                    for (let i = 0; i < contractTotalSupply; i += enumerableBatchSize) {
-                      const to = (i + enumerableBatchSize > contractTotalSupply) ? contractTotalSupply : i + enumerableBatchSize;
-                      const ownersInfo = await erc721Helper.ownersByEnumerableIndex(collection.address, i, to);
-                      for (let j = 0; j < ownersInfo[0].length; j++) {
-                        const tokenId = ownersInfo[0][j].toString();
-                        owners[tokenId] = { tokenId: tokenId, owner: ownersInfo[1][j] };
-                      }
+            if (collection.chainId == store.getters['connection/network'].chainId) {
+              if (existingCollection == null) {
+                logInfo("collectionDataModule", "execWeb3() - New sync chainId: " + collection.chainId + ", address: " + collection.address);
+                let tokenInfo = null;
+                try {
+                  tokenInfo = await erc721Helper.tokenInfo([collection.address]);
+                } catch (e) {
+                  console.log("ERROR - Not ERC-721");
+                }
+                if (tokenInfo && tokenInfo.length == 4 && tokenInfo[0].length == 1) {
+                  let tokenType = tokenInfo[0][0].toNumber();
+                  const MASK_ERC721 = 2**0;
+                  const MASK_ERC721METADATA = 2**1;
+                  const MASK_ERC721ENUMERABLE = 2**2;
+                  let symbol = null;
+                  let name = null;
+                  let contractTotalSupply = null;
+                  const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
+                  const enumerableBatchSize = 1000;
+                  const scanBatchSize = 5000;
+                  if ((tokenType & MASK_ERC721) == MASK_ERC721) {
+                    if ((tokenType & MASK_ERC721METADATA) == MASK_ERC721METADATA) {
+                      symbol = tokenInfo[1][0];
+                      name = tokenInfo[2][0];
                     }
-                  } else {
-                    contractTotalSupply = null;
-                    const scanFrom = 0;
-                    const scanTo = 6969;
-                    var searchTokenIds = range(parseInt(scanFrom), (parseInt(scanTo) - 1), 1);
-                    for (let i = 0; i < searchTokenIds.length; i += scanBatchSize) {
-                      const batch = searchTokenIds.slice(i, parseInt(i) + scanBatchSize);
-                      const ownersInfo = await erc721Helper.ownersByTokenIds(collection.address, batch);
-                      for (let j = 0; j < ownersInfo[0].length; j++) {
-                        if (ownersInfo[0][j]) {
-                          const tokenId = batch[j].toString();
+                    const owners = {};
+                    if ((tokenType & MASK_ERC721ENUMERABLE) == MASK_ERC721ENUMERABLE) {
+                      contractTotalSupply = tokenInfo[3][0].toString();
+                      for (let i = 0; i < contractTotalSupply; i += enumerableBatchSize) {
+                        const to = (i + enumerableBatchSize > contractTotalSupply) ? contractTotalSupply : i + enumerableBatchSize;
+                        const ownersInfo = await erc721Helper.ownersByEnumerableIndex(collection.address, i, to);
+                        for (let j = 0; j < ownersInfo[0].length; j++) {
+                          const tokenId = ownersInfo[0][j].toString();
                           owners[tokenId] = { tokenId: tokenId, owner: ownersInfo[1][j] };
                         }
                       }
-                    }
-                  }
-                  const tokenIds = Object.keys(owners);
-                  const tokenURIs = {};
-                  for (let i = 0; i < tokenIds.length; i += scanBatchSize) {
-                    const batch = tokenIds.slice(i, parseInt(i) + scanBatchSize);
-                    const tokenURIsInfo = await erc721Helper.tokenURIsByTokenIds(collection.address, batch);
-                    for (let i = 0; i < tokenURIsInfo[0].length; i++) {
-                      if (tokenURIsInfo[0][i]) {
-                        tokenURIs[tokenIds[i]] = tokenURIsInfo[1][i];
+                    } else {
+                      contractTotalSupply = null;
+                      const scanFrom = 0;
+                      const scanTo = 6969;
+                      var searchTokenIds = range(parseInt(scanFrom), (parseInt(scanTo) - 1), 1);
+                      for (let i = 0; i < searchTokenIds.length; i += scanBatchSize) {
+                        const batch = searchTokenIds.slice(i, parseInt(i) + scanBatchSize);
+                        const ownersInfo = await erc721Helper.ownersByTokenIds(collection.address, batch);
+                        for (let j = 0; j < ownersInfo[0].length; j++) {
+                          if (ownersInfo[0][j]) {
+                            const tokenId = batch[j].toString();
+                            owners[tokenId] = { tokenId: tokenId, owner: ownersInfo[1][j] };
+                          }
+                        }
                       }
                     }
+                    const tokenIds = Object.keys(owners);
+                    const tokenURIs = {};
+                    for (let i = 0; i < tokenIds.length; i += scanBatchSize) {
+                      const batch = tokenIds.slice(i, parseInt(i) + scanBatchSize);
+                      const tokenURIsInfo = await erc721Helper.tokenURIsByTokenIds(collection.address, batch);
+                      for (let i = 0; i < tokenURIsInfo[0].length; i++) {
+                        if (tokenURIsInfo[0][i]) {
+                          tokenURIs[tokenIds[i]] = tokenURIsInfo[1][i];
+                        }
+                      }
+                    }
+                    const tokens = {};
+                    for (const [tokenId, owner] of Object.entries(owners)) {
+                      const tokenURI = tokenURIs[tokenId];
+                      tokens[tokenId] = { tokenId: tokenId, owner: owner.owner, tokenURI: tokenURI };
+                    }
+                    commit('updateCollection', {
+                      chainId: collection.chainId,
+                      address: collection.address,
+                      symbol: collection.symbol,
+                      name: collection.name,
+                      blockNumber: blockNumber,
+                      timestamp: timestamp,
+                      tokens: tokens
+                    });
+                  } else {
+                    logError("collectionDataModule", "execWeb3() - address: " + collection.address + " is not an ERC-721 contract");
                   }
-                  const tokens = {};
-                  for (const [tokenId, owner] of Object.entries(owners)) {
-                    const tokenURI = tokenURIs[tokenId];
-                    tokens[tokenId] = { tokenId: tokenId, owner: owner.owner, tokenURI: tokenURI };
-                  }
-                  commit('updateCollection', {
-                    chainId: collection.chainId,
-                    address: collection.address,
-                    symbol: collection.symbol,
-                    name: collection.name,
-                    blockNumber: blockNumber,
-                    timestamp: timestamp,
-                    tokens: tokens
-                  });
-                } else {
-                  logError("collectionDataModule", "execWeb3() - address: " + collection.address + " is not an ERC-721 contract");
                 }
+              } else {
+                const lastBlockNumber = existingCollection.blockNumber;
+                commit('updateCollection', {
+                  chainId: collection.chainId,
+                  address: collection.address,
+                  symbol: collection.symbol,
+                  name: collection.name,
+                  blockNumber: blockNumber,
+                  timestamp: timestamp,
+                  tokens: collection.tokens
+                });
+                logInfo("collectionDataModule", "execWeb3() - Syncing chainId: " + collection.chainId + ", address: " + collection.address + ", lastBlockNumber: " + lastBlockNumber);
               }
             }
           }
