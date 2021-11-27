@@ -455,7 +455,7 @@ const Collections = {
       this.inspect.symbol = "?";
       this.inspect.name = "?";
       this.inspect.totalSupply = "?";
-      this.tabIndex = 1;
+      this.tabIndex = 2;
     },
 
     async inspectAddress() {
