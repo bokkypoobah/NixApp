@@ -298,34 +298,51 @@ const collectionDataModule = {
                 }
               } else {
                 const lastBlockNumber = existingCollection.blockNumber;
-
+                const lookback = 100000;
                 const filter = {
                   address: collection.address,
                   // address: [NIXADDRESS, weth.address],
-                  // fromBlock: blockNumber.sub(1000).toNumber(),
-                  fromBlock: lastBlockNumber - 100000,
-                  // fromBlock: 'earliest',
-                  // toBlock: 'latest',
+                  fromBlock: lastBlockNumber - lookback,
                   toBlock: blockNumber,
                   topics: [[
-                  //   // '0x98294be035c742c5a68ff3c35920bf3c58cba97677569fb8bea1ae14e1e8643d', // OrderAdded(address token, uint256 orderIndex)
-                  //   // '0xf4c563a3ea86ff1f4275e8c207df0375a51963f2b831b7bf4da8be938d92876c', // TokenAdded(address token, uint256 tokenIndex)
-                  //   '0x384bb209f0fe774478cff852a38e0ad1152d763f1a10b696be5b14437e594ef4', // event OrderExecuted(address indexed token, uint indexed orderIndex, uint indexed tradeIndex, uint[] tokenIds);
                     '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', // Transfer(index_topic_1 address from, index_topic_2 address to, index_topic_3 uint256 tokenId)
                     '0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31', // ApprovalForAll (index_topic_1 address owner, index_topic_2 address operator, bool approved)
-                  // //   // // '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', // Transfer(index_topic_1 address src, index_topic_2 address dst, uint256 wad)
-                  //   // '0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c', // weth Deposit(index_topic_1 address dst, uint256 wad)
                   ]],
                 };
                 const events = await provider.getLogs(filter);
-                console.log("events: " + JSON.stringify(events));
                 const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
+                const updatedTokenIdsMap = {};
+                const updateApprovals = {};
                 for (let j = 0; j < events.length; j++) {
                   const event = events[j];
                   const parsedLog = testToadz.interface.parseLog(event);
                   const decodedEventLog = testToadz.interface.decodeEventLog(parsedLog.eventFragment.name, event.data, event.topics);
-                  console.log(parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
+                  if (parsedLog.eventFragment.name == "Transfer") {
+                    // console.log(parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
+                    updatedTokenIdsMap[decodedEventLog[2]] = true;
+                  } else {
+                    // console.log(parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
+                    updateApprovals[decodedEventLog[0]] = true;
+                  }
                 }
+                // TODO - Send both below to Nix to handle
+                console.log("updateApprovals: " + JSON.stringify(Object.keys(updateApprovals)));
+                const updatedTokenIds = Object.keys(updatedTokenIdsMap);
+                console.log("updatedTokenIds: " + JSON.stringify(updatedTokenIds));
+                const scanBatchSize = 5000;
+                for (let i = 0; i < updatedTokenIds.length; i += scanBatchSize) {
+                  const batch = updatedTokenIds.slice(i, parseInt(i) + scanBatchSize);
+                  const ownersInfo = await erc721Helper.ownersByTokenIds(collection.address, batch);
+                  for (let j = 0; j < ownersInfo[0].length; j++) {
+                    if (ownersInfo[0][j]) {
+                      const tokenId = batch[j].toString();
+                      // owners[tokenId] = { tokenId: tokenId, owner: ownersInfo[1][j] };
+                      console.log(tokenId + " = " + ownersInfo[1][j]);
+                    }
+                  }
+                }
+
+
 
                 commit('updateCollection', {
                   chainId: collection.chainId,
