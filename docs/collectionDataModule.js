@@ -86,15 +86,15 @@ const collectionDataModule = {
   namespaced: true,
   state: {
     collectionConfig: {
-      "0x652dc3aa8e1d18a8cc19aef62cf4f03c4d50b2b5": {
-        chainId: 4,
-        address: "0x652dc3aa8e1d18a8cc19aef62cf4f03c4d50b2b5",
-        symbol: "TESTS",
-        name: "Tests for Devolution",
-        sync: "auto",
-        status: null,
-        data: {},
-      },
+      // "0x652dc3aa8e1d18a8cc19aef62cf4f03c4d50b2b5": {
+      //   chainId: 4,
+      //   address: "0x652dc3aa8e1d18a8cc19aef62cf4f03c4d50b2b5",
+      //   symbol: "TESTS",
+      //   name: "Tests for Devolution",
+      //   sync: "auto",
+      //   status: null,
+      //   data: {},
+      // },
       "0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4": {
         chainId: 4,
         address: "0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4",
@@ -104,15 +104,15 @@ const collectionDataModule = {
         status: null,
         data: {},
       },
-      "0xab04795fa12aCe45Dd2A2E4A132e4E46B2d4D1B8": {
-        chainId: 4,
-        address: "0xab04795fa12aCe45Dd2A2E4A132e4E46B2d4D1B8",
-        symbol: "TTTT",
-        name: "TTTT",
-        sync: "auto",
-        status: null,
-        data: {},
-      },
+      // "0xab04795fa12aCe45Dd2A2E4A132e4E46B2d4D1B8": {
+      //   chainId: 4,
+      //   address: "0xab04795fa12aCe45Dd2A2E4A132e4E46B2d4D1B8",
+      //   symbol: "TTTT",
+      //   name: "TTTT",
+      //   sync: "auto",
+      //   status: null,
+      //   data: {},
+      // },
     },
     collections: {},
     collectionList: [],
@@ -298,6 +298,35 @@ const collectionDataModule = {
                 }
               } else {
                 const lastBlockNumber = existingCollection.blockNumber;
+
+                const filter = {
+                  address: collection.address,
+                  // address: [NIXADDRESS, weth.address],
+                  // fromBlock: blockNumber.sub(1000).toNumber(),
+                  fromBlock: lastBlockNumber - 100000,
+                  // fromBlock: 'earliest',
+                  // toBlock: 'latest',
+                  toBlock: blockNumber,
+                  topics: [[
+                  //   // '0x98294be035c742c5a68ff3c35920bf3c58cba97677569fb8bea1ae14e1e8643d', // OrderAdded(address token, uint256 orderIndex)
+                  //   // '0xf4c563a3ea86ff1f4275e8c207df0375a51963f2b831b7bf4da8be938d92876c', // TokenAdded(address token, uint256 tokenIndex)
+                  //   '0x384bb209f0fe774478cff852a38e0ad1152d763f1a10b696be5b14437e594ef4', // event OrderExecuted(address indexed token, uint indexed orderIndex, uint indexed tradeIndex, uint[] tokenIds);
+                    '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', // Transfer(index_topic_1 address from, index_topic_2 address to, index_topic_3 uint256 tokenId)
+                    '0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31', // ApprovalForAll (index_topic_1 address owner, index_topic_2 address operator, bool approved)
+                  // //   // // '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', // Transfer(index_topic_1 address src, index_topic_2 address dst, uint256 wad)
+                  //   // '0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c', // weth Deposit(index_topic_1 address dst, uint256 wad)
+                  ]],
+                };
+                const events = await provider.getLogs(filter);
+                console.log("events: " + JSON.stringify(events));
+                const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
+                for (let j = 0; j < events.length; j++) {
+                  const event = events[j];
+                  const parsedLog = testToadz.interface.parseLog(event);
+                  const decodedEventLog = testToadz.interface.decodeEventLog(parsedLog.eventFragment.name, event.data, event.topics);
+                  console.log(parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
+                }
+
                 commit('updateCollection', {
                   chainId: collection.chainId,
                   address: collection.address,
