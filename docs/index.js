@@ -56,13 +56,11 @@ const store = new Vuex.Store({
     connection: connectionModule,
     nixData: nixDataModule,
     collectionData: collectionDataModule,
-    nftPostcard: nftPostcardModule,
     welcome: welcomeModule,
     nix: nixModule,
     weth: wethModule,
     admin: adminModule,
     collections: collectionsModule,
-    beeefLibrary: beeefLibraryModule,
   }
 });
 
