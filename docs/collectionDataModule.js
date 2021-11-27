@@ -11,7 +11,7 @@ const CollectionData = {
         <b-card no-body class="border-0" v-if="network && network.chainId == 4">
           <b-row>
             <b-col cols="4" class="small">Collections</b-col>
-            <b-col class="small truncate" cols="8">{{ collectionData.length }}</b-col>
+            <b-col class="small truncate" cols="8">{{ Object.keys(collections).length }}</b-col>
           </b-row>
         </b-card>
       </b-collapse>
@@ -36,9 +36,12 @@ const CollectionData = {
     coinbase() {
       return store.getters['connection/coinbase'];
     },
-    collectionData() {
-      return store.getters['collectionData/collectionData'];
+    collections() {
+      return store.getters['collectionData/collections'];
     },
+    // collectionList() {
+    //   return store.getters['collectionData/collectionList'];
+    // },
     nixAddress() {
       return NIXADDRESS;
     },
@@ -82,29 +85,37 @@ const CollectionData = {
 const collectionDataModule = {
   namespaced: true,
   state: {
-    collectionData: [
-      {
+    collectionConfig: {
+      "0x652dc3aa8e1d18a8cc19aef62cf4f03c4d50b2b5": {
+        chainId: 4,
         address: "0x652dc3aa8e1d18a8cc19aef62cf4f03c4d50b2b5",
         symbol: "TESTS",
         name: "Tests for Devolution",
         sync: "auto",
         status: null,
+        data: {},
       },
-      {
+      "0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4": {
+        chainId: 4,
         address: "0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4",
         symbol: "TESTTOADZ",
         name: "TestToadz",
         sync: "auto",
         status: null,
+        data: {},
       },
-      {
+      "0xab04795fa12aCe45Dd2A2E4A132e4E46B2d4D1B8": {
+        chainId: 4,
         address: "0xab04795fa12aCe45Dd2A2E4A132e4E46B2d4D1B8",
         symbol: "TTTT",
         name: "TTTT",
         sync: "auto",
         status: null,
+        data: {},
       },
-    ],
+    },
+    collections: {},
+    collectionList: [],
     nixRoyaltyEngine: null,
     tokensData: [],
     tradeData: [],
@@ -112,7 +123,9 @@ const collectionDataModule = {
     executing: false,
   },
   getters: {
-    collectionData: state => state.collectionData,
+    collectionConfig: state => state.collectionConfig,
+    collections: state => state.collections,
+    collectionList: state => state.collectionList,
     nixRoyaltyEngine: state => state.nixRoyaltyEngine,
     tokensData: state => state.tokensData,
     tradeData: state => state.tradeData,
@@ -120,6 +133,32 @@ const collectionDataModule = {
     params: state => state.params,
   },
   mutations: {
+    updateCollection(state, data) {
+      // logInfo("collectionDataModule", "updateCollection: " + JSON.stringify(data.address));
+      const collectionKey = data.chainId + '.' + data.address;
+      let collection = state.collections[collectionKey];
+      if (collection == null) {
+        Vue.set(state.collections, collectionKey, {
+          chainId: data.chainId,
+          address: data.address,
+          symbol: data.symbol,
+          name: data.name,
+          blockNumber: data.blockNumber,
+          timestamp: data.timestamp,
+          tokens: data.tokens,
+        });
+        collection = state.collections[collectionKey];
+      } else {
+        collection.blockNumber = data.blockNumber;
+        collection.timestamp = data.timestamp;
+        Vue.set(collection, 'tokens', data.tokens);
+      }
+      const collectionList = [];
+      for (const [key, collection] of Object.entries(state.collections)) {
+        collectionList.push(collection);
+      }
+      state.collectionList = collectionList;
+    },
     updateNixRoyaltyEngine(state, nixRoyaltyEngine) {
       // logInfo("collectionDataModule", "updateNixRoyaltyEngine: " + nixRoyaltyEngine);
       state.nixRoyaltyEngine = nixRoyaltyEngine;
@@ -165,77 +204,105 @@ const collectionDataModule = {
         if (connected && blockUpdated) {
           const provider = new ethers.providers.Web3Provider(window.ethereum);
           const blockNumber = block ? block.number : await provider.getBlockNumber();
+          const timestamp = block ? block.timestamp : await provider.getBlock().timestamp;
           logInfo("collectionDataModule", "execWeb3() count: " + count + ", blockUpdated: " + blockUpdated + ", blockNumber: " + blockNumber + ", listenersInstalled: " + listenersInstalled + ", rootState.route.params: " + JSON.stringify(rootState.route.params) + "]");
-          const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
-          const nixHelper = new ethers.Contract(NIXHELPERADDRESS, NIXHELPERABI, provider);
 
-          if (!state.nixRoyaltyEngine) {
-            const nixRoyaltyEngine = await nix.royaltyEngine();
-            commit('updateNixRoyaltyEngine', nixRoyaltyEngine);
+          const erc721Helper = new ethers.Contract(ERC721HELPERADDRESS, ERC721HELPERABI, provider);
+          const collectionList = [];
+          for (const [key, collection] of Object.entries(state.collectionConfig)) {
+            const collectionKey = collection.chainId + '.' + collection.address;
+            let existingCollection = state.collections[collectionKey];
+            if (collection.chainId == store.getters['connection/network'].chainId && existingCollection == null) {
+              logInfo("collectionDataModule", "execWeb3() - processing chainId: " + collection.chainId + ", address: " + collection.address);
+              let tokenInfo = null;
+              try {
+                tokenInfo = await erc721Helper.tokenInfo([collection.address]);
+              } catch (e) {
+                console.log("ERROR - Not ERC-721");
+              }
+              if (tokenInfo && tokenInfo.length == 4 && tokenInfo[0].length == 1) {
+                let tokenType = tokenInfo[0][0].toNumber();
+                const MASK_ERC721 = 2**0;
+                const MASK_ERC721METADATA = 2**1;
+                const MASK_ERC721ENUMERABLE = 2**2;
+                let symbol = null;
+                let name = null;
+                let contractTotalSupply = null;
+                const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
+                const enumerableBatchSize = 1000;
+                const scanBatchSize = 5000;
+                if ((tokenType & MASK_ERC721) == MASK_ERC721) {
+                  if ((tokenType & MASK_ERC721METADATA) == MASK_ERC721METADATA) {
+                    symbol = tokenInfo[1][0];
+                    name = tokenInfo[2][0];
+                  }
+                  const owners = {};
+                  if ((tokenType & MASK_ERC721ENUMERABLE) == MASK_ERC721ENUMERABLE) {
+                    contractTotalSupply = tokenInfo[3][0].toString();
+                    for (let i = 0; i < contractTotalSupply; i += enumerableBatchSize) {
+                      const to = (i + enumerableBatchSize > contractTotalSupply) ? contractTotalSupply : i + enumerableBatchSize;
+                      const ownersInfo = await erc721Helper.ownersByEnumerableIndex(collection.address, i, to);
+                      for (let j = 0; j < ownersInfo[0].length; j++) {
+                        const tokenId = ownersInfo[0][j].toString();
+                        owners[tokenId] = { tokenId: tokenId, owner: ownersInfo[1][j] };
+                      }
+                    }
+                  } else {
+                    contractTotalSupply = null;
+                    const scanFrom = 0;
+                    const scanTo = 6969;
+                    var searchTokenIds = range(parseInt(scanFrom), (parseInt(scanTo) - 1), 1);
+                    for (let i = 0; i < searchTokenIds.length; i += scanBatchSize) {
+                      const batch = searchTokenIds.slice(i, parseInt(i) + scanBatchSize);
+                      const ownersInfo = await erc721Helper.ownersByTokenIds(collection.address, batch);
+                      for (let j = 0; j < ownersInfo[0].length; j++) {
+                        if (ownersInfo[0][j]) {
+                          const tokenId = batch[j].toString();
+                          owners[tokenId] = { tokenId: tokenId, owner: ownersInfo[1][j] };
+                        }
+                      }
+                    }
+                  }
+                  const tokenIds = Object.keys(owners);
+                  const tokenURIs = {};
+                  for (let i = 0; i < tokenIds.length; i += scanBatchSize) {
+                    const batch = tokenIds.slice(i, parseInt(i) + scanBatchSize);
+                    const tokenURIsInfo = await erc721Helper.tokenURIsByTokenIds(collection.address, batch);
+                    for (let i = 0; i < tokenURIsInfo[0].length; i++) {
+                      if (tokenURIsInfo[0][i]) {
+                        tokenURIs[tokenIds[i]] = tokenURIsInfo[1][i];
+                      }
+                    }
+                  }
+                  const tokens = {};
+                  for (const [tokenId, owner] of Object.entries(owners)) {
+                    const tokenURI = tokenURIs[tokenId];
+                    tokens[tokenId] = { tokenId: tokenId, owner: owner.owner, tokenURI: tokenURI };
+                  }
+                  commit('updateCollection', {
+                    chainId: collection.chainId,
+                    address: collection.address,
+                    symbol: collection.symbol,
+                    name: collection.name,
+                    blockNumber: blockNumber,
+                    timestamp: timestamp,
+                    tokens: tokens
+                  });
+                } else {
+                  logError("collectionDataModule", "execWeb3() - address: " + collection.address + " is not an ERC-721 contract");
+                }
+              }
+            }
           }
 
           // TODO - Capture relevant events, and refresh only the updated orders & trades data
           // Install listeners
           if (!listenersInstalled) {
             logInfo("collectionDataModule", "execWeb3() installing listener");
-            nix.on("*", (event) => {
-              // console.log("nix - event: ", JSON.stringify(event));
-              logInfo("collectionDataModule", "nix - event: " + JSON.stringify(event));
-            });
-          }
-
-          const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
-
-          var tokensData = [];
-          const tokensLength = await nix.tokensLength();
-          if (false && tokensLength > 0) {
-            var tokenIndices = range(0, tokensLength - 1, 1);
-            const tokens = await nixHelper.getTokens(tokenIndices);
-            for (let i = 0; i < tokens[0].length; i++) {
-              const token = tokens[0][i];
-              const ordersLength = tokens[1][i];
-              const executed = tokens[2][i];
-              const volumeToken = tokens[3][i];
-              const volumeWeth = tokens[4][i];
-              var ordersData = [];
-              var orderIndices = range(0, ordersLength - 1, 1);
-              const orders = await nixHelper.getOrders(token, orderIndices);
-              for (let i = 0; i < ordersLength; i++) {
-                const maker = orders[0][i];
-                const taker = orders[1][i];
-                const tokenIds = orders[2][i];
-                const price = orders[3][i];
-                const data = orders[4][i];
-                const buyOrSell = data[0];
-                const anyOrAll = data[1];
-                const expiry = data[2];
-                const expiryString = expiry == 0 ? "(none)" : new Date(expiry * 1000).toISOString();
-                const tradeCount = data[3];
-                const tradeMax = data[4];
-                const royaltyFactor = data[5];
-                const orderStatus = data[6];
-                ordersData.push({ orderIndex: i, maker: maker, taker: taker, tokenIds: tokenIds, price: price, buyOrSell: buyOrSell,
-                  anyOrAll: anyOrAll, expiry: expiry, tradeCount: tradeCount, tradeMax: tradeMax, royaltyFactor: royaltyFactor,
-                  orderStatus: orderStatus });
-              }
-              tokensData.push({ token: token, ordersLength: ordersLength, executed: executed, volumeToken: volumeToken, volumeWeth: volumeWeth, ordersData: ordersData });
-            }
-            // commit('updateTokensData', tokensData);
-
-            const tradesLength = await nix.tradesLength();
-            const loaded = 0;
-            var tradeData = [];
-            const tradeIndices = range(loaded, parseInt(tradesLength) - 1, 1);
-            const trades = await nixHelper.getTrades(tradeIndices);
-            for (let i = 0; i < trades[0].length; i++) {
-              // console.log("trades[" + i + "]: " + JSON.stringify(trades[i], null, 2));
-              const taker = trades[0][i];
-              const royaltyFactor = trades[1][i];
-              const blockNumber = trades[2][i];
-              const orders = trades[3][i];
-              tradeData.push({ tradeIndex: i, taker: taker, royaltyFactor: royaltyFactor, blockNumber: blockNumber, orders: orders });
-            }
-            // commit('updateTradeData', tradeData);
+            // nix.on("*", (event) => {
+            //   // console.log("nix - event: ", JSON.stringify(event));
+            //   logInfo("collectionDataModule", "nix - event: " + JSON.stringify(event));
+            // });
           }
         }
 

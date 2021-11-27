@@ -19,7 +19,7 @@ const Collections = {
                   <b-tab active title="Collections" class="p-1">
                     <b-card-text>
                       <font size="-2">
-                        <b-table small fixed striped sticky-header="1000px" :items="collectionData" head-variant="light">
+                        <b-table small fixed striped sticky-header="1000px" :items="collectionList" head-variant="light">
                           <template #cell(address)="data">
                             <b-link :href="explorer + 'token/' + data.item.address" class="card-link truncate" target="_blank">{{ data.item.address }}</b-link>
                           </template>
@@ -359,8 +359,11 @@ const Collections = {
     tradeData() {
       return store.getters['nixData/tradeData'];
     },
-    collectionData() {
-      return store.getters['collectionData/collectionData'];
+    collections() {
+      return store.getters['collectionData/collections'];
+    },
+    collectionList() {
+      return store.getters['collectionData/collectionList'];
     },
   },
   methods: {
