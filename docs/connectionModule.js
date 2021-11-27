@@ -272,7 +272,7 @@ const Connection = {
         if (this.connected && !this.listenersInstalled) {
           logInfo("Connection", "execWeb3() Installing listeners");
           function handleChainChanged(_chainId) {
-            alert('Ethereum chain has changed. We will reload the page as recommended.')
+            alert('Ethereum chain has changed - reloading this page.')
             window.location.reload();
           }
           window.ethereum.on('chainChanged', handleChainChanged);
@@ -312,10 +312,14 @@ const Connection = {
             const balance = await provider.getBalance(this.coinbase);
             store.dispatch('connection/setBalance', balance);
 
-            const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
-            const wethBalance = await weth.balanceOf(this.coinbase);
-            const wethAllowanceToNix = await weth.allowance(this.coinbase, NIXADDRESS);
-            store.dispatch('connection/setWethInfo', { wethBalance: wethBalance, wethAllowanceToNix: wethAllowanceToNix });
+            if (network.chainId == 4) {
+              const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
+              const wethBalance = await weth.balanceOf(this.coinbase);
+              const wethAllowanceToNix = await weth.allowance(this.coinbase, NIXADDRESS);
+              store.dispatch('connection/setWethInfo', { wethBalance: wethBalance, wethAllowanceToNix: wethAllowanceToNix });
+            } else {
+              store.dispatch('connection/setWethInfo', { wethBalance: null, wethAllowanceToNix: null });
+            }
 
           } catch (e) {
             store.dispatch('connection/setConnectionError', 'Cannot retrieve data from web3 provider');
@@ -333,8 +337,10 @@ const Connection = {
         }
       }
 
-      store.dispatch('nixData/execWeb3', { count: this.count, listenersInstalled: this.listenersInstalled });
-      store.dispatch('collectionData/execWeb3', { count: this.count, listenersInstalled: this.listenersInstalled });
+      if (this.connected && this.network && this.network.chainId == 4) {
+        store.dispatch('nixData/execWeb3', { count: this.count, listenersInstalled: this.listenersInstalled });
+        store.dispatch('collectionData/execWeb3', { count: this.count, listenersInstalled: this.listenersInstalled });
+      }
 
       if (!this.listenersInstalled) {
         this.listenersInstalled = true;

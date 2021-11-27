@@ -161,7 +161,7 @@ const nixDataModule = {
         if (connected && blockUpdated) {
           const provider = new ethers.providers.Web3Provider(window.ethereum);
           const blockNumber = block ? block.number : await provider.getBlockNumber();
-          logInfo("nixDataModule", "execWeb3() count: " + count + ", blockUpdated: " + blockUpdated + ", blockNumber: " + blockNumber + ", listenersInstalled: " + listenersInstalled + ", rootState.route.params: " + JSON.stringify(rootState.route.params) + "]");
+          logDebug("nixDataModule", "execWeb3() count: " + count + ", blockUpdated: " + blockUpdated + ", blockNumber: " + blockNumber + ", listenersInstalled: " + listenersInstalled + ", rootState.route.params: " + JSON.stringify(rootState.route.params) + "]");
           const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
           const nixHelper = new ethers.Contract(NIXHELPERADDRESS, NIXHELPERABI, provider);
 
@@ -173,7 +173,7 @@ const nixDataModule = {
           // TODO - Capture relevant events, and refresh only the updated orders & trades data
           // Install listeners
           if (!listenersInstalled) {
-            logInfo("nixDataModule", "execWeb3() installing listener");
+            logDebug("nixDataModule", "execWeb3() installing listener");
             nix.on("*", (event) => {
               // console.log("nix - event: ", JSON.stringify(event));
               logInfo("nixDataModule", "nix - event: " + JSON.stringify(event));
