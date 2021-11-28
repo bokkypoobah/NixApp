@@ -259,15 +259,23 @@ const nixDataModule = {
         return { nixTokens, nixOrders, nixTrades, accounts, tokens };
       }
 
-      async function fullSync() {
+      async function fullSync(erc721Helper) {
         logInfo("nixDataModule", "fullSync()");
         const collectionsConfig = store.getters['collectionData/collectionsConfig'];
         for (const [address, collectionConfig] of Object.entries(collectionsConfig)) {
           logInfo("nixDataModule", "fullSync() - collection: " + JSON.stringify(collectionConfig));
-          // const collectionKey = data.chainId + '.' + data.address;
-          // let collection = state.collections[collectionKey];
-          // if (collection == null) {
-          // }
+          const collectionKey = collectionConfig.chainId + '.' + collectionConfig.address;
+          let collection = state.collections[collectionKey];
+          if (collection == null) {
+            logInfo("nixDataModule", "execWeb3.fullSync() - New sync chainId: " + collectionConfig.chainId + ", address: " + collectionConfig.address);
+            let tokenInfo = null;
+            try {
+              tokenInfo = await erc721Helper.tokenInfo([collectionConfig.address]);
+            } catch (e) {
+              console.log("ERROR - Not ERC-721");
+            }
+            logInfo("nixDataModule", "execWeb3.fullSync() - tokenInfo: " + JSON.stringify(tokenInfo));
+          }
 
 
         }
@@ -301,11 +309,12 @@ const nixDataModule = {
           const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
           const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
           const nixHelper = new ethers.Contract(NIXHELPERADDRESS, NIXHELPERABI, provider);
+          const erc721Helper = new ethers.Contract(ERC721HELPERADDRESS, ERC721HELPERABI, provider);
           const erc721 = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
 
           const updates = await getUpdatedEvents(provider, nix, erc721, weth, blockNumber);
           // console.log(JSON.stringify(updates));
-          await fullSync();
+          await fullSync(erc721Helper);
           await incrementalSync();
 
           if (!state.nixRoyaltyEngine) {

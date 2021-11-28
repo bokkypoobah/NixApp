@@ -213,8 +213,8 @@ const collectionDataModule = {
           const erc721Helper = new ethers.Contract(ERC721HELPERADDRESS, ERC721HELPERABI, provider);
           const collectionList = [];
           for (const [key, collection] of Object.entries(state.collectionsConfig)) {
-            const collectionKey = collection.chainId + '.' + collection.address;
             if (collection.chainId == store.getters['connection/network'].chainId) {
+              const collectionKey = collection.chainId + '.' + collection.address;
               let existingCollection = state.collections[collectionKey];
               if (existingCollection == null) {
                 logInfo("collectionDataModule", "execWeb3() - New sync chainId: " + collection.chainId + ", address: " + collection.address);
