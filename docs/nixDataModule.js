@@ -133,6 +133,7 @@ const nixDataModule = {
           blockNumber: null,
           timestamp: null,
           tokens: [],
+          computedTotalSupply: null,
         });
       }
       const collectionList = [];
@@ -155,6 +156,7 @@ const nixDataModule = {
           blockNumber: data.blockNumber,
           timestamp: data.timestamp,
           tokens: data.tokens,
+          computedTotalSupply: Object.keys(data.tokens).length,
         });
       }
     },
