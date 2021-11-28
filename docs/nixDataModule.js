@@ -147,9 +147,46 @@ const nixDataModule = {
       async function getLogs(provider, blockNumber) {
         logInfo("nixDataModule", "getLogs()");
         const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
-        // Get WETH logs, Tokens logs and nix logs
+        const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
+        const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
+
         const wethLookback = 50000; // 100
         const erc721Lookback = 20000; // 100
+        const nixLookback = 50000; // 100
+
+        const updatedAccounts = {};
+        const updatedTokenIds = {};
+        const updatedTokens = {};
+        const updatedOrders = {};
+        const updatedTrades = {};
+
+        const nixFilter = {
+          address: NIXADDRESS,
+          fromBlock: blockNumber - nixLookback,
+          toBlock: blockNumber,
+          topics: [[
+            '0xf4c563a3ea86ff1f4275e8c207df0375a51963f2b831b7bf4da8be938d92876c', // TokenAdded(address token, uint256 tokenIndex)
+            '0x98294be035c742c5a68ff3c35920bf3c58cba97677569fb8bea1ae14e1e8643d', // OrderAdded(address token, uint256 orderIndex)
+            '0x384bb209f0fe774478cff852a38e0ad1152d763f1a10b696be5b14437e594ef4', // OrderExecuted(address indexed token, uint indexed orderIndex, uint indexed tradeIndex, uint[] tokenIds);
+          ]],
+        };
+        const nixEvents = await provider.getLogs(nixFilter);
+        for (let j = 0; j < nixEvents.length; j++) {
+          const nixEvent = nixEvents[j];
+          const parsedLog = nix.interface.parseLog(nixEvent);
+          const decodedEventLog = nix.interface.decodeEventLog(parsedLog.eventFragment.name, nixEvent.data, nixEvent.topics);
+          // console.log(parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
+          if (parsedLog.eventFragment.name == "TokenAdded") {
+            updatedTokens[decodedEventLog[1]] = decodedEventLog[0];
+          } else if (parsedLog.eventFragment.name == "OrderAdded") {
+            if (updatedOrders[decodedEventLog[0]] == null) {
+              updatedOrders[decodedEventLog[0]] = {};
+            }
+            updatedOrders[decodedEventLog[0]][decodedEventLog[1]] = true;
+          } else if (parsedLog.eventFragment.name == "OrderExecuted") {
+            updatedTrades[decodedEventLog[2]] = true;
+          }
+        }
 
         const wethFilter = {
           address: WETHADDRESS,
@@ -163,8 +200,6 @@ const nixDataModule = {
           ]],
         };
         const wethEvents = await provider.getLogs(wethFilter);
-        const updatedAccounts = {};
-        const updatedTokenIds = {};
         for (let j = 0; j < wethEvents.length; j++) {
           const wethEvent = wethEvents[j];
           const parsedLog = weth.interface.parseLog(wethEvent);
@@ -194,7 +229,6 @@ const nixDataModule = {
             ]],
           };
           const erc721Events = await provider.getLogs(erc721Filter);
-          const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
           for (let j = 0; j < erc721Events.length; j++) {
             const erc721Event = erc721Events[j];
             const parsedLog = testToadz.interface.parseLog(erc721Event);
@@ -203,7 +237,6 @@ const nixDataModule = {
             if (parsedLog.eventFragment.name == "Transfer") {
               updatedAccounts[decodedEventLog[0]] = true;
               updatedAccounts[decodedEventLog[1]] = true;
-
               if (updatedTokenIds[erc721Event.address] == null) {
                 updatedTokenIds[erc721Event.address] = {};
               }
@@ -215,11 +248,15 @@ const nixDataModule = {
             }
           }
         }
+        console.log("updatedTokens: " + JSON.stringify(Object.keys(updatedTokens)));
+        for (let collection of Object.keys(updatedOrders)) {
+          console.log("updatedOrders: " + collection + " - " + Object.keys(updatedOrders[collection]));
+        }
+        console.log("updatedTrades: " + JSON.stringify(Object.keys(updatedTrades)));
         console.log("updatedAccounts: " + JSON.stringify(Object.keys(updatedAccounts)));
         for (let collection of Object.keys(updatedTokenIds)) {
           console.log("updatedTokenIds: " + collection + " - " + Object.keys(updatedTokenIds[collection]));
         }
-
       }
 
       async function fullSync() {
