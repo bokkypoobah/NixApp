@@ -279,11 +279,11 @@ const Collections = {
 
       collectionFields: [
         { key: 'chainId', label: 'Chain Id', thStyle: 'width: 10%;', sortable: true },
-        { key: 'address', label: 'Address', thStyle: 'width: 20%;', sortable: true },
+        { key: 'address', label: 'Address', thStyle: 'width: 10%;', sortable: true },
         { key: 'symbol', label: 'Symbol', thStyle: 'width: 10%;', sortable: true },
-        { key: 'name', label: 'Name', thStyle: 'width: 20%;', sortable: true },
+        { key: 'name', label: 'Name', thStyle: 'width: 15%;', sortable: true },
         { key: 'totalSupply', label: 'Total Supply', thStyle: 'width: 10%;', thClass: 'text-right', tdClass: 'text-right', sortable: true },
-        { key: 'computedTotalSupply', label: 'Computed Total Supply', thStyle: 'width: 10%;', thClass: 'text-right', tdClass: 'text-right', sortable: true },
+        { key: 'computedTotalSupply', label: 'Computed Total Supply', thStyle: 'width: 20%;', thClass: 'text-right', tdClass: 'text-right', sortable: true },
         { key: 'blockNumber', label: 'Block Number', thStyle: 'width: 10%;', thClass: 'text-right', tdClass: 'text-right', sortable: true },
         { key: 'timestamp', label: 'Timestamp', thStyle: 'width: 20%;', sortable: true },
       ],
