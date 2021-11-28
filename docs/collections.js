@@ -24,7 +24,9 @@ const Collections = {
                             <b-link :href="explorer + 'token/' + data.item.address" class="card-link truncate" target="_blank">{{ data.item.address }}</b-link>
                           </template>
                           <template #cell(timestamp)="data">
-                            {{ formatDate(data.item.timestamp) }}
+                            <div v-if="data.item.timestamp">
+                              {{ formatDate(data.item.timestamp) }}
+                            </div>
                           </template>
                         </b-table>
                       </font>
@@ -373,10 +375,10 @@ const Collections = {
       return store.getters['nixData/tradeData'];
     },
     collections() {
-      return store.getters['collectionData/collections'];
+      return store.getters['nixData/collections'];
     },
     collectionList() {
-      return store.getters['collectionData/collectionList'];
+      return store.getters['nixData/collectionList'];
     },
   },
   methods: {

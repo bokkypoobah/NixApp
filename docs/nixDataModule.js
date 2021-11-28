@@ -103,6 +103,7 @@ const nixDataModule = {
   state: {
     nixRoyaltyEngine: null,
     collections: {},
+    collectionList: [],
     tokensData: [],
     tradeData: [],
     params: null,
@@ -111,12 +112,43 @@ const nixDataModule = {
   getters: {
     nixRoyaltyEngine: state => state.nixRoyaltyEngine,
     collections: state => state.collections,
+    collectionList: state => state.collectionList,
     tokensData: state => state.tokensData,
     tradeData: state => state.tradeData,
     balances: state => state.balances,
     params: state => state.params,
   },
   mutations: {
+    newCollection(state, data) {
+      logInfo("nixDataModule", "newCollection: " + JSON.stringify(data));
+      const collectionKey = data.chainId + '.' + data.address;
+      let collection = state.collections[collectionKey];
+      if (collection == null) {
+        Vue.set(state.collections, collectionKey, {
+          chainId: data.chainId,
+          address: data.address,
+          symbol: data.symbol,
+          name: data.name,
+          totalSupply: data.totalSupply,
+          blockNumber: null,
+          timestamp: null,
+          tokens: [],
+          totalSupply: null,
+        });
+        // collection = state.collections[collectionKey];
+      } else {
+      //   collection.blockNumber = data.blockNumber;
+      //   collection.timestamp = data.timestamp;
+      //   // TODO Sync new token info
+      //   // Vue.set(collection, 'tokens', data.tokens);
+      //   // collection.totalSupply = Object.keys(data.tokens).length;
+      }
+      const collectionList = [];
+      for (const [key, collection] of Object.entries(state.collections)) {
+        collectionList.push(collection);
+      }
+      state.collectionList = collectionList;
+    },
     updateNixRoyaltyEngine(state, nixRoyaltyEngine) {
       // logInfo("nixDataModule", "updateNixRoyaltyEngine: " + nixRoyaltyEngine);
       state.nixRoyaltyEngine = nixRoyaltyEngine;
@@ -147,7 +179,7 @@ const nixDataModule = {
     async execWeb3({ state, commit, rootState }, { count, listenersInstalled }) {
 
       async function getUpdatedEvents(provider, nix, erc721, weth, blockNumber) {
-        logInfo("nixDataModule", "getUpdatedEvents()");
+        logDebug("nixDataModule", "execWeb3.getUpdatedEvents()");
 
         const wethLookback = 50000; // 100
         const erc721Lookback = 20000; // 100
@@ -247,38 +279,83 @@ const nixDataModule = {
             }
           }
         }
-        // logInfo("nixDataModule", "getUpdatedEvents() - nixTokens: " + JSON.stringify(Object.keys(nixTokens)));
-        // for (let collection of Object.keys(nixOrders)) {
-        //   logInfo("nixDataModule", "getUpdatedEvents() - nixOrders: " + collection + " - " + Object.keys(nixOrders[collection]));
-        // }
-        // logInfo("nixDataModule", "getUpdatedEvents() - nixTrades: " + JSON.stringify(Object.keys(nixTrades)));
-        // logInfo("nixDataModule", "getUpdatedEvents() - accounts: " + JSON.stringify(Object.keys(accounts)));
-        // for (let collection of Object.keys(tokens)) {
-        //   logInfo("nixDataModule", "getUpdatedEvents() - tokens: " + collection + " - " + Object.keys(tokens[collection]));
-        // }
+        logInfo("nixDataModule", "execWeb3.getUpdatedEvents() - nixTokens: " + JSON.stringify(Object.keys(nixTokens)));
+        for (let collection of Object.keys(nixOrders)) {
+          logInfo("nixDataModule", "execWeb3.getUpdatedEvents() - nixOrders: " + collection + " - " + Object.keys(nixOrders[collection]));
+        }
+        logInfo("nixDataModule", "execWeb3.getUpdatedEvents() - nixTrades: " + JSON.stringify(Object.keys(nixTrades)));
+        logInfo("nixDataModule", "execWeb3.getUpdatedEvents() - accounts: " + JSON.stringify(Object.keys(accounts)));
+        for (let collection of Object.keys(tokens)) {
+          logInfo("nixDataModule", "execWeb3.getUpdatedEvents() - tokens: " + collection + " - " + Object.keys(tokens[collection]));
+        }
         return { nixTokens, nixOrders, nixTrades, accounts, tokens };
       }
 
-      async function fullSync(erc721Helper) {
-        logInfo("nixDataModule", "fullSync()");
+      async function fullSyncCollections(erc721Helper) {
+        logInfo("nixDataModule", "execWeb3.fullSyncCollections()");
         const collectionsConfig = store.getters['collectionData/collectionsConfig'];
+
+        const collectionsToSync = [];
         for (const [address, collectionConfig] of Object.entries(collectionsConfig)) {
-          logInfo("nixDataModule", "fullSync() - collection: " + JSON.stringify(collectionConfig));
-          const collectionKey = collectionConfig.chainId + '.' + collectionConfig.address;
-          let collection = state.collections[collectionKey];
-          if (collection == null) {
-            logInfo("nixDataModule", "execWeb3.fullSync() - New sync chainId: " + collectionConfig.chainId + ", address: " + collectionConfig.address);
-            let tokenInfo = null;
-            try {
-              tokenInfo = await erc721Helper.tokenInfo([collectionConfig.address]);
-            } catch (e) {
-              console.log("ERROR - Not ERC-721");
+          if (collectionConfig.chainId == store.getters['connection/network'].chainId) {
+            if (state.collections[collectionConfig.chainId + '.' + collectionConfig.address] == null) {
+              collectionsToSync.push(collectionConfig.address)
             }
-            logInfo("nixDataModule", "execWeb3.fullSync() - tokenInfo: " + JSON.stringify(tokenInfo));
           }
-
-
         }
+        logInfo("nixDataModule", "execWeb3.fullSyncCollections() - collectionsToSync: " + JSON.stringify(collectionsToSync));
+
+        if (collectionsToSync.length > 0) {
+          const MASK_ERC721 = 2**0;
+          const MASK_ERC721METADATA = 2**1;
+          const MASK_ERC721ENUMERABLE = 2**2;
+          let tokenInfo = null;
+          try {
+            tokenInfo = await erc721Helper.tokenInfo(collectionsToSync);
+            for (let i = 0; i < tokenInfo[0].length; i++) {
+              const tokenType = tokenInfo[0][i].toNumber();
+              let symbol = null;
+              let name = null;
+              let totalSupply = null;
+              if ((tokenType & MASK_ERC721) == MASK_ERC721) {
+                if ((tokenType & MASK_ERC721METADATA) == MASK_ERC721METADATA) {
+                  symbol = tokenInfo[1][i];
+                  name = tokenInfo[2][i];
+                }
+                if ((tokenType & MASK_ERC721ENUMERABLE) == MASK_ERC721ENUMERABLE) {
+                  totalSupply = tokenInfo[3][i].toString();
+                }
+              }
+              commit('newCollection', {
+                chainId: store.getters['connection/network'].chainId,
+                address: collectionsToSync[i],
+                symbol: symbol,
+                name: name,
+                totalSupply: totalSupply,
+              });
+            }
+          } catch (e) {
+            console.log("ERROR - Not ERC-721");
+          }
+          logInfo("nixDataModule", "execWeb3.fullSyncCollections() - tokenInfo: " + JSON.stringify(tokenInfo));
+        }
+
+        // for (const [address, collectionConfig] of Object.entries(collectionsConfig)) {
+        //   logInfo("nixDataModule", "execWeb3.fullSyncCollections() - collection: " + JSON.stringify(collectionConfig));
+        //   const collectionKey = collectionConfig.chainId + '.' + collectionConfig.address;
+        //   let collection = state.collections[collectionKey];
+        //   if (collection == null) {
+        //     logInfo("nixDataModule", "execWeb3.fullSyncCollections() - New sync chainId: " + collectionConfig.chainId + ", address: " + collectionConfig.address);
+        //     let tokenInfo = null;
+        //     try {
+        //       tokenInfo = await erc721Helper.tokenInfo([collectionConfig.address]);
+        //
+        //     } catch (e) {
+        //       console.log("ERROR - Not ERC-721");
+        //     }
+        //     logInfo("nixDataModule", "execWeb3.fullSyncCollections() - tokenInfo: " + JSON.stringify(tokenInfo));
+        //   }
+        // }
       }
 
       async function incrementalSync() {
@@ -314,7 +391,7 @@ const nixDataModule = {
 
           const updates = await getUpdatedEvents(provider, nix, erc721, weth, blockNumber);
           // console.log(JSON.stringify(updates));
-          await fullSync(erc721Helper);
+          await fullSyncCollections(erc721Helper);
           await incrementalSync();
 
           if (!state.nixRoyaltyEngine) {

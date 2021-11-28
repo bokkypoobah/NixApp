@@ -134,7 +134,7 @@ const collectionDataModule = {
   },
   mutations: {
     updateCollection(state, data) {
-      logInfo("collectionDataModule", "updateCollection: " + JSON.stringify(data.address));
+      logDebug("collectionDataModule", "updateCollection: " + JSON.stringify(data.address));
       const collectionKey = data.chainId + '.' + data.address;
       let collection = state.collections[collectionKey];
       if (collection == null) {
@@ -208,7 +208,7 @@ const collectionDataModule = {
           const provider = new ethers.providers.Web3Provider(window.ethereum);
           const blockNumber = block ? block.number : await provider.getBlockNumber();
           const timestamp = block ? block.timestamp : await provider.getBlock().timestamp;
-          logInfo("collectionDataModule", "execWeb3() count: " + count + ", blockUpdated: " + blockUpdated + ", blockNumber: " + blockNumber + ", listenersInstalled: " + listenersInstalled + ", rootState.route.params: " + JSON.stringify(rootState.route.params) + "]");
+          logDebug("collectionDataModule", "execWeb3() count: " + count + ", blockUpdated: " + blockUpdated + ", blockNumber: " + blockNumber + ", listenersInstalled: " + listenersInstalled + ", rootState.route.params: " + JSON.stringify(rootState.route.params) + "]");
 
           const erc721Helper = new ethers.Contract(ERC721HELPERADDRESS, ERC721HELPERABI, provider);
           const collectionList = [];
@@ -217,7 +217,7 @@ const collectionDataModule = {
               const collectionKey = collection.chainId + '.' + collection.address;
               let existingCollection = state.collections[collectionKey];
               if (existingCollection == null) {
-                logInfo("collectionDataModule", "execWeb3() - New sync chainId: " + collection.chainId + ", address: " + collection.address);
+                logDebug("collectionDataModule", "execWeb3() - New sync chainId: " + collection.chainId + ", address: " + collection.address);
                 let tokenInfo = null;
                 try {
                   tokenInfo = await erc721Helper.tokenInfo([collection.address]);
@@ -354,7 +354,7 @@ const collectionDataModule = {
                   timestamp: timestamp,
                   tokens: collection.tokens
                 });
-                logInfo("collectionDataModule", "execWeb3() - Syncing chainId: " + collection.chainId + ", address: " + collection.address + ", lastBlockNumber: " + lastBlockNumber);
+                // logInfo("collectionDataModule", "execWeb3() - Syncing chainId: " + collection.chainId + ", address: " + collection.address + ", lastBlockNumber: " + lastBlockNumber);
               }
             }
           }
@@ -362,7 +362,7 @@ const collectionDataModule = {
           // TODO - Capture relevant events, and refresh only the updated orders & trades data
           // Install listeners
           if (!listenersInstalled) {
-            logInfo("collectionDataModule", "execWeb3() installing listener");
+            // logInfo("collectionDataModule", "execWeb3() installing listener");
             // nix.on("*", (event) => {
             //   // console.log("nix - event: ", JSON.stringify(event));
             //   logInfo("collectionDataModule", "nix - event: " + JSON.stringify(event));
