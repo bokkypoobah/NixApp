@@ -144,8 +144,8 @@ const nixDataModule = {
     // Called by Connection.execWeb3()
     async execWeb3({ state, commit, rootState }, { count, listenersInstalled }) {
 
-      async function getLogs(provider, blockNumber) {
-        logInfo("nixDataModule", "getLogs()");
+      async function getUpdatedEvents(provider, blockNumber) {
+        logInfo("nixDataModule", "getUpdatedEvents()");
         const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
         const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
         const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
@@ -154,11 +154,11 @@ const nixDataModule = {
         const erc721Lookback = 20000; // 100
         const nixLookback = 50000; // 100
 
-        const updatedAccounts = {};
-        const updatedTokenIds = {};
-        const updatedTokens = {};
-        const updatedOrders = {};
-        const updatedTrades = {};
+        const accounts = {};
+        const tokens = {};
+        const nixTokens = {};
+        const nixOrders = {};
+        const nixTrades = {};
 
         const nixFilter = {
           address: NIXADDRESS,
@@ -177,14 +177,14 @@ const nixDataModule = {
           const decodedEventLog = nix.interface.decodeEventLog(parsedLog.eventFragment.name, nixEvent.data, nixEvent.topics);
           // console.log(parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
           if (parsedLog.eventFragment.name == "TokenAdded") {
-            updatedTokens[decodedEventLog[1]] = decodedEventLog[0];
+            nixTokens[decodedEventLog[1]] = decodedEventLog[0];
           } else if (parsedLog.eventFragment.name == "OrderAdded") {
-            if (updatedOrders[decodedEventLog[0]] == null) {
-              updatedOrders[decodedEventLog[0]] = {};
+            if (nixOrders[decodedEventLog[0]] == null) {
+              nixOrders[decodedEventLog[0]] = {};
             }
-            updatedOrders[decodedEventLog[0]][decodedEventLog[1]] = true;
+            nixOrders[decodedEventLog[0]][decodedEventLog[1]] = true;
           } else if (parsedLog.eventFragment.name == "OrderExecuted") {
-            updatedTrades[decodedEventLog[2]] = true;
+            nixTrades[decodedEventLog[2]] = true;
           }
         }
 
@@ -206,13 +206,13 @@ const nixDataModule = {
           const decodedEventLog = weth.interface.decodeEventLog(parsedLog.eventFragment.name, wethEvent.data, wethEvent.topics);
           // console.log(parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
           if (parsedLog.eventFragment.name == "Transfer") {
-            updatedAccounts[decodedEventLog[0]] = true;
-            updatedAccounts[decodedEventLog[1]] = true;
+            accounts[decodedEventLog[0]] = true;
+            accounts[decodedEventLog[1]] = true;
           } else if (parsedLog.eventFragment.name == "Deposit" || parsedLog.eventFragment.name == "Withdrawal") {
-            updatedAccounts[decodedEventLog[0]] = true;
+            accounts[decodedEventLog[0]] = true;
           } else { // Approval
             if (decodedEventLog[1] == NIXADDRESS) {
-              updatedAccounts[decodedEventLog[0]] = true;
+              accounts[decodedEventLog[0]] = true;
             }
           }
         }
@@ -235,28 +235,29 @@ const nixDataModule = {
             const decodedEventLog = testToadz.interface.decodeEventLog(parsedLog.eventFragment.name, erc721Event.data, erc721Event.topics);
             // console.log(erc721Event.address + " " + parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
             if (parsedLog.eventFragment.name == "Transfer") {
-              updatedAccounts[decodedEventLog[0]] = true;
-              updatedAccounts[decodedEventLog[1]] = true;
-              if (updatedTokenIds[erc721Event.address] == null) {
-                updatedTokenIds[erc721Event.address] = {};
+              accounts[decodedEventLog[0]] = true;
+              accounts[decodedEventLog[1]] = true;
+              if (tokens[erc721Event.address] == null) {
+                tokens[erc721Event.address] = {};
               }
-              updatedTokenIds[erc721Event.address][decodedEventLog[2]] = true;
+              tokens[erc721Event.address][decodedEventLog[2]] = true;
             } else { // ApprovalForAll
               if (decodedEventLog[1] == NIXADDRESS) {
-                updatedAccounts[decodedEventLog[0]] = true;
+                accounts[decodedEventLog[0]] = true;
               }
             }
           }
         }
-        console.log("updatedTokens: " + JSON.stringify(Object.keys(updatedTokens)));
-        for (let collection of Object.keys(updatedOrders)) {
-          console.log("updatedOrders: " + collection + " - " + Object.keys(updatedOrders[collection]));
-        }
-        console.log("updatedTrades: " + JSON.stringify(Object.keys(updatedTrades)));
-        console.log("updatedAccounts: " + JSON.stringify(Object.keys(updatedAccounts)));
-        for (let collection of Object.keys(updatedTokenIds)) {
-          console.log("updatedTokenIds: " + collection + " - " + Object.keys(updatedTokenIds[collection]));
-        }
+        // logInfo("nixDataModule", "getUpdatedEvents() - nixTokens: " + JSON.stringify(Object.keys(nixTokens)));
+        // for (let collection of Object.keys(nixOrders)) {
+        //   logInfo("nixDataModule", "getUpdatedEvents() - nixOrders: " + collection + " - " + Object.keys(nixOrders[collection]));
+        // }
+        // logInfo("nixDataModule", "getUpdatedEvents() - nixTrades: " + JSON.stringify(Object.keys(nixTrades)));
+        // logInfo("nixDataModule", "getUpdatedEvents() - accounts: " + JSON.stringify(Object.keys(accounts)));
+        // for (let collection of Object.keys(tokens)) {
+        //   logInfo("nixDataModule", "getUpdatedEvents() - tokens: " + collection + " - " + Object.keys(tokens[collection]));
+        // }
+        return { nixTokens, nixOrders, nixTrades, accounts, tokens };
       }
 
       async function fullSync() {
@@ -288,7 +289,8 @@ const nixDataModule = {
           const blockNumber = block ? block.number : await provider.getBlockNumber();
           logDebug("nixDataModule", "execWeb3() count: " + count + ", blockUpdated: " + blockUpdated + ", blockNumber: " + blockNumber + ", listenersInstalled: " + listenersInstalled + ", rootState.route.params: " + JSON.stringify(rootState.route.params) + "]");
 
-          await getLogs(provider, blockNumber);
+          const updates = await getUpdatedEvents(provider, blockNumber);
+          // console.log(JSON.stringify(updates));
           await fullSync();
           await incrementalSync();
 
