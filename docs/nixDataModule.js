@@ -313,10 +313,8 @@ const nixDataModule = {
 
       async function fullSyncCollections(erc721Helper, blockNumber, timestamp) {
         // logInfo("nixDataModule", "execWeb3.fullSyncCollections()");
-        const collectionsConfig = store.getters['collectionData/collectionsConfig'];
-
         const collectionsToSync = [];
-        for (const [address, collectionConfig] of Object.entries(collectionsConfig)) {
+        for (const [address, collectionConfig] of Object.entries(store.getters['collectionData/collectionsConfig'])) {
           if (collectionConfig.chainId == store.getters['connection/network'].chainId) {
             if (state.collections[collectionConfig.chainId + '.' + collectionConfig.address] == null) {
               collectionsToSync.push(collectionConfig.address)

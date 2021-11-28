@@ -23,6 +23,9 @@ const Collections = {
                           <template #cell(address)="data">
                             <b-link :href="explorer + 'token/' + data.item.address" class="card-link truncate" target="_blank">{{ data.item.address }}</b-link>
                           </template>
+                          <template #cell(totalSupply)="data">
+                            {{ data.item.totalSupply ? data.item.totalSupply : 'Not Enumerable' }}
+                          </template>
                           <template #cell(timestamp)="data">
                             <div v-if="data.item.timestamp">
                               {{ formatDate(data.item.timestamp) }}
