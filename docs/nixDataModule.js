@@ -143,6 +143,94 @@ const nixDataModule = {
   actions: {
     // Called by Connection.execWeb3()
     async execWeb3({ state, commit, rootState }, { count, listenersInstalled }) {
+
+      async function getLogs(provider, blockNumber) {
+        logInfo("nixDataModule", "getLogs()");
+        const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
+        // Get WETH logs, Tokens logs and nix logs
+        const wethLookback = 50000; // 100
+        const erc721Lookback = 20000; // 100
+
+        const wethFilter = {
+          address: WETHADDRESS,
+          fromBlock: blockNumber - wethLookback,
+          toBlock: blockNumber,
+          topics: [[
+            '0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c', // Deposit (index_topic_1 address dst, uint256 wad)
+            '0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65', // Withdrawal (index_topic_1 address src, uint256 wad)
+            '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', // Transfer(index_topic_1 address from, index_topic_2 address to, index_topic_3 uint256 tokenId)
+            '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925', // Approval (index_topic_1 address src, index_topic_2 address guy, uint256 wad)
+          ]],
+        };
+        const wethEvents = await provider.getLogs(wethFilter);
+        const updatedAccounts = {};
+        const updatedTokenIds = {};
+        for (let j = 0; j < wethEvents.length; j++) {
+          const wethEvent = wethEvents[j];
+          const parsedLog = weth.interface.parseLog(wethEvent);
+          const decodedEventLog = weth.interface.decodeEventLog(parsedLog.eventFragment.name, wethEvent.data, wethEvent.topics);
+          // console.log(parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
+          if (parsedLog.eventFragment.name == "Transfer") {
+            updatedAccounts[decodedEventLog[0]] = true;
+            updatedAccounts[decodedEventLog[1]] = true;
+          } else if (parsedLog.eventFragment.name == "Deposit" || parsedLog.eventFragment.name == "Withdrawal") {
+            updatedAccounts[decodedEventLog[0]] = true;
+          } else { // Approval
+            if (decodedEventLog[1] == NIXADDRESS) {
+              updatedAccounts[decodedEventLog[0]] = true;
+            }
+          }
+        }
+
+        const collections = Object.keys(store.getters['collectionData/collectionConfig']);
+        for (collection of collections) {
+          const erc721Filter = {
+            address: collection,
+            fromBlock: blockNumber - erc721Lookback,
+            toBlock: blockNumber,
+            topics: [[
+              '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', // Transfer(index_topic_1 address from, index_topic_2 address to, index_topic_3 uint256 tokenId)
+              '0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31', // ApprovalForAll (index_topic_1 address owner, index_topic_2 address operator, bool approved)
+            ]],
+          };
+          const erc721Events = await provider.getLogs(erc721Filter);
+          const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
+          for (let j = 0; j < erc721Events.length; j++) {
+            const erc721Event = erc721Events[j];
+            const parsedLog = testToadz.interface.parseLog(erc721Event);
+            const decodedEventLog = testToadz.interface.decodeEventLog(parsedLog.eventFragment.name, erc721Event.data, erc721Event.topics);
+            // console.log(erc721Event.address + " " + parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
+            if (parsedLog.eventFragment.name == "Transfer") {
+              updatedAccounts[decodedEventLog[0]] = true;
+              updatedAccounts[decodedEventLog[1]] = true;
+
+              if (updatedTokenIds[erc721Event.address] == null) {
+                updatedTokenIds[erc721Event.address] = {};
+              }
+              updatedTokenIds[erc721Event.address][decodedEventLog[2]] = true;
+            } else { // ApprovalForAll
+              if (decodedEventLog[1] == NIXADDRESS) {
+                updatedAccounts[decodedEventLog[0]] = true;
+              }
+            }
+          }
+        }
+        console.log("updatedAccounts: " + JSON.stringify(Object.keys(updatedAccounts)));
+        for (let collection of Object.keys(updatedTokenIds)) {
+          console.log("updatedTokenIds: " + collection + " - " + Object.keys(updatedTokenIds[collection]));
+        }
+
+      }
+
+      async function fullSync() {
+        logInfo("nixDataModule", "fullSync()");
+      }
+
+      async function incrementalSync() {
+        logInfo("nixDataModule", "incrementalSync()");
+      }
+
+
       logDebug("nixDataModule", "execWeb3() start[" + count + ", " + listenersInstalled + ", " + JSON.stringify(rootState.route.params) + "]");
       if (!state.executing) {
         commit('updateExecuting', true);
@@ -162,6 +250,11 @@ const nixDataModule = {
           const provider = new ethers.providers.Web3Provider(window.ethereum);
           const blockNumber = block ? block.number : await provider.getBlockNumber();
           logDebug("nixDataModule", "execWeb3() count: " + count + ", blockUpdated: " + blockUpdated + ", blockNumber: " + blockNumber + ", listenersInstalled: " + listenersInstalled + ", rootState.route.params: " + JSON.stringify(rootState.route.params) + "]");
+
+          await getLogs(provider, blockNumber);
+          await fullSync();
+          await incrementalSync();
+
           const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
           const nixHelper = new ethers.Contract(NIXHELPERADDRESS, NIXHELPERABI, provider);
 
