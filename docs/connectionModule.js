@@ -254,7 +254,7 @@ const Connection = {
       store.dispatch('connection/setTxError', "");
     },
     async execWeb3() {
-      logDebug("Connection", "execWeb3() start[" + this.count + "]");
+      logInfo("Connection", "execWeb3() start[" + this.count + "]");
 
       if (this.powerOn) {
         if (!window.ethereum.isConnected() || !window.ethereum['isUnlocked']) {
@@ -321,10 +321,10 @@ const Connection = {
               const wethAllowanceToNix = await weth.allowance(this.coinbase, NIXADDRESS);
 
               const blockNumber = block.number;
-              const lookback = 50000;
-              const filter = {
+              const wethLookback = 50000; // 100
+              const wethFilter = {
                 address: WETHADDRESS,
-                fromBlock: blockNumber - lookback,
+                fromBlock: blockNumber - wethLookback,
                 toBlock: blockNumber,
                 topics: [[
                   '0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c', // Deposit (index_topic_1 address dst, uint256 wad)
@@ -333,12 +333,12 @@ const Connection = {
                   '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925', // Approval (index_topic_1 address src, index_topic_2 address guy, uint256 wad)
                 ]],
               };
-              const events = await provider.getLogs(filter);
+              const wethEvents = await provider.getLogs(wethFilter);
               const updatedAccounts = {};
-              for (let j = 0; j < events.length; j++) {
-                const event = events[j];
-                const parsedLog = weth.interface.parseLog(event);
-                const decodedEventLog = weth.interface.decodeEventLog(parsedLog.eventFragment.name, event.data, event.topics);
+              for (let j = 0; j < wethEvents.length; j++) {
+                const wethEvent = wethEvents[j];
+                const parsedLog = weth.interface.parseLog(wethEvent);
+                const decodedEventLog = weth.interface.decodeEventLog(parsedLog.eventFragment.name, wethEvent.data, wethEvent.topics);
                 // console.log(parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
                 if (parsedLog.eventFragment.name == "Transfer") {
                   updatedAccounts[decodedEventLog[0]] = true;
@@ -352,6 +352,60 @@ const Connection = {
                 }
               }
               store.dispatch('connection/setWeth', { balance: wethBalance, allowanceToNix: wethAllowanceToNix, updatedAccounts: Object.keys(updatedAccounts) });
+
+              const accounts = Object.keys(store.getters['collectionData/collectionConfig']);
+              for (account of accounts) {
+                // console.log("account: " + JSON.stringify(account));
+                const erc721Lookback = 2000; // 100
+                const erc721Filter = {
+                  address: account,
+                  // address: [["0x652dc3aa8e1d18a8cc19aef62cf4f03c4d50b2b5", "0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4", "0xab04795fa12aCe45Dd2A2E4A132e4E46B2d4D1B8"]],
+                  // fromBlock: 9718914, // blockNumber - 300, //  - erc721Lookback,
+                  // toBlock: 9718914, // blockNumber - 200,
+                  fromBlock: blockNumber - erc721Lookback,
+                  toBlock: blockNumber,
+                  topics: [[
+                    '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', // Transfer(index_topic_1 address from, index_topic_2 address to, index_topic_3 uint256 tokenId)
+                    '0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31', // ApprovalForAll (index_topic_1 address owner, index_topic_2 address operator, bool approved)
+                  ]],
+                };
+                console.log("erc721Filter: " + JSON.stringify(erc721Filter));
+                const erc721Events = await provider.getLogs(erc721Filter);
+                // console.log("erc721Events: " + JSON.stringify(erc721Events));
+                const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
+                // const updatedTokenIdsMap = {};
+                // const updateApprovals = {};
+                for (let j = 0; j < erc721Events.length; j++) {
+                  const erc721Event = erc721Events[j];
+                  const parsedLog = testToadz.interface.parseLog(erc721Event);
+                  // console.log("parsedLog: " + JSON.stringify(parsedLog));
+                  const decodedEventLog = testToadz.interface.decodeEventLog(parsedLog.eventFragment.name, erc721Event.data, erc721Event.topics);
+                  console.log(erc721Event.address + " " + parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
+                  if (parsedLog.eventFragment.name == "Transfer") {
+                //     updatedTokenIdsMap[decodedEventLog[2]] = true;
+                  } else {
+                //     updateApprovals[decodedEventLog[0]] = true;
+                  }
+                }
+                // // TODO - Send both below to Nix to handle
+                // console.log("updateApprovals: " + JSON.stringify(Object.keys(updateApprovals)));
+                // const updatedTokenIds = Object.keys(updatedTokenIdsMap);
+                // console.log("updatedTokenIds: " + JSON.stringify(updatedTokenIds));
+                // const scanBatchSize = 5000;
+                // for (let i = 0; i < updatedTokenIds.length; i += scanBatchSize) {
+                //   const batch = updatedTokenIds.slice(i, parseInt(i) + scanBatchSize);
+                //   const ownersInfo = await erc721Helper.ownersByTokenIds(collection.address, batch);
+                //   for (let j = 0; j < ownersInfo[0].length; j++) {
+                //     if (ownersInfo[0][j]) {
+                //       const tokenId = batch[j].toString();
+                //       // owners[tokenId] = { tokenId: tokenId, owner: ownersInfo[1][j] };
+                //       // console.log(tokenId + " = " + ownersInfo[1][j]);
+                //     }
+                //   }
+                // }
+
+              }
+
 
             } else {
               store.dispatch('connection/setWeth', { balance: null, allowanceToNix: null, updatedAccounts: [] });
@@ -374,8 +428,11 @@ const Connection = {
       }
 
       if (this.connected && this.network && this.network.chainId == 4) {
+        console.log("1");
+        await store.dispatch('collectionData/execWeb3', { count: this.count, listenersInstalled: this.listenersInstalled });
+        console.log("2");
         store.dispatch('nixData/execWeb3', { count: this.count, listenersInstalled: this.listenersInstalled });
-        store.dispatch('collectionData/execWeb3', { count: this.count, listenersInstalled: this.listenersInstalled });
+        console.log("3");
       }
 
       if (!this.listenersInstalled) {
@@ -407,7 +464,7 @@ const Connection = {
       if (this.reschedule) {
         setTimeout(function() {
           t.timeoutCallback();
-        }, 100);
+        }, 1000);
       }
     }
   },

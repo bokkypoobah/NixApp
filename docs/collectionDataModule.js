@@ -327,9 +327,9 @@ const collectionDataModule = {
                   }
                 }
                 // TODO - Send both below to Nix to handle
-                console.log("updateApprovals: " + JSON.stringify(Object.keys(updateApprovals)));
+                // console.log("updateApprovals: " + JSON.stringify(Object.keys(updateApprovals)));
                 const updatedTokenIds = Object.keys(updatedTokenIdsMap);
-                console.log("updatedTokenIds: " + JSON.stringify(updatedTokenIds));
+                // console.log("updatedTokenIds: " + JSON.stringify(updatedTokenIds));
                 const scanBatchSize = 5000;
                 for (let i = 0; i < updatedTokenIds.length; i += scanBatchSize) {
                   const batch = updatedTokenIds.slice(i, parseInt(i) + scanBatchSize);
