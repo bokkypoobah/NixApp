@@ -102,6 +102,7 @@ const nixDataModule = {
   namespaced: true,
   state: {
     nixRoyaltyEngine: null,
+    collections: {},
     tokensData: [],
     tradeData: [],
     params: null,
@@ -109,6 +110,7 @@ const nixDataModule = {
   },
   getters: {
     nixRoyaltyEngine: state => state.nixRoyaltyEngine,
+    collections: state => state.collections,
     tokensData: state => state.tokensData,
     tradeData: state => state.tradeData,
     balances: state => state.balances,
@@ -144,11 +146,8 @@ const nixDataModule = {
     // Called by Connection.execWeb3()
     async execWeb3({ state, commit, rootState }, { count, listenersInstalled }) {
 
-      async function getUpdatedEvents(provider, blockNumber) {
+      async function getUpdatedEvents(provider, nix, erc721, weth, blockNumber) {
         logInfo("nixDataModule", "getUpdatedEvents()");
-        const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
-        const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
-        const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
 
         const wethLookback = 50000; // 100
         const erc721Lookback = 20000; // 100
@@ -217,10 +216,10 @@ const nixDataModule = {
           }
         }
 
-        const collections = Object.keys(store.getters['collectionData/collectionConfig']);
-        for (collection of collections) {
+        const collectionsConfig = Object.keys(store.getters['collectionData/collectionsConfig']);
+        for (collectionConfig of collectionsConfig) {
           const erc721Filter = {
-            address: collection,
+            address: collectionConfig,
             fromBlock: blockNumber - erc721Lookback,
             toBlock: blockNumber,
             topics: [[
@@ -231,8 +230,8 @@ const nixDataModule = {
           const erc721Events = await provider.getLogs(erc721Filter);
           for (let j = 0; j < erc721Events.length; j++) {
             const erc721Event = erc721Events[j];
-            const parsedLog = testToadz.interface.parseLog(erc721Event);
-            const decodedEventLog = testToadz.interface.decodeEventLog(parsedLog.eventFragment.name, erc721Event.data, erc721Event.topics);
+            const parsedLog = erc721.interface.parseLog(erc721Event);
+            const decodedEventLog = erc721.interface.decodeEventLog(parsedLog.eventFragment.name, erc721Event.data, erc721Event.topics);
             // console.log(erc721Event.address + " " + parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
             if (parsedLog.eventFragment.name == "Transfer") {
               accounts[decodedEventLog[0]] = true;
@@ -262,6 +261,16 @@ const nixDataModule = {
 
       async function fullSync() {
         logInfo("nixDataModule", "fullSync()");
+        const collectionsConfig = store.getters['collectionData/collectionsConfig'];
+        for (const [address, collectionConfig] of Object.entries(collectionsConfig)) {
+          logInfo("nixDataModule", "fullSync() - collection: " + JSON.stringify(collectionConfig));
+          // const collectionKey = data.chainId + '.' + data.address;
+          // let collection = state.collections[collectionKey];
+          // if (collection == null) {
+          // }
+
+
+        }
       }
 
       async function incrementalSync() {
@@ -287,15 +296,17 @@ const nixDataModule = {
         if (connected && blockUpdated) {
           const provider = new ethers.providers.Web3Provider(window.ethereum);
           const blockNumber = block ? block.number : await provider.getBlockNumber();
+          const timestamp = block ? block.timestamp : await provider.getBlock().timestamp;
           logDebug("nixDataModule", "execWeb3() count: " + count + ", blockUpdated: " + blockUpdated + ", blockNumber: " + blockNumber + ", listenersInstalled: " + listenersInstalled + ", rootState.route.params: " + JSON.stringify(rootState.route.params) + "]");
+          const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
+          const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
+          const nixHelper = new ethers.Contract(NIXHELPERADDRESS, NIXHELPERABI, provider);
+          const erc721 = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
 
-          const updates = await getUpdatedEvents(provider, blockNumber);
+          const updates = await getUpdatedEvents(provider, nix, erc721, weth, blockNumber);
           // console.log(JSON.stringify(updates));
           await fullSync();
           await incrementalSync();
-
-          const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
-          const nixHelper = new ethers.Contract(NIXHELPERADDRESS, NIXHELPERABI, provider);
 
           if (!state.nixRoyaltyEngine) {
             const nixRoyaltyEngine = await nix.royaltyEngine();

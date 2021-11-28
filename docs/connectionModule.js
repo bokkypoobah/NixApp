@@ -283,7 +283,7 @@ const Connection = {
           const t = this;
           async function handleAccountsChanged(accounts) {
             logInfo("Connection", "execWeb3() handleAccountsChanged: " + JSON.stringify(accounts));
-            const signer = provider.getSigner()
+            const signer = provider.getSigner();
             const coinbase = await signer.getAddress();
             store.dispatch('connection/setCoinbase', coinbase);
             t.refreshNow = true;

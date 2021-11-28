@@ -85,7 +85,7 @@ const CollectionData = {
 const collectionDataModule = {
   namespaced: true,
   state: {
-    collectionConfig: {
+    collectionsConfig: {
       "0x652dc3aa8e1d18a8cc19aef62cf4f03c4d50b2b5": {
         chainId: 4,
         address: "0x652dc3aa8e1d18a8cc19aef62cf4f03c4d50b2b5",
@@ -123,7 +123,7 @@ const collectionDataModule = {
     executing: false,
   },
   getters: {
-    collectionConfig: state => state.collectionConfig,
+    collectionsConfig: state => state.collectionsConfig,
     collections: state => state.collections,
     collectionList: state => state.collectionList,
     nixRoyaltyEngine: state => state.nixRoyaltyEngine,
@@ -212,7 +212,7 @@ const collectionDataModule = {
 
           const erc721Helper = new ethers.Contract(ERC721HELPERADDRESS, ERC721HELPERABI, provider);
           const collectionList = [];
-          for (const [key, collection] of Object.entries(state.collectionConfig)) {
+          for (const [key, collection] of Object.entries(state.collectionsConfig)) {
             const collectionKey = collection.chainId + '.' + collection.address;
             if (collection.chainId == store.getters['connection/network'].chainId) {
               let existingCollection = state.collections[collectionKey];
