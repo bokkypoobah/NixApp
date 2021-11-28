@@ -214,8 +214,8 @@ const collectionDataModule = {
           const collectionList = [];
           for (const [key, collection] of Object.entries(state.collectionConfig)) {
             const collectionKey = collection.chainId + '.' + collection.address;
-            let existingCollection = state.collections[collectionKey];
             if (collection.chainId == store.getters['connection/network'].chainId) {
+              let existingCollection = state.collections[collectionKey];
               if (existingCollection == null) {
                 logInfo("collectionDataModule", "execWeb3() - New sync chainId: " + collection.chainId + ", address: " + collection.address);
                 let tokenInfo = null;
@@ -338,7 +338,7 @@ const collectionDataModule = {
                     if (ownersInfo[0][j]) {
                       const tokenId = batch[j].toString();
                       // owners[tokenId] = { tokenId: tokenId, owner: ownersInfo[1][j] };
-                      console.log(tokenId + " = " + ownersInfo[1][j]);
+                      // console.log(tokenId + " = " + ownersInfo[1][j]);
                     }
                   }
                 }

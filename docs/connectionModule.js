@@ -117,10 +117,10 @@ const Connection = {
             <b-col cols="4" class="small">ETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ formatETH(balance) }}</b-link></b-col>
           </b-row>
           <b-row>
-            <b-col cols="4" class="small">WETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'token/' + wethAddress + '?=' + coinbase" class="card-link" target="_blank">{{ formatETH(wethBalance) }}</b-link> <font size="-3">Δ{{ weth && weth.recentTransfers && weth.recentTransfers.length }}</font></b-col>
+            <b-col cols="4" class="small">WETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'token/' + wethAddress + '?=' + coinbase" class="card-link" target="_blank">{{ formatETH(wethBalance) }}</b-link> <font size="-3">Δ{{ weth && weth.updatedAccounts && weth.updatedAccounts.length }}</font></b-col>
           </b-row>
           <b-row>
-            <b-col cols="4" class="small">Nix WETH Allow</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + wethAddress + '#events'" class="card-link" target="_blank">{{ formatETH(wethAllowanceToNix) }}</b-link> <font size="-3">Δ{{ weth && weth.recentApprovalsToNix && weth.recentApprovalsToNix.length }}</font></b-col>
+            <b-col cols="4" class="small">Nix WETH Allow</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + wethAddress + '#events'" class="card-link" target="_blank">{{ formatETH(wethAllowanceToNix) }}</b-link></b-col>
           </b-row>
           <b-row v-show="Object.keys(faucets).length">
             <b-col cols="4" class="small">Faucet(s)</b-col>
@@ -327,32 +327,34 @@ const Connection = {
                 fromBlock: blockNumber - lookback,
                 toBlock: blockNumber,
                 topics: [[
+                  '0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c', // Deposit (index_topic_1 address dst, uint256 wad)
+                  '0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65', // Withdrawal (index_topic_1 address src, uint256 wad)
                   '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', // Transfer(index_topic_1 address from, index_topic_2 address to, index_topic_3 uint256 tokenId)
                   '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925', // Approval (index_topic_1 address src, index_topic_2 address guy, uint256 wad)
                 ]],
               };
               const events = await provider.getLogs(filter);
-              const recentTransfers = {};
-              const recentApprovals = {};
+              const updatedAccounts = {};
               for (let j = 0; j < events.length; j++) {
                 const event = events[j];
                 const parsedLog = weth.interface.parseLog(event);
                 const decodedEventLog = weth.interface.decodeEventLog(parsedLog.eventFragment.name, event.data, event.topics);
+                // console.log(parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
                 if (parsedLog.eventFragment.name == "Transfer") {
-                  // console.log(parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
-                  recentTransfers[decodedEventLog[0]] = true;
-                  recentTransfers[decodedEventLog[1]] = true;
-                } else {
-                  // console.log(parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
+                  updatedAccounts[decodedEventLog[0]] = true;
+                  updatedAccounts[decodedEventLog[1]] = true;
+                } else if (parsedLog.eventFragment.name == "Deposit" || parsedLog.eventFragment.name == "Withdrawal") {
+                  updatedAccounts[decodedEventLog[0]] = true;
+                } else { // Approval
                   if (decodedEventLog[1] == NIXADDRESS) {
-                    recentApprovals[decodedEventLog[0]] = true;
+                    updatedAccounts[decodedEventLog[0]] = true;
                   }
                 }
               }
-              store.dispatch('connection/setWeth', { balance: wethBalance, allowanceToNix: wethAllowanceToNix, recentTransfers: Object.keys(recentTransfers), recentApprovalsToNix: Object.keys(recentApprovals) });
+              store.dispatch('connection/setWeth', { balance: wethBalance, allowanceToNix: wethAllowanceToNix, updatedAccounts: Object.keys(updatedAccounts) });
 
             } else {
-              store.dispatch('connection/setWeth', { balance: null, allowanceToNix: null, recentTransfers: [], recentApprovalsToNix: [] });
+              store.dispatch('connection/setWeth', { balance: null, allowanceToNix: null, updatedAccounts: [] });
             }
 
           } catch (e) {
@@ -441,8 +443,7 @@ const connectionModule = {
     weth: {
       balance: null,
       allowanceToNix: null,
-      recentTransfers: [],
-      recentApprovalsToNix: [],
+      updatedAccounts: [],
     },
     block: null,
     blockUpdated: false,
