@@ -204,7 +204,7 @@ const collectionDataModule = {
         const connected = store.getters['connection/connected'];
         const block = store.getters['connection/block'];
         const blockUpdated = store.getters['connection/blockUpdated'];
-        if (connected && blockUpdated) {
+        if (false && connected && blockUpdated) {
           const provider = new ethers.providers.Web3Provider(window.ethereum);
           const blockNumber = block ? block.number : await provider.getBlockNumber();
           const timestamp = block ? block.timestamp : await provider.getBlock().timestamp;

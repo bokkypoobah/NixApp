@@ -142,8 +142,8 @@ const nixDataModule = {
       }
       state.collectionList = collectionList;
     },
-    updateCollection(state, data) {
-      logInfo("nixDataModule", "updateCollection: " + JSON.stringify(data));
+    newCollectionTokens(state, data) {
+      logInfo("nixDataModule", "newCollectionTokens: " + JSON.stringify(data));
       const collectionKey = data.chainId + '.' + data.address;
       let collection = state.collections[collectionKey];
       if (collection != null) {
@@ -159,6 +159,11 @@ const nixDataModule = {
           computedTotalSupply: Object.keys(data.tokens).length,
         });
       }
+      const collectionList = [];
+      for (const [key, collection] of Object.entries(state.collections)) {
+        collectionList.push(collection);
+      }
+      state.collectionList = collectionList;
     },
     updateNixRoyaltyEngine(state, nixRoyaltyEngine) {
       // logInfo("nixDataModule", "updateNixRoyaltyEngine: " + nixRoyaltyEngine);
@@ -302,7 +307,7 @@ const nixDataModule = {
         return { nixTokens, nixOrders, nixTrades, accounts, tokens };
       }
 
-      async function fullSyncCollections(erc721Helper) {
+      async function fullSyncCollections(erc721Helper, blockNumber, timestamp) {
         logInfo("nixDataModule", "execWeb3.fullSyncCollections()");
         const collectionsConfig = store.getters['collectionData/collectionsConfig'];
 
@@ -320,6 +325,8 @@ const nixDataModule = {
           const MASK_ERC721 = 2**0;
           const MASK_ERC721METADATA = 2**1;
           const MASK_ERC721ENUMERABLE = 2**2;
+          const enumerableBatchSize = 1000;
+          const scanBatchSize = 5000;
           let tokenInfo = null;
           try {
             tokenInfo = await erc721Helper.tokenInfo(collectionsToSync);
@@ -345,6 +352,74 @@ const nixDataModule = {
                 totalSupply: totalSupply,
               });
             }
+            for (let i = 0; i < tokenInfo[0].length; i++) {
+              const tokenType = tokenInfo[0][i].toNumber();
+              if ((tokenType & MASK_ERC721) == MASK_ERC721) {
+                if ((tokenType & MASK_ERC721ENUMERABLE) == MASK_ERC721ENUMERABLE) {
+                  const totalSupply = tokenInfo[3][i].toString();
+                  for (let j = 0; j < totalSupply; j += enumerableBatchSize) {
+                    const to = (j + enumerableBatchSize > totalSupply) ? totalSupply : j + enumerableBatchSize;
+                    const ownersInfo = await erc721Helper.ownersByEnumerableIndex(collectionsToSync[i], j, to);
+                    // console.log(JSON.stringify(ownersInfo));
+                    const owners = {};
+                    for (let k = 0; k < ownersInfo[0].length; k++) {
+                      const tokenId = ownersInfo[0][k].toString();
+                      owners[tokenId] = { tokenId: tokenId, owner: ownersInfo[1][k] };
+                    }
+                    const tokens = {};
+                    for (const [tokenId, owner] of Object.entries(owners)) {
+                      // const tokenURI = tokenURIs[tokenId];
+                      tokens[tokenId] = { tokenId: tokenId, owner: owner.owner, tokenURI: null };
+                    }
+                    console.log(JSON.stringify(tokens));
+                    console.log("blockNumber: " + blockNumber);
+                    console.log("timestamp: " + timestamp);
+                    commit('newCollectionTokens', {
+                      chainId: store.getters['connection/network'].chainId,
+                      address: collectionsToSync[i],
+                      blockNumber: blockNumber,
+                      timestamp: timestamp,
+                      tokens: tokens,
+                    });
+                  }
+                } else {
+                  const scanFrom = 0;
+                  const scanTo = 6969;
+                  const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
+                  var searchTokenIds = range(parseInt(scanFrom), (parseInt(scanTo) - 1), 1);
+                  for (let j = 0; j < searchTokenIds.length; j += scanBatchSize) {
+                    const batch = searchTokenIds.slice(j, parseInt(j) + scanBatchSize);
+                    const ownersInfo = await erc721Helper.ownersByTokenIds(collectionsToSync[i], batch);
+                    const owners = {};
+                    for (let k = 0; k < ownersInfo[0].length; k++) {
+                      if (ownersInfo[0][k]) {
+                        const tokenId = batch[k].toString();
+                        owners[tokenId] = { tokenId: tokenId, owner: ownersInfo[1][k] };
+                      }
+                    }
+                    // console.log(JSON.stringify(owners));
+                    const tokens = {};
+                    for (const [tokenId, owner] of Object.entries(owners)) {
+                      // const tokenURI = tokenURIs[tokenId];
+                      tokens[tokenId] = { tokenId: tokenId, owner: owner.owner, tokenURI: null };
+                    }
+                    console.log(JSON.stringify(tokens));
+                    console.log("blockNumber: " + blockNumber);
+                    console.log("timestamp: " + timestamp);
+                    commit('newCollectionTokens', {
+                      chainId: store.getters['connection/network'].chainId,
+                      address: collectionsToSync[i],
+                      blockNumber: blockNumber,
+                      timestamp: timestamp,
+                      tokens: tokens,
+                    });
+                  }
+
+                }
+              }
+            }
+
+
           } catch (e) {
             console.log("ERROR - Not ERC-721");
           }
@@ -402,7 +477,7 @@ const nixDataModule = {
 
           const updates = await getUpdatedEvents(provider, nix, erc721, weth, blockNumber);
           // console.log(JSON.stringify(updates));
-          await fullSyncCollections(erc721Helper);
+          await fullSyncCollections(erc721Helper, blockNumber, timestamp);
           await incrementalSync();
 
           if (!state.nixRoyaltyEngine) {
