@@ -435,8 +435,59 @@ const nixDataModule = {
         // }
       }
 
-      async function incrementalSync() {
-        logInfo("nixDataModule", "incrementalSync()");
+      async function fullSyncNix(nix, nixHelper, blockNumber, timestamp) {
+        logInfo("nixDataModule", "fullSyncNix()");
+
+        const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
+
+        var tokensData = [];
+        const tokensLength = await nix.tokensLength();
+        console.log(JSON.stringify(tokensLength));
+        if (tokensLength > 0) {
+          var tokenIndices = range(0, tokensLength - 1, 1);
+          const tokens = await nixHelper.getTokens(tokenIndices);
+          console.log(JSON.stringify(tokens));
+          for (let i = 0; i < tokens[0].length; i++) {
+            const token = tokens[0][i];
+            const ordersLength = tokens[1][i];
+            const executed = tokens[2][i];
+            const volumeToken = tokens[3][i];
+            const volumeWeth = tokens[4][i];
+            const averageWeth = volumeWeth  > 0 ? volumeWeth.div(volumeToken) : null;
+            var ordersData = [];
+            var orderIndices = range(0, ordersLength - 1, 1);
+            const orders = await nixHelper.getOrders(token, orderIndices);
+            for (let i = 0; i < ordersLength; i++) {
+              const maker = orders[0][i];
+              const taker = orders[1][i];
+              const tokenIds = orders[2][i];
+              const price = orders[3][i];
+              const data = orders[4][i];
+              const buyOrSell = data[0];
+              const anyOrAll = data[1];
+              const expiry = data[2];
+              const expiryString = expiry == 0 ? "(none)" : new Date(expiry * 1000).toISOString();
+              const tradeCount = data[3];
+              const tradeMax = data[4];
+              const royaltyFactor = data[5];
+              const orderStatus = data[6];
+              ordersData.push({ orderIndex: i, maker: maker, taker: taker, tokenIds: tokenIds, price: price, buyOrSell: buyOrSell,
+                anyOrAll: anyOrAll, expiry: expiry, tradeCount: tradeCount, tradeMax: tradeMax, royaltyFactor: royaltyFactor,
+                orderStatus: orderStatus });
+            }
+            // tokensData.push({ token: token, ordersLength: ordersLength, executed: executed, volumeToken: volumeToken, volumeWeth: volumeWeth, averageWeth: averageWeth, ordersData: ordersData });
+          }
+          console.log(JSON.stringify(ordersData));
+        }
+
+          // commit('updateTokensData', tokensData);
+
+
+
+      }
+
+      async function incrementalSync(updates) {
+        logInfo("nixDataModule", "incrementalSync()" + JSON.stringify(updates));
       }
 
 
@@ -468,8 +519,9 @@ const nixDataModule = {
 
           const updates = await getUpdatedEvents(provider, nix, erc721, weth, blockNumber);
           // console.log(JSON.stringify(updates));
+          await fullSyncNix(nix, nixHelper, blockNumber, timestamp);
           await fullSyncCollections(erc721Helper, blockNumber, timestamp);
-          await incrementalSync();
+          await incrementalSync(updates);
 
           if (!state.nixRoyaltyEngine) {
             const nixRoyaltyEngine = await nix.royaltyEngine();
