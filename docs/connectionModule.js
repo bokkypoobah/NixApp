@@ -117,10 +117,10 @@ const Connection = {
             <b-col cols="4" class="small">ETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ formatETH(balance) }}</b-link></b-col>
           </b-row>
           <b-row>
-            <b-col cols="4" class="small">WETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'token/' + wethAddress + '?=' + coinbase" class="card-link" target="_blank">{{ formatETH(wethBalance) }}</b-link></b-col>
+            <b-col cols="4" class="small">WETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'token/' + wethAddress + '?=' + coinbase" class="card-link" target="_blank">{{ formatETH(wethBalance) }}</b-link> <font size="-3">Δ{{ weth && weth.recentTransfers && weth.recentTransfers.length }}</font></b-col>
           </b-row>
           <b-row>
-            <b-col cols="4" class="small">Nix WETH Allow</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + wethAddress + '#events'" class="card-link" target="_blank">{{ formatETH(wethAllowanceToNix) }}</b-link></b-col>
+            <b-col cols="4" class="small">Nix WETH Allow</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + wethAddress + '#events'" class="card-link" target="_blank">{{ formatETH(wethAllowanceToNix) }}</b-link> <font size="-3">Δ{{ weth && weth.recentApprovalsToNix && weth.recentApprovalsToNix.length }}</font></b-col>
           </b-row>
           <b-row v-show="Object.keys(faucets).length">
             <b-col cols="4" class="small">Faucet(s)</b-col>
@@ -205,6 +205,9 @@ const Connection = {
     },
     balanceString() {
       return store.getters['connection/balance'] == null ? "" : new BigNumber(store.getters['connection/balance']).shift(-18).toString();
+    },
+    weth() {
+      return store.getters['connection/weth'];
     },
     wethAddress() {
       return WETHADDRESS;
@@ -318,7 +321,7 @@ const Connection = {
               const wethAllowanceToNix = await weth.allowance(this.coinbase, NIXADDRESS);
 
               const blockNumber = block.number;
-              const lookback = 30;
+              const lookback = 50000;
               const filter = {
                 address: WETHADDRESS,
                 fromBlock: blockNumber - lookback,
@@ -513,7 +516,7 @@ const connectionModule = {
       state.balance = b;
     },
     setWeth(state, weth) {
-      logInfo("connectionModule", "mutations.setWeth(): " + JSON.stringify(weth));
+      // logInfo("connectionModule", "mutations.setWeth(): " + JSON.stringify(weth));
       state.weth = weth;
     },
     setBlock(state, block) {
