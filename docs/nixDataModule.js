@@ -133,21 +133,30 @@ const nixDataModule = {
           blockNumber: null,
           timestamp: null,
           tokens: [],
-          totalSupply: null,
         });
-        // collection = state.collections[collectionKey];
-      } else {
-      //   collection.blockNumber = data.blockNumber;
-      //   collection.timestamp = data.timestamp;
-      //   // TODO Sync new token info
-      //   // Vue.set(collection, 'tokens', data.tokens);
-      //   // collection.totalSupply = Object.keys(data.tokens).length;
       }
       const collectionList = [];
       for (const [key, collection] of Object.entries(state.collections)) {
         collectionList.push(collection);
       }
       state.collectionList = collectionList;
+    },
+    updateCollection(state, data) {
+      logInfo("nixDataModule", "updateCollection: " + JSON.stringify(data));
+      const collectionKey = data.chainId + '.' + data.address;
+      let collection = state.collections[collectionKey];
+      if (collection != null) {
+        Vue.set(state.collections, collectionKey, {
+          chainId: data.chainId,
+          address: data.address,
+          symbol: collection.symbol,
+          name: collection.name,
+          totalSupply: collection.totalSupply,
+          blockNumber: data.blockNumber,
+          timestamp: data.timestamp,
+          tokens: data.tokens,
+        });
+      }
     },
     updateNixRoyaltyEngine(state, nixRoyaltyEngine) {
       // logInfo("nixDataModule", "updateNixRoyaltyEngine: " + nixRoyaltyEngine);
@@ -337,7 +346,7 @@ const nixDataModule = {
           } catch (e) {
             console.log("ERROR - Not ERC-721");
           }
-          logInfo("nixDataModule", "execWeb3.fullSyncCollections() - tokenInfo: " + JSON.stringify(tokenInfo));
+          // logInfo("nixDataModule", "execWeb3.fullSyncCollections() - tokenInfo: " + JSON.stringify(tokenInfo));
         }
 
         // for (const [address, collectionConfig] of Object.entries(collectionsConfig)) {
