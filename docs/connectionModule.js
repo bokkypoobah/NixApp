@@ -210,10 +210,10 @@ const Connection = {
       return WETHADDRESS;
     },
     wethBalance() {
-      return store.getters['connection/wethBalance']; //  == null ? "" : ethers.utils.formatEther(store.getters['connection/wethBalance']);
+      return store.getters['connection/weth'] ? store.getters['connection/weth'].balance : null;
     },
     wethAllowanceToNix() {
-      return store.getters['connection/wethAllowanceToNix']; //  == null ? "" : new BigNumber(store.getters['connection/wethAllowanceToNix']).shift(-18).toString();
+      return store.getters['connection/weth'] ? store.getters['connection/weth'].allowanceToNix : null;
     },
     block() {
       return store.getters['connection/block'];
@@ -316,9 +316,40 @@ const Connection = {
               const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
               const wethBalance = await weth.balanceOf(this.coinbase);
               const wethAllowanceToNix = await weth.allowance(this.coinbase, NIXADDRESS);
-              store.dispatch('connection/setWethInfo', { wethBalance: wethBalance, wethAllowanceToNix: wethAllowanceToNix });
+
+              const blockNumber = block.number;
+              const lookback = 30;
+              const filter = {
+                address: WETHADDRESS,
+                fromBlock: blockNumber - lookback,
+                toBlock: blockNumber,
+                topics: [[
+                  '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', // Transfer(index_topic_1 address from, index_topic_2 address to, index_topic_3 uint256 tokenId)
+                  '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925', // Approval (index_topic_1 address src, index_topic_2 address guy, uint256 wad)
+                ]],
+              };
+              const events = await provider.getLogs(filter);
+              const recentTransfers = {};
+              const recentApprovals = {};
+              for (let j = 0; j < events.length; j++) {
+                const event = events[j];
+                const parsedLog = weth.interface.parseLog(event);
+                const decodedEventLog = weth.interface.decodeEventLog(parsedLog.eventFragment.name, event.data, event.topics);
+                if (parsedLog.eventFragment.name == "Transfer") {
+                  // console.log(parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
+                  recentTransfers[decodedEventLog[0]] = true;
+                  recentTransfers[decodedEventLog[1]] = true;
+                } else {
+                  // console.log(parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
+                  if (decodedEventLog[1] == NIXADDRESS) {
+                    recentApprovals[decodedEventLog[0]] = true;
+                  }
+                }
+              }
+              store.dispatch('connection/setWeth', { balance: wethBalance, allowanceToNix: wethAllowanceToNix, recentTransfers: Object.keys(recentTransfers), recentApprovalsToNix: Object.keys(recentApprovals) });
+
             } else {
-              store.dispatch('connection/setWethInfo', { wethBalance: null, wethAllowanceToNix: null });
+              store.dispatch('connection/setWeth', { balance: null, allowanceToNix: null, recentTransfers: [], recentApprovalsToNix: [] });
             }
 
           } catch (e) {
@@ -404,8 +435,12 @@ const connectionModule = {
     coinbase: null,
     coinbaseUpdated: false,
     balance: null,
-    wethBalance: null,
-    wethAllowanceToNix: null,
+    weth: {
+      balance: null,
+      allowanceToNix: null,
+      recentTransfers: [],
+      recentApprovalsToNix: [],
+    },
     block: null,
     blockUpdated: false,
     txs: {},
@@ -425,8 +460,7 @@ const connectionModule = {
     coinbaseUpdated: state => state.coinbaseUpdated,
     balance: state => state.balance,
 
-    wethBalance: state => state.wethBalance,
-    wethAllowanceToNix: state => state.wethAllowanceToNix,
+    weth: state => state.weth,
 
     block: state => state.block,
     blockUpdated: state => state.blockUpdated,
@@ -478,9 +512,9 @@ const connectionModule = {
     setBalance(state, b) {
       state.balance = b;
     },
-    setWethInfo(state, { wethBalance, wethAllowanceToNix }) {
-      state.wethBalance = wethBalance;
-      state.wethAllowanceToNix = wethAllowanceToNix;
+    setWeth(state, weth) {
+      logInfo("connectionModule", "mutations.setWeth(): " + JSON.stringify(weth));
+      state.weth = weth;
     },
     setBlock(state, block) {
       logDebug("connectionModule", "mutations.setBlock()");
@@ -538,8 +572,8 @@ const connectionModule = {
     setBalance(context, b) {
       context.commit('setBalance', b);
     },
-    setWethInfo(context, { wethBalance, wethAllowanceToNix} ) {
-      context.commit('setWethInfo', { wethBalance, wethAllowanceToNix });
+    setWeth(context, weth ) {
+      context.commit('setWeth', weth);
     },
     setBlock(context, block) {
       logDebug("connectionModule", "actions.setBlock()");
