@@ -120,7 +120,7 @@ const nixDataModule = {
   },
   mutations: {
     newCollection(state, data) {
-      logInfo("nixDataModule", "newCollection: " + JSON.stringify(data));
+      // logInfo("nixDataModule", "newCollection: " + JSON.stringify(data));
       const collectionKey = data.chainId + '.' + data.address;
       let collection = state.collections[collectionKey];
       if (collection == null) {
@@ -143,10 +143,14 @@ const nixDataModule = {
       state.collectionList = collectionList;
     },
     newCollectionTokens(state, data) {
-      logInfo("nixDataModule", "newCollectionTokens: " + JSON.stringify(data));
+      // logInfo("nixDataModule", "newCollectionTokens: " + JSON.stringify(data));
       const collectionKey = data.chainId + '.' + data.address;
       let collection = state.collections[collectionKey];
       if (collection != null) {
+        const tokens = collection.tokens;
+        for (const [tokenId, token] of Object.entries(data.tokens)) {
+          tokens[tokenId] = token;
+        }
         Vue.set(state.collections, collectionKey, {
           chainId: data.chainId,
           address: data.address,
@@ -155,8 +159,8 @@ const nixDataModule = {
           totalSupply: collection.totalSupply,
           blockNumber: data.blockNumber,
           timestamp: data.timestamp,
-          tokens: data.tokens,
-          computedTotalSupply: Object.keys(data.tokens).length,
+          tokens: tokens,
+          computedTotalSupply: Object.keys(tokens).length,
         });
       }
       const collectionList = [];
@@ -308,7 +312,7 @@ const nixDataModule = {
       }
 
       async function fullSyncCollections(erc721Helper, blockNumber, timestamp) {
-        logInfo("nixDataModule", "execWeb3.fullSyncCollections()");
+        // logInfo("nixDataModule", "execWeb3.fullSyncCollections()");
         const collectionsConfig = store.getters['collectionData/collectionsConfig'];
 
         const collectionsToSync = [];
@@ -325,7 +329,7 @@ const nixDataModule = {
           const MASK_ERC721 = 2**0;
           const MASK_ERC721METADATA = 2**1;
           const MASK_ERC721ENUMERABLE = 2**2;
-          const enumerableBatchSize = 1000;
+          const enumerableBatchSize = 50;
           const scanBatchSize = 5000;
           let tokenInfo = null;
           try {
@@ -360,7 +364,6 @@ const nixDataModule = {
                   for (let j = 0; j < totalSupply; j += enumerableBatchSize) {
                     const to = (j + enumerableBatchSize > totalSupply) ? totalSupply : j + enumerableBatchSize;
                     const ownersInfo = await erc721Helper.ownersByEnumerableIndex(collectionsToSync[i], j, to);
-                    // console.log(JSON.stringify(ownersInfo));
                     const owners = {};
                     for (let k = 0; k < ownersInfo[0].length; k++) {
                       const tokenId = ownersInfo[0][k].toString();
@@ -368,12 +371,8 @@ const nixDataModule = {
                     }
                     const tokens = {};
                     for (const [tokenId, owner] of Object.entries(owners)) {
-                      // const tokenURI = tokenURIs[tokenId];
                       tokens[tokenId] = { tokenId: tokenId, owner: owner.owner, tokenURI: null };
                     }
-                    console.log(JSON.stringify(tokens));
-                    console.log("blockNumber: " + blockNumber);
-                    console.log("timestamp: " + timestamp);
                     commit('newCollectionTokens', {
                       chainId: store.getters['connection/network'].chainId,
                       address: collectionsToSync[i],
@@ -397,15 +396,10 @@ const nixDataModule = {
                         owners[tokenId] = { tokenId: tokenId, owner: ownersInfo[1][k] };
                       }
                     }
-                    // console.log(JSON.stringify(owners));
                     const tokens = {};
                     for (const [tokenId, owner] of Object.entries(owners)) {
-                      // const tokenURI = tokenURIs[tokenId];
                       tokens[tokenId] = { tokenId: tokenId, owner: owner.owner, tokenURI: null };
                     }
-                    console.log(JSON.stringify(tokens));
-                    console.log("blockNumber: " + blockNumber);
-                    console.log("timestamp: " + timestamp);
                     commit('newCollectionTokens', {
                       chainId: store.getters['connection/network'].chainId,
                       address: collectionsToSync[i],
@@ -414,7 +408,6 @@ const nixDataModule = {
                       tokens: tokens,
                     });
                   }
-
                 }
               }
             }
