@@ -16,20 +16,24 @@ const Exchange = {
 
                 <b-tabs vertical pills card end nav-class="p-2" active-tab-class="p-2">
 
-                  <b-tab title="Tokens" class="p-1">
+                  <b-tab title="Collections" class="p-1">
                     <div v-if="nixTokenList.length == 0">
                       <b-card>
                         <b-card-text>
-                          Loading tokens
+                          Loading collections
                         </b-card-text>
                       </b-card>
                     </div>
-                    {{ nixTokenList }}
                     <font size="-2">
-                      <b-table small fixed striped sticky-header="1000px" :items="nixTokenList" head-variant="light" show-empty>
-                        <template #cell(tokenIndex)="data">
-                          {{ data.item.tokenIndex }}
-                          <!-- <b-link :href="explorer + 'address/' + data.item.maker" target="_blank">{{ data.item.maker.substring(0, 10) + '...' }}</b-link> -->
+                      <b-table small fixed striped sticky-header="1000px" :fields="nixTokenFields" :items="nixTokenList" head-variant="light" show-empty>
+                        <template #cell(token)="data">
+                          <b-link :href="explorer + 'token/' + data.item.token" class="truncate" target="_blank">{{ data.item.token }}</b-link>
+                        </template>
+                        <template #cell(volumeWeth)="data">
+                          {{ formatETH(data.item.volumeWeth) }}
+                        </template>
+                        <template #cell(averageWeth)="data">
+                          {{ formatETH(data.item.averageWeth) }}
                         </template>
                       </b-table>
                     </font>
@@ -41,6 +45,15 @@ const Exchange = {
                         <b-card-text>
                           Loading orders
                         </b-card-text>
+                      </b-card>
+                    </div>
+                    <div v-for="(nixToken, nixTokenIndex) in nixTokenList">
+                      <b-card body-class="p-0" header-class="m-0 p-0 pl-2" footer-class="p-1" class="m-3 p-0">
+                        <template #header>
+                          <span variant="secondary" class="small truncate">
+                            {{ nixTokenIndex }}. <b-link :href="explorer + 'token/' + nixToken.token" target="_blank">{{ nixToken.token }}</b-link> {{ nixToken.symbol }} {{ nixToken.name }}, # Orders: {{ nixToken.ordersLength }}, executed: {{ nixToken.executed }}, volumeToken: {{ nixToken.volumeToken }}, volumeWeth: {{ formatETH(nixToken.volumeWeth) }}, averageWeth: {{ formatETH(nixToken.averageWeth) }}
+                          </span>
+                        </template>
                       </b-card>
                     </div>
                     <div v-for="(tokensDataItem, tokensDataIndex) in tokensData">
@@ -348,6 +361,18 @@ const Exchange = {
         { key: 'txHash', label: 'Tx', thStyle: 'width: 10%;', sortable: true },
         { key: 'events', label: 'Events', thStyle: 'width: 30%;', sortable: true },
       ],
+
+      nixTokenFields: [
+        { key: 'tokenIndex', label: '#', thStyle: 'width: 5%;', sortable: true },
+        { key: 'token', label: 'Collection', thStyle: 'width: 10%;', sortable: true },
+        { key: 'symbol', label: 'Symbol', thStyle: 'width: 10%;', sortable: true },
+        { key: 'name', label: 'Name', thStyle: 'width: 20%;', sortable: true },
+        { key: 'ordersLength', label: '# Orders', thStyle: 'width: 10%;', sortable: true },
+        { key: 'executed', label: '# Executed', thStyle: 'width: 10%;', sortable: true },
+        { key: 'volumeToken', label: 'Volume (Tokens)', thStyle: 'width: 10%;', sortable: true },
+        { key: 'volumeWeth', label: 'Volume (WETH)', thStyle: 'width: 10%;', sortable: true },
+        { key: 'averageWeth', label: 'Average (WETH)', thStyle: 'width: 15%;', sortable: true },
+      ]
     }
   },
   computed: {
