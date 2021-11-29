@@ -681,8 +681,8 @@ const nixDataModule = {
                 }
               } else {
                 try {
-                  const parsedLog = testToadz.interface.parseLog(log);
-                  const decodedEventLog = testToadz.interface.decodeEventLog(parsedLog.eventFragment.name, log.data, log.topics);
+                  const parsedLog = erc721.interface.parseLog(log);
+                  const decodedEventLog = erc721.interface.decodeEventLog(parsedLog.eventFragment.name, log.data, log.topics);
                   if (parsedLog.eventFragment.name == 'Transfer') {
                     results.push({
                       logIndex: log.logIndex,
