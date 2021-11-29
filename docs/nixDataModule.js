@@ -182,25 +182,38 @@ const nixDataModule = {
 
       let token = state.nixTokens[data.tokenIndex];
       if (token == null) {
-          Vue.set(state.nixTokens, data.tokenIndex, {
-            tokenIndex: data.tokenIndex,
-            token: data.token,
-            symbol: data.symbol,
-            name: data.name,
-            totalSupply: data.totalSupply,
-            ordersLength: data.ordersLength,
-            executed: data.executed,
-            volumeToken: data.volumeToken,
-            volumeWeth: data.volumeWeth,
-            averageWeth: data.averageWeth,
-          });
-          token = state.nixTokens[data.tokenIndex];
+        const ordersList = [];
+        for (const [orderIndex, order] of Object.entries(data.orders)) {
+          ordersList.push(order);
+        }
+        Vue.set(state.nixTokens, data.tokenIndex, {
+          tokenIndex: data.tokenIndex,
+          token: data.token,
+          symbol: data.symbol,
+          name: data.name,
+          totalSupply: data.totalSupply,
+          ordersLength: data.ordersLength,
+          executed: data.executed,
+          volumeToken: data.volumeToken,
+          volumeWeth: data.volumeWeth,
+          averageWeth: data.averageWeth,
+          orders: data.orders,
+          ordersList: ordersList,
+        });
+        token = state.nixTokens[data.tokenIndex];
       } else {
         token.ordersLength = data.ordersLength;
         token.executed = data.executed;
         token.volumeToken = data.volumeToken;
         token.volumeWeth = data.volumeWeth;
         token.averageWeth = data.averageWeth;
+        const ordersList = [];
+        for (const [orderIndex, order] of Object.entries(data.orders)) {
+          token.orders[orderIndex] = order;
+          ordersList.push(order);
+        }
+        token.ordersList = ordersList;
+        Vue.set(state.nixTokens, data.tokenIndex, token);
       }
       const nixTokenList = [];
       for (const [tokenIndex, token] of Object.entries(state.nixTokens)) {
@@ -520,10 +533,57 @@ const nixDataModule = {
               executed: executed,
               volumeToken: volumeToken,
               volumeWeth: volumeWeth,
-              averageWeth: averageWeth
+              averageWeth: averageWeth,
+              orders: {},
             });
           }
-          console.log(JSON.stringify(ordersData));
+          for (let i = 0; i < tokens[0].length; i++) {
+            const token = tokens[0][i];
+            const ordersLength = tokens[1][i];
+            const executed = tokens[2][i];
+            const volumeToken = tokens[3][i];
+            const volumeWeth = tokens[4][i];
+            const averageWeth = volumeWeth  > 0 ? volumeWeth.div(volumeToken) : null;
+            // tokensData.push({ token: token, ordersLength: ordersLength, executed: executed, volumeToken: volumeToken, volumeWeth: volumeWeth, averageWeth: averageWeth, ordersData: ordersData });
+
+            var ordersData = [];
+            var orderIndices = range(0, ordersLength - 1, 1);
+            const orders = await nixHelper.getOrders(token, orderIndices);
+            console.log(JSON.stringify(orders));
+            for (let i = 0; i < ordersLength; i++) {
+              const maker = orders[0][i];
+              const taker = orders[1][i];
+              const tokenIds = orders[2][i];
+              const price = orders[3][i];
+              const data = orders[4][i];
+              const buyOrSell = data[0];
+              const anyOrAll = data[1];
+              const expiry = data[2];
+              const expiryString = expiry == 0 ? "(none)" : new Date(expiry * 1000).toISOString();
+              const tradeCount = data[3];
+              const tradeMax = data[4];
+              const royaltyFactor = data[5];
+              const orderStatus = data[6];
+              ordersData.push({ orderIndex: i, maker: maker, taker: taker, tokenIds: tokenIds, price: price, buyOrSell: buyOrSell,
+                anyOrAll: anyOrAll, expiry: expiry, tradeCount: tradeCount, tradeMax: tradeMax, royaltyFactor: royaltyFactor,
+                orderStatus: orderStatus });
+            }
+
+            commit('updateNixToken', {
+              tokenIndex: tokenIndices[i],
+              token: token,
+              // symbol: symbol,
+              // name: name,
+              // totalSupply: totalSupply,
+              ordersLength: ordersLength,
+              executed: executed,
+              volumeToken: volumeToken,
+              volumeWeth: volumeWeth,
+              averageWeth: averageWeth,
+              orders: ordersData,
+            });
+          }
+          // console.log(JSON.stringify(ordersData));
         }
 
 

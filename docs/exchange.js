@@ -54,6 +54,38 @@ const Exchange = {
                             {{ nixTokenIndex }}. <b-link :href="explorer + 'token/' + nixToken.token" target="_blank">{{ nixToken.token }}</b-link> {{ nixToken.symbol }} {{ nixToken.name }}, # Orders: {{ nixToken.ordersLength }}, executed: {{ nixToken.executed }}, volumeToken: {{ nixToken.volumeToken }}, volumeWeth: {{ formatETH(nixToken.volumeWeth) }}, averageWeth: {{ formatETH(nixToken.averageWeth) }}
                           </span>
                         </template>
+                        <font size="-2">
+                          <b-table small fixed striped sticky-header="1000px" :items="nixToken.ordersList" head-variant="light" show-empty>
+                            <template #cell(maker)="data">
+                              <b-link :href="explorer + 'address/' + data.item.maker" target="_blank">{{ data.item.maker.substring(0, 10) + '...' }}</b-link>
+                            </template>
+                            <template #cell(taker)="data">
+                              <b-link :href="explorer + 'address/' + data.item.taker" target="_blank">{{ data.item.taker.substring(0, 10) + '...' }}</b-link>
+                            </template>
+                            <template #cell(tokenIds)="data">
+                              {{ JSON.stringify(data.item.tokenIds.map((x) => { return x.toString(); })) }}
+                            </template>
+                            <template #cell(price)="data">
+                              {{ formatETH(data.item.price) }}
+                            </template>
+                            <template #cell(buyOrSell)="data">
+                              {{ formatBuyOrSell(data.item.buyOrSell) }}
+                            </template>
+                            <template #cell(anyOrAll)="data">
+                              {{ formatAnyOrAll(data.item.anyOrAll) }}
+                            </template>
+                            <template #cell(expiry)="data">
+                              {{ formatDate(data.item.expiry) }}
+                            </template>
+                            <template #cell(royaltyFactor)="data">
+                              {{ data.item.royaltyFactor.toString() }}
+                            </template>
+                            <template #cell(orderStatus)="data">
+                              {{ formatOrderStatus(data.item.orderStatus) }}
+                            </template>
+                          </b-table>
+                        </font>
+
                       </b-card>
                     </div>
                     <div v-for="(tokensDataItem, tokensDataIndex) in tokensData">
