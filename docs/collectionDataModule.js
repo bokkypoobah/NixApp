@@ -226,9 +226,6 @@ const collectionDataModule = {
                 }
                 if (tokenInfo && tokenInfo.length == 4 && tokenInfo[0].length == 1) {
                   let tokenType = tokenInfo[0][0].toNumber();
-                  const MASK_ERC721 = 2**0;
-                  const MASK_ERC721METADATA = 2**1;
-                  const MASK_ERC721ENUMERABLE = 2**2;
                   let symbol = null;
                   let name = null;
                   let contractTotalSupply = null;

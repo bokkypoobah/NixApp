@@ -324,9 +324,6 @@ const nixDataModule = {
         logInfo("nixDataModule", "execWeb3.fullSyncCollections() - collectionsToSync: " + JSON.stringify(collectionsToSync));
 
         if (collectionsToSync.length > 0) {
-          const MASK_ERC721 = 2**0;
-          const MASK_ERC721METADATA = 2**1;
-          const MASK_ERC721ENUMERABLE = 2**2;
           const enumerableBatchSize = 50;
           const scanBatchSize = 5000;
           let tokenInfo = null;
