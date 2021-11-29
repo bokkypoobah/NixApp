@@ -201,6 +201,11 @@ const nixDataModule = {
           ordersList: ordersList,
         });
         token = state.nixTokens[data.tokenIndex];
+        const nixTokenList = [];
+        for (const [tokenIndex, t] of Object.entries(state.nixTokens)) {
+          nixTokenList.push(t);
+        }
+        state.nixTokenList = nixTokenList;
       } else {
         token.ordersLength = data.ordersLength;
         token.executed = data.executed;
@@ -215,11 +220,6 @@ const nixDataModule = {
         token.ordersList = ordersList;
         Vue.set(state.nixTokens, data.tokenIndex, token);
       }
-      const nixTokenList = [];
-      for (const [tokenIndex, token] of Object.entries(state.nixTokens)) {
-        nixTokenList.push(token);
-      }
-      state.nixTokenList = nixTokenList;
     },
     updateNixRoyaltyEngine(state, nixRoyaltyEngine) {
       // logInfo("nixDataModule", "updateNixRoyaltyEngine: " + nixRoyaltyEngine);
@@ -484,23 +484,21 @@ const nixDataModule = {
         // }
       }
 
-      async function fullSyncNix(nix, nixHelper, erc721Helper, blockNumber, timestamp) {
+      async function fullSyncNix(provider, nix, nixHelper, erc721Helper, erc721, weth, blockNumber, timestamp) {
         logInfo("nixDataModule", "fullSyncNix()");
 
         const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
 
         var tokensData = [];
         const tokensLength = await nix.tokensLength();
-        console.log(JSON.stringify(tokensLength));
         if (tokensLength > 0) {
           var tokenIndices = range(0, tokensLength - 1, 1);
           const tokens = await nixHelper.getTokens(tokenIndices);
-          // console.log(JSON.stringify(tokens));
           for (let i = 0; i < tokens[0].length; i++) {
             const token = tokens[0][i];
-            const ordersLength = tokens[1][i];
-            const executed = tokens[2][i];
-            const volumeToken = tokens[3][i];
+            const ordersLength = tokens[1][i].toNumber();
+            const executed = tokens[2][i].toNumber();
+            const volumeToken = tokens[3][i].toNumber();
             const volumeWeth = tokens[4][i];
             const averageWeth = volumeWeth  > 0 ? volumeWeth.div(volumeToken) : null;
             let tokenInfo = null;
@@ -516,13 +514,11 @@ const nixDataModule = {
                   name = tokenInfo[2][0];
                 }
                 if ((tokenType & MASK_ERC721ENUMERABLE) == MASK_ERC721ENUMERABLE) {
-                  totalSupply = tokenInfo[3][0].toString();
+                  totalSupply = tokenInfo[3][0].toNumber();
                 }
               }
             } catch (e) {
             }
-            console.log(JSON.stringify(tokenInfo));
-            // tokensData.push({ token: token, ordersLength: ordersLength, executed: executed, volumeToken: volumeToken, volumeWeth: volumeWeth, averageWeth: averageWeth, ordersData: ordersData });
             commit('updateNixToken', {
               tokenIndex: tokenIndices[i],
               token: token,
@@ -539,9 +535,9 @@ const nixDataModule = {
           }
           for (let i = 0; i < tokens[0].length; i++) {
             const token = tokens[0][i];
-            const ordersLength = tokens[1][i];
-            const executed = tokens[2][i];
-            const volumeToken = tokens[3][i];
+            const ordersLength = tokens[1][i].toNumber();
+            const executed = tokens[2][i].toNumber();
+            const volumeToken = tokens[3][i].toNumber();
             const volumeWeth = tokens[4][i];
             const averageWeth = volumeWeth  > 0 ? volumeWeth.div(volumeToken) : null;
             // tokensData.push({ token: token, ordersLength: ordersLength, executed: executed, volumeToken: volumeToken, volumeWeth: volumeWeth, averageWeth: averageWeth, ordersData: ordersData });
@@ -549,21 +545,20 @@ const nixDataModule = {
             var ordersData = [];
             var orderIndices = range(0, ordersLength - 1, 1);
             const orders = await nixHelper.getOrders(token, orderIndices);
-            console.log(JSON.stringify(orders));
+            // console.log(JSON.stringify(orders));
             for (let i = 0; i < ordersLength; i++) {
               const maker = orders[0][i];
               const taker = orders[1][i];
               const tokenIds = orders[2][i];
               const price = orders[3][i];
               const data = orders[4][i];
-              const buyOrSell = data[0];
-              const anyOrAll = data[1];
-              const expiry = data[2];
-              const expiryString = expiry == 0 ? "(none)" : new Date(expiry * 1000).toISOString();
-              const tradeCount = data[3];
-              const tradeMax = data[4];
-              const royaltyFactor = data[5];
-              const orderStatus = data[6];
+              const buyOrSell = data[0].toNumber();
+              const anyOrAll = data[1].toNumber();
+              const expiry = data[2].toNumber();
+              const tradeCount = data[3].toNumber();
+              const tradeMax = data[4].toNumber();
+              const royaltyFactor = data[5].toNumber();
+              const orderStatus = data[6].toNumber();
               ordersData.push({ orderIndex: i, maker: maker, taker: taker, tokenIds: tokenIds, price: price, buyOrSell: buyOrSell,
                 anyOrAll: anyOrAll, expiry: expiry, tradeCount: tradeCount, tradeMax: tradeMax, royaltyFactor: royaltyFactor,
                 orderStatus: orderStatus });
@@ -586,8 +581,157 @@ const nixDataModule = {
           // console.log(JSON.stringify(ordersData));
         }
 
+        const tradesLength = await nix.tradesLength();
+        const loaded = 0;
+        var tradeData = [];
+        const tradeIndices = range(loaded, parseInt(tradesLength) - 1, 1);
+        const trades = await nixHelper.getTrades(tradeIndices);
+        for (let i = 0; i < trades[0].length; i++) {
+          const taker = trades[0][i];
+          const royaltyFactor = trades[1][i].toNumber();
+          const blockNumber = trades[2][i].toNumber();
+          const orders = trades[3][i];
 
+          // event OrderExecuted(address indexed token, uint indexed orderIndex, uint indexed tradeIndex, uint[] tokenIds);
+          // TODO - handle removed: true
+          async function getOrderExecutedTransaction(tradeIndex, blockNumber, nix) {
+            let eventFilter = nix.filters.OrderExecuted(null, null, tradeIndex);
+            const timestamp = (await provider.getBlock(blockNumber)).timestamp;
+            let events = await nix.queryFilter(eventFilter, blockNumber, blockNumber);
+            for (let j = 0; j < events.length; j++) {
+              const event = events[j];
+              const parsedLog = nix.interface.parseLog(event);
+              const decodedEventLog = nix.interface.decodeEventLog(parsedLog.eventFragment.name, event.data, event.topics);
+              return {
+                address: event.address,
+                txHash: event.transactionHash,
+                txIndex: event.transactionIndex,
+                logIndex: event.logIndex,
+                blockNumber: event.blockNumber,
+                timestamp: timestamp,
+                removed: event.removed,
+                eventName: parsedLog.eventFragment.name,
+                token: decodedEventLog[0],
+                orderIndex: decodedEventLog[1].toNumber(),
+                tradeIndex: decodedEventLog[2].toNumber(),
+                tokenIds: decodedEventLog[3].map((x) => { return x.toNumber(); }),
+              };
+            }
+            return null;
+          }
 
+          async function getOrderExecutedEvents(txHash) {
+            const results = [];
+            const txReceipt = await provider.getTransactionReceipt(txHash);
+            for (let j = 0; j < txReceipt.logs.length; j++) {
+              const log = txReceipt.logs[j];
+              if (log.address == nix.address) {
+                const parsedLog = nix.interface.parseLog(log);
+                try {
+                  const decodedEventLog = nix.interface.decodeEventLog(parsedLog.eventFragment.name, log.data, log.topics);
+                  if (parsedLog.eventFragment.name == 'OrderExecuted') {
+                    results.push({
+                      logIndex: log.logIndex,
+                      address: log.address,
+                      name: 'OrderExecuted',
+                      description: 'Nix.OrderExecuted(' + decodedEventLog[0].substring(0, 10) + '...' +
+                        ', ' + decodedEventLog[1].toNumber() +
+                        ', ' + decodedEventLog[2].toNumber() +
+                        ', [' + decodedEventLog[3].map((x) => { return x.toNumber(); }) +
+                        '])',
+                      token: decodedEventLog[0],
+                      orderIndex: decodedEventLog[1].toNumber(),
+                      tradeIndex: decodedEventLog[2].toNumber(),
+                      tokenIds: decodedEventLog[3].map((x) => { return x.toNumber(); }),
+                    });
+                  } else if (parsedLog.eventFragment.name == 'ThankYou') {
+                    results.push({
+                      logIndex: log.logIndex,
+                      address: log.address,
+                      name: 'ThankYou',
+                      description: 'Nix.ThankYou(' + ethers.utils.formatEther(decodedEventLog[0]) + ')',
+                      tip: ethers.utils.formatEther(decodedEventLog[0]),
+                    });
+                  } else {
+                    console.log("TODO: " + parsedLog.eventFragment.name);
+                  }
+                } catch (e) {
+                }
+              } else if (log.address == weth.address) {
+                try {
+                  const parsedLog = weth.interface.parseLog(log);
+                  const decodedEventLog = weth.interface.decodeEventLog(parsedLog.eventFragment.name, log.data, log.topics);
+                  if (parsedLog.eventFragment.name == 'Transfer') {
+                    results.push({
+                      logIndex: log.logIndex,
+                      address: log.address,
+                      name: 'Transfer',
+                      description: 'WETH.Transfer(' + decodedEventLog[0].substring(0, 10) + '...' +
+                        ', ' + decodedEventLog[1].substring(0, 10) + '...' +
+                        ', ' + ethers.utils.formatEther(decodedEventLog[2]) +
+                        ')',
+                      from: decodedEventLog[0],
+                      to: decodedEventLog[1],
+                      tokens: decodedEventLog[2].toString(),
+                    });
+                  } else {
+                    console.log("TODO: " + parsedLog.eventFragment.name);
+                  }
+                } catch (e) {
+                }
+              } else {
+                try {
+                  const parsedLog = testToadz.interface.parseLog(log);
+                  const decodedEventLog = testToadz.interface.decodeEventLog(parsedLog.eventFragment.name, log.data, log.topics);
+                  if (parsedLog.eventFragment.name == 'Transfer') {
+                    results.push({
+                      logIndex: log.logIndex,
+                      address: log.address,
+                      name: 'Transfer',
+                      description: log.address.substring(0, 10) + '.Transfer(' + decodedEventLog[0].substring(0, 10) + '...' +
+                        ', ' + decodedEventLog[1].substring(0, 10) + '...' +
+                        ', ' + decodedEventLog[2].toNumber() +
+                        ')',
+                      from: decodedEventLog[0],
+                      to: decodedEventLog[1],
+                      tokenId: decodedEventLog[2].toString(),
+                    });
+                  } else if (parsedLog.eventFragment.name == 'Approval') {
+                    results.push({
+                      logIndex: log.logIndex,
+                      address: log.address,
+                      name: 'Approval',
+                      description: log.address.substring(0, 10) + '.Approval(' + decodedEventLog[0].substring(0, 10) + '...' +
+                        ', ' + decodedEventLog[1].substring(0, 10) + '...' +
+                        ', ' + decodedEventLog[2].toNumber() +
+                        ')',
+                      owner: decodedEventLog[0],
+                      approved: decodedEventLog[1],
+                      tokenId: decodedEventLog[2].toString(),
+                    });
+                  } else {
+                    console.log("TODO: " + parsedLog.eventFragment.name);
+                  }
+                } catch (e) {
+                }
+              }
+            }
+            return results;
+          }
+          const tx = await getOrderExecutedTransaction(i, blockNumber, nix);
+          const orderExecutedEvents = await getOrderExecutedEvents(tx.txHash);
+          // console.log("orderExecutedEvents: " + JSON.stringify(orderExecutedEvents, null, 2));
+          tradeData.push({
+            tradeIndex: i,
+            taker: taker,
+            royaltyFactor: royaltyFactor,
+            blockNumber: blockNumber,
+            orders: orders,
+            txHash: tx.txHash,
+            events: orderExecutedEvents,
+          });
+        }
+        commit('updateTradeData', tradeData);
       }
 
       async function incrementalSync(updates) {
@@ -623,7 +767,7 @@ const nixDataModule = {
 
           const updates = await getUpdatedEvents(provider, nix, erc721, weth, blockNumber);
           // console.log(JSON.stringify(updates));
-          await fullSyncNix(nix, nixHelper, erc721Helper, blockNumber, timestamp);
+          await fullSyncNix(provider, nix, nixHelper, erc721Helper, erc721, weth, blockNumber, timestamp);
           await fullSyncCollections(erc721Helper, blockNumber, timestamp);
           // await incrementalSync(updates);
 
@@ -642,199 +786,199 @@ const nixDataModule = {
             });
           }
 
-          const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
-
-          var tokensData = [];
-          const tokensLength = await nix.tokensLength();
-          if (tokensLength > 0) {
-            var tokenIndices = range(0, tokensLength - 1, 1);
-            const tokens = await nixHelper.getTokens(tokenIndices);
-            for (let i = 0; i < tokens[0].length; i++) {
-              const token = tokens[0][i];
-              const ordersLength = tokens[1][i];
-              const executed = tokens[2][i];
-              const volumeToken = tokens[3][i];
-              const volumeWeth = tokens[4][i];
-              const averageWeth = volumeWeth  > 0 ? volumeWeth.div(volumeToken) : null;
-              var ordersData = [];
-              var orderIndices = range(0, ordersLength - 1, 1);
-              const orders = await nixHelper.getOrders(token, orderIndices);
-              for (let i = 0; i < ordersLength; i++) {
-                const maker = orders[0][i];
-                const taker = orders[1][i];
-                const tokenIds = orders[2][i];
-                const price = orders[3][i];
-                const data = orders[4][i];
-                const buyOrSell = data[0];
-                const anyOrAll = data[1];
-                const expiry = data[2];
-                const expiryString = expiry == 0 ? "(none)" : new Date(expiry * 1000).toISOString();
-                const tradeCount = data[3];
-                const tradeMax = data[4];
-                const royaltyFactor = data[5];
-                const orderStatus = data[6];
-                ordersData.push({ orderIndex: i, maker: maker, taker: taker, tokenIds: tokenIds, price: price, buyOrSell: buyOrSell,
-                  anyOrAll: anyOrAll, expiry: expiry, tradeCount: tradeCount, tradeMax: tradeMax, royaltyFactor: royaltyFactor,
-                  orderStatus: orderStatus });
-              }
-              tokensData.push({ token: token, ordersLength: ordersLength, executed: executed, volumeToken: volumeToken, volumeWeth: volumeWeth, averageWeth: averageWeth, ordersData: ordersData });
-            }
-            commit('updateTokensData', tokensData);
-
-            const tradesLength = await nix.tradesLength();
-            const loaded = 0;
-            var tradeData = [];
-            const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
-            const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
-            const tradeIndices = range(loaded, parseInt(tradesLength) - 1, 1);
-            const trades = await nixHelper.getTrades(tradeIndices);
-            for (let i = 0; i < trades[0].length; i++) {
-              const taker = trades[0][i];
-              const royaltyFactor = trades[1][i];
-              const blockNumber = trades[2][i];
-              const orders = trades[3][i];
-
-              // event OrderExecuted(address indexed token, uint indexed orderIndex, uint indexed tradeIndex, uint[] tokenIds);
-              // TODO - handle removed: true
-              async function getOrderExecutedTransaction(tradeIndex, blockNumber, nix) {
-                let eventFilter = nix.filters.OrderExecuted(null, null, tradeIndex);
-                const timestamp = (await provider.getBlock(blockNumber)).timestamp;
-                let events = await nix.queryFilter(eventFilter, blockNumber, blockNumber);
-                for (let j = 0; j < events.length; j++) {
-                  const event = events[j];
-                  const parsedLog = nix.interface.parseLog(event);
-                  const decodedEventLog = nix.interface.decodeEventLog(parsedLog.eventFragment.name, event.data, event.topics);
-                  return {
-                    address: event.address,
-                    txHash: event.transactionHash,
-                    txIndex: event.transactionIndex,
-                    logIndex: event.logIndex,
-                    blockNumber: event.blockNumber,
-                    timestamp: timestamp,
-                    removed: event.removed,
-                    eventName: parsedLog.eventFragment.name,
-                    token: decodedEventLog[0],
-                    orderIndex: decodedEventLog[1].toNumber(),
-                    tradeIndex: decodedEventLog[2].toNumber(),
-                    tokenIds: decodedEventLog[3].map((x) => { return x.toNumber(); }),
-                  };
-                }
-                return null;
-              }
-
-              async function getOrderExecutedEvents(txHash) {
-                const results = [];
-                const txReceipt = await provider.getTransactionReceipt(txHash);
-                for (let j = 0; j < txReceipt.logs.length; j++) {
-                  const log = txReceipt.logs[j];
-                  if (log.address == nix.address) {
-                    const parsedLog = nix.interface.parseLog(log);
-                    try {
-                      const decodedEventLog = nix.interface.decodeEventLog(parsedLog.eventFragment.name, log.data, log.topics);
-                      if (parsedLog.eventFragment.name == 'OrderExecuted') {
-                        results.push({
-                          logIndex: log.logIndex,
-                          address: log.address,
-                          name: 'OrderExecuted',
-                          description: 'Nix.OrderExecuted(' + decodedEventLog[0].substring(0, 10) + '...' +
-                            ', ' + decodedEventLog[1].toNumber() +
-                            ', ' + decodedEventLog[2].toNumber() +
-                            ', [' + decodedEventLog[3].map((x) => { return x.toNumber(); }) +
-                            '])',
-                          token: decodedEventLog[0],
-                          orderIndex: decodedEventLog[1].toNumber(),
-                          tradeIndex: decodedEventLog[2].toNumber(),
-                          tokenIds: decodedEventLog[3].map((x) => { return x.toNumber(); }),
-                        });
-                      } else if (parsedLog.eventFragment.name == 'ThankYou') {
-                        results.push({
-                          logIndex: log.logIndex,
-                          address: log.address,
-                          name: 'ThankYou',
-                          description: 'Nix.ThankYou(' + ethers.utils.formatEther(decodedEventLog[0]) + ')',
-                          tip: ethers.utils.formatEther(decodedEventLog[0]),
-                        });
-                      } else {
-                        console.log("TODO: " + parsedLog.eventFragment.name);
-                      }
-                    } catch (e) {
-                    }
-                  } else if (log.address == weth.address) {
-                    try {
-                      const parsedLog = weth.interface.parseLog(log);
-                      const decodedEventLog = weth.interface.decodeEventLog(parsedLog.eventFragment.name, log.data, log.topics);
-                      if (parsedLog.eventFragment.name == 'Transfer') {
-                        results.push({
-                          logIndex: log.logIndex,
-                          address: log.address,
-                          name: 'Transfer',
-                          description: 'WETH.Transfer(' + decodedEventLog[0].substring(0, 10) + '...' +
-                            ', ' + decodedEventLog[1].substring(0, 10) + '...' +
-                            ', ' + ethers.utils.formatEther(decodedEventLog[2]) +
-                            ')',
-                          from: decodedEventLog[0],
-                          to: decodedEventLog[1],
-                          tokens: decodedEventLog[2].toString(),
-                        });
-                      } else {
-                        console.log("TODO: " + parsedLog.eventFragment.name);
-                      }
-                    } catch (e) {
-                    }
-                  } else {
-                    try {
-                      const parsedLog = testToadz.interface.parseLog(log);
-                      const decodedEventLog = testToadz.interface.decodeEventLog(parsedLog.eventFragment.name, log.data, log.topics);
-                      if (parsedLog.eventFragment.name == 'Transfer') {
-                        results.push({
-                          logIndex: log.logIndex,
-                          address: log.address,
-                          name: 'Transfer',
-                          description: log.address.substring(0, 10) + '.Transfer(' + decodedEventLog[0].substring(0, 10) + '...' +
-                            ', ' + decodedEventLog[1].substring(0, 10) + '...' +
-                            ', ' + decodedEventLog[2].toNumber() +
-                            ')',
-                          from: decodedEventLog[0],
-                          to: decodedEventLog[1],
-                          tokenId: decodedEventLog[2].toString(),
-                        });
-                      } else if (parsedLog.eventFragment.name == 'Approval') {
-                        results.push({
-                          logIndex: log.logIndex,
-                          address: log.address,
-                          name: 'Approval',
-                          description: log.address.substring(0, 10) + '.Approval(' + decodedEventLog[0].substring(0, 10) + '...' +
-                            ', ' + decodedEventLog[1].substring(0, 10) + '...' +
-                            ', ' + decodedEventLog[2].toNumber() +
-                            ')',
-                          owner: decodedEventLog[0],
-                          approved: decodedEventLog[1],
-                          tokenId: decodedEventLog[2].toString(),
-                        });
-                      } else {
-                        console.log("TODO: " + parsedLog.eventFragment.name);
-                      }
-                    } catch (e) {
-                    }
-                  }
-                }
-                return results;
-              }
-              const tx = await getOrderExecutedTransaction(i, blockNumber.toNumber(), nix);
-              const orderExecutedEvents = await getOrderExecutedEvents(tx.txHash);
-              // console.log("orderExecutedEvents: " + JSON.stringify(orderExecutedEvents, null, 2));
-              tradeData.push({
-                tradeIndex: i,
-                taker: taker,
-                royaltyFactor: royaltyFactor,
-                blockNumber: blockNumber,
-                orders: orders,
-                txHash: tx.txHash,
-                events: orderExecutedEvents,
-              });
-            }
-            commit('updateTradeData', tradeData);
-          }
+          // const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
+          //
+          // var tokensData = [];
+          // const tokensLength = await nix.tokensLength();
+          // if (tokensLength > 0) {
+          //   var tokenIndices = range(0, tokensLength - 1, 1);
+          //   const tokens = await nixHelper.getTokens(tokenIndices);
+          //   for (let i = 0; i < tokens[0].length; i++) {
+          //     const token = tokens[0][i];
+          //     const ordersLength = tokens[1][i];
+          //     const executed = tokens[2][i];
+          //     const volumeToken = tokens[3][i];
+          //     const volumeWeth = tokens[4][i];
+          //     const averageWeth = volumeWeth  > 0 ? volumeWeth.div(volumeToken) : null;
+          //     var ordersData = [];
+          //     var orderIndices = range(0, ordersLength - 1, 1);
+          //     const orders = await nixHelper.getOrders(token, orderIndices);
+          //     for (let i = 0; i < ordersLength; i++) {
+          //       const maker = orders[0][i];
+          //       const taker = orders[1][i];
+          //       const tokenIds = orders[2][i];
+          //       const price = orders[3][i];
+          //       const data = orders[4][i];
+          //       const buyOrSell = data[0];
+          //       const anyOrAll = data[1];
+          //       const expiry = data[2];
+          //       const expiryString = expiry == 0 ? "(none)" : new Date(expiry * 1000).toISOString();
+          //       const tradeCount = data[3];
+          //       const tradeMax = data[4];
+          //       const royaltyFactor = data[5];
+          //       const orderStatus = data[6];
+          //       ordersData.push({ orderIndex: i, maker: maker, taker: taker, tokenIds: tokenIds, price: price, buyOrSell: buyOrSell,
+          //         anyOrAll: anyOrAll, expiry: expiry, tradeCount: tradeCount, tradeMax: tradeMax, royaltyFactor: royaltyFactor,
+          //         orderStatus: orderStatus });
+          //     }
+          //     tokensData.push({ token: token, ordersLength: ordersLength, executed: executed, volumeToken: volumeToken, volumeWeth: volumeWeth, averageWeth: averageWeth, ordersData: ordersData });
+          //   }
+          //   commit('updateTokensData', tokensData);
+          //
+          //   const tradesLength = await nix.tradesLength();
+          //   const loaded = 0;
+          //   var tradeData = [];
+          //   const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
+          //   const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
+          //   const tradeIndices = range(loaded, parseInt(tradesLength) - 1, 1);
+          //   const trades = await nixHelper.getTrades(tradeIndices);
+          //   for (let i = 0; i < trades[0].length; i++) {
+          //     const taker = trades[0][i];
+          //     const royaltyFactor = trades[1][i];
+          //     const blockNumber = trades[2][i];
+          //     const orders = trades[3][i];
+          //
+          //     // event OrderExecuted(address indexed token, uint indexed orderIndex, uint indexed tradeIndex, uint[] tokenIds);
+          //     // TODO - handle removed: true
+          //     async function getOrderExecutedTransaction(tradeIndex, blockNumber, nix) {
+          //       let eventFilter = nix.filters.OrderExecuted(null, null, tradeIndex);
+          //       const timestamp = (await provider.getBlock(blockNumber)).timestamp;
+          //       let events = await nix.queryFilter(eventFilter, blockNumber, blockNumber);
+          //       for (let j = 0; j < events.length; j++) {
+          //         const event = events[j];
+          //         const parsedLog = nix.interface.parseLog(event);
+          //         const decodedEventLog = nix.interface.decodeEventLog(parsedLog.eventFragment.name, event.data, event.topics);
+          //         return {
+          //           address: event.address,
+          //           txHash: event.transactionHash,
+          //           txIndex: event.transactionIndex,
+          //           logIndex: event.logIndex,
+          //           blockNumber: event.blockNumber,
+          //           timestamp: timestamp,
+          //           removed: event.removed,
+          //           eventName: parsedLog.eventFragment.name,
+          //           token: decodedEventLog[0],
+          //           orderIndex: decodedEventLog[1].toNumber(),
+          //           tradeIndex: decodedEventLog[2].toNumber(),
+          //           tokenIds: decodedEventLog[3].map((x) => { return x.toNumber(); }),
+          //         };
+          //       }
+          //       return null;
+          //     }
+          //
+          //     async function getOrderExecutedEvents(txHash) {
+          //       const results = [];
+          //       const txReceipt = await provider.getTransactionReceipt(txHash);
+          //       for (let j = 0; j < txReceipt.logs.length; j++) {
+          //         const log = txReceipt.logs[j];
+          //         if (log.address == nix.address) {
+          //           const parsedLog = nix.interface.parseLog(log);
+          //           try {
+          //             const decodedEventLog = nix.interface.decodeEventLog(parsedLog.eventFragment.name, log.data, log.topics);
+          //             if (parsedLog.eventFragment.name == 'OrderExecuted') {
+          //               results.push({
+          //                 logIndex: log.logIndex,
+          //                 address: log.address,
+          //                 name: 'OrderExecuted',
+          //                 description: 'Nix.OrderExecuted(' + decodedEventLog[0].substring(0, 10) + '...' +
+          //                   ', ' + decodedEventLog[1].toNumber() +
+          //                   ', ' + decodedEventLog[2].toNumber() +
+          //                   ', [' + decodedEventLog[3].map((x) => { return x.toNumber(); }) +
+          //                   '])',
+          //                 token: decodedEventLog[0],
+          //                 orderIndex: decodedEventLog[1].toNumber(),
+          //                 tradeIndex: decodedEventLog[2].toNumber(),
+          //                 tokenIds: decodedEventLog[3].map((x) => { return x.toNumber(); }),
+          //               });
+          //             } else if (parsedLog.eventFragment.name == 'ThankYou') {
+          //               results.push({
+          //                 logIndex: log.logIndex,
+          //                 address: log.address,
+          //                 name: 'ThankYou',
+          //                 description: 'Nix.ThankYou(' + ethers.utils.formatEther(decodedEventLog[0]) + ')',
+          //                 tip: ethers.utils.formatEther(decodedEventLog[0]),
+          //               });
+          //             } else {
+          //               console.log("TODO: " + parsedLog.eventFragment.name);
+          //             }
+          //           } catch (e) {
+          //           }
+          //         } else if (log.address == weth.address) {
+          //           try {
+          //             const parsedLog = weth.interface.parseLog(log);
+          //             const decodedEventLog = weth.interface.decodeEventLog(parsedLog.eventFragment.name, log.data, log.topics);
+          //             if (parsedLog.eventFragment.name == 'Transfer') {
+          //               results.push({
+          //                 logIndex: log.logIndex,
+          //                 address: log.address,
+          //                 name: 'Transfer',
+          //                 description: 'WETH.Transfer(' + decodedEventLog[0].substring(0, 10) + '...' +
+          //                   ', ' + decodedEventLog[1].substring(0, 10) + '...' +
+          //                   ', ' + ethers.utils.formatEther(decodedEventLog[2]) +
+          //                   ')',
+          //                 from: decodedEventLog[0],
+          //                 to: decodedEventLog[1],
+          //                 tokens: decodedEventLog[2].toString(),
+          //               });
+          //             } else {
+          //               console.log("TODO: " + parsedLog.eventFragment.name);
+          //             }
+          //           } catch (e) {
+          //           }
+          //         } else {
+          //           try {
+          //             const parsedLog = testToadz.interface.parseLog(log);
+          //             const decodedEventLog = testToadz.interface.decodeEventLog(parsedLog.eventFragment.name, log.data, log.topics);
+          //             if (parsedLog.eventFragment.name == 'Transfer') {
+          //               results.push({
+          //                 logIndex: log.logIndex,
+          //                 address: log.address,
+          //                 name: 'Transfer',
+          //                 description: log.address.substring(0, 10) + '.Transfer(' + decodedEventLog[0].substring(0, 10) + '...' +
+          //                   ', ' + decodedEventLog[1].substring(0, 10) + '...' +
+          //                   ', ' + decodedEventLog[2].toNumber() +
+          //                   ')',
+          //                 from: decodedEventLog[0],
+          //                 to: decodedEventLog[1],
+          //                 tokenId: decodedEventLog[2].toString(),
+          //               });
+          //             } else if (parsedLog.eventFragment.name == 'Approval') {
+          //               results.push({
+          //                 logIndex: log.logIndex,
+          //                 address: log.address,
+          //                 name: 'Approval',
+          //                 description: log.address.substring(0, 10) + '.Approval(' + decodedEventLog[0].substring(0, 10) + '...' +
+          //                   ', ' + decodedEventLog[1].substring(0, 10) + '...' +
+          //                   ', ' + decodedEventLog[2].toNumber() +
+          //                   ')',
+          //                 owner: decodedEventLog[0],
+          //                 approved: decodedEventLog[1],
+          //                 tokenId: decodedEventLog[2].toString(),
+          //               });
+          //             } else {
+          //               console.log("TODO: " + parsedLog.eventFragment.name);
+          //             }
+          //           } catch (e) {
+          //           }
+          //         }
+          //       }
+          //       return results;
+          //     }
+          //     const tx = await getOrderExecutedTransaction(i, blockNumber.toNumber(), nix);
+          //     const orderExecutedEvents = await getOrderExecutedEvents(tx.txHash);
+          //     // console.log("orderExecutedEvents: " + JSON.stringify(orderExecutedEvents, null, 2));
+          //     tradeData.push({
+          //       tradeIndex: i,
+          //       taker: taker,
+          //       royaltyFactor: royaltyFactor,
+          //       blockNumber: blockNumber,
+          //       orders: orders,
+          //       txHash: tx.txHash,
+          //       events: orderExecutedEvents,
+          //     });
+          //   }
+          //   commit('updateTradeData', tradeData);
+          // }
         }
         commit('updateExecuting', false);
         logDebug("nixDataModule", "execWeb3() end[" + count + "]");

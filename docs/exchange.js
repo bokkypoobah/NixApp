@@ -40,7 +40,7 @@ const Exchange = {
                   </b-tab>
 
                   <b-tab title="Orders" class="p-1">
-                    <div v-if="!tokensData || tokensData.length == 0">
+                    <div v-if="nixTokenList.length == 0">
                       <b-card>
                         <b-card-text>
                           Loading orders
