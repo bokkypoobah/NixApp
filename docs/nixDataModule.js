@@ -102,8 +102,12 @@ const nixDataModule = {
   namespaced: true,
   state: {
     nixRoyaltyEngine: null,
+
     collections: {},
     collectionList: [],
+    nixTokens: {},
+    nixTokenList: [],
+
     tokensData: [],
     tradeData: [],
     params: null,
@@ -111,8 +115,12 @@ const nixDataModule = {
   },
   getters: {
     nixRoyaltyEngine: state => state.nixRoyaltyEngine,
+
     collections: state => state.collections,
     collectionList: state => state.collectionList,
+    nixTokens: state => state.nixTokens,
+    nixTokenList: state => state.nixTokenList,
+
     tokensData: state => state.tokensData,
     tradeData: state => state.tradeData,
     balances: state => state.balances,
@@ -168,6 +176,37 @@ const nixDataModule = {
         collectionList.push(collection);
       }
       state.collectionList = collectionList;
+    },
+    updateNixToken(state, data) {
+      logInfo("nixDataModule", "updateNixToken: " + JSON.stringify(data));
+
+      let token = state.nixTokens[data.tokenIndex];
+      if (token == null) {
+          Vue.set(state.nixTokens, data.tokenIndex, {
+            tokenIndex: data.tokenIndex,
+            token: data.token,
+            symbol: data.symbol,
+            name: data.name,
+            totalSupply: data.totalSupply,
+            ordersLength: data.ordersLength,
+            executed: data.executed,
+            volumeToken: data.volumeToken,
+            volumeWeth: data.volumeWeth,
+            averageWeth: data.averageWeth,
+          });
+          token = state.nixTokens[data.tokenIndex];
+      } else {
+        token.ordersLength = data.ordersLength;
+        token.executed = data.executed;
+        token.volumeToken = data.volumeToken;
+        token.volumeWeth = data.volumeWeth;
+        token.averageWeth = data.averageWeth;
+      }
+      const nixTokenList = [];
+      for (const [tokenIndex, token] of Object.entries(state.nixTokens)) {
+        nixTokenList.push(token);
+      }
+      state.nixTokenList = nixTokenList;
     },
     updateNixRoyaltyEngine(state, nixRoyaltyEngine) {
       // logInfo("nixDataModule", "updateNixRoyaltyEngine: " + nixRoyaltyEngine);
@@ -432,7 +471,7 @@ const nixDataModule = {
         // }
       }
 
-      async function fullSyncNix(nix, nixHelper, blockNumber, timestamp) {
+      async function fullSyncNix(nix, nixHelper, erc721Helper, blockNumber, timestamp) {
         logInfo("nixDataModule", "fullSyncNix()");
 
         const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
@@ -443,7 +482,7 @@ const nixDataModule = {
         if (tokensLength > 0) {
           var tokenIndices = range(0, tokensLength - 1, 1);
           const tokens = await nixHelper.getTokens(tokenIndices);
-          console.log(JSON.stringify(tokens));
+          // console.log(JSON.stringify(tokens));
           for (let i = 0; i < tokens[0].length; i++) {
             const token = tokens[0][i];
             const ordersLength = tokens[1][i];
@@ -451,33 +490,41 @@ const nixDataModule = {
             const volumeToken = tokens[3][i];
             const volumeWeth = tokens[4][i];
             const averageWeth = volumeWeth  > 0 ? volumeWeth.div(volumeToken) : null;
-            var ordersData = [];
-            var orderIndices = range(0, ordersLength - 1, 1);
-            const orders = await nixHelper.getOrders(token, orderIndices);
-            for (let i = 0; i < ordersLength; i++) {
-              const maker = orders[0][i];
-              const taker = orders[1][i];
-              const tokenIds = orders[2][i];
-              const price = orders[3][i];
-              const data = orders[4][i];
-              const buyOrSell = data[0];
-              const anyOrAll = data[1];
-              const expiry = data[2];
-              const expiryString = expiry == 0 ? "(none)" : new Date(expiry * 1000).toISOString();
-              const tradeCount = data[3];
-              const tradeMax = data[4];
-              const royaltyFactor = data[5];
-              const orderStatus = data[6];
-              ordersData.push({ orderIndex: i, maker: maker, taker: taker, tokenIds: tokenIds, price: price, buyOrSell: buyOrSell,
-                anyOrAll: anyOrAll, expiry: expiry, tradeCount: tradeCount, tradeMax: tradeMax, royaltyFactor: royaltyFactor,
-                orderStatus: orderStatus });
+            let tokenInfo = null;
+            let symbol = null;
+            let name = null;
+            let totalSupply = null;
+            try {
+              tokenInfo = await erc721Helper.tokenInfo([token]);
+              const tokenType = tokenInfo[0][0].toNumber();
+              if ((tokenType & MASK_ERC721) == MASK_ERC721) {
+                if ((tokenType & MASK_ERC721METADATA) == MASK_ERC721METADATA) {
+                  symbol = tokenInfo[1][0];
+                  name = tokenInfo[2][0];
+                }
+                if ((tokenType & MASK_ERC721ENUMERABLE) == MASK_ERC721ENUMERABLE) {
+                  totalSupply = tokenInfo[3][0].toString();
+                }
+              }
+            } catch (e) {
             }
+            console.log(JSON.stringify(tokenInfo));
             // tokensData.push({ token: token, ordersLength: ordersLength, executed: executed, volumeToken: volumeToken, volumeWeth: volumeWeth, averageWeth: averageWeth, ordersData: ordersData });
+            commit('updateNixToken', {
+              tokenIndex: tokenIndices[i],
+              token: token,
+              symbol: symbol,
+              name: name,
+              totalSupply: totalSupply,
+              ordersLength: ordersLength,
+              executed: executed,
+              volumeToken: volumeToken,
+              volumeWeth: volumeWeth,
+              averageWeth: averageWeth
+            });
           }
           console.log(JSON.stringify(ordersData));
         }
-
-          // commit('updateTokensData', tokensData);
 
 
 
@@ -516,9 +563,9 @@ const nixDataModule = {
 
           const updates = await getUpdatedEvents(provider, nix, erc721, weth, blockNumber);
           // console.log(JSON.stringify(updates));
-          await fullSyncNix(nix, nixHelper, blockNumber, timestamp);
+          await fullSyncNix(nix, nixHelper, erc721Helper, blockNumber, timestamp);
           await fullSyncCollections(erc721Helper, blockNumber, timestamp);
-          await incrementalSync(updates);
+          // await incrementalSync(updates);
 
           if (!state.nixRoyaltyEngine) {
             const nixRoyaltyEngine = await nix.royaltyEngine();

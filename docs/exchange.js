@@ -16,6 +16,25 @@ const Exchange = {
 
                 <b-tabs vertical pills card end nav-class="p-2" active-tab-class="p-2">
 
+                  <b-tab title="Tokens" class="p-1">
+                    <div v-if="nixTokenList.length == 0">
+                      <b-card>
+                        <b-card-text>
+                          Loading tokens
+                        </b-card-text>
+                      </b-card>
+                    </div>
+                    {{ nixTokenList }}
+                    <font size="-2">
+                      <b-table small fixed striped sticky-header="1000px" :items="nixTokenList" head-variant="light" show-empty>
+                        <template #cell(tokenIndex)="data">
+                          {{ data.item.tokenIndex }}
+                          <!-- <b-link :href="explorer + 'address/' + data.item.maker" target="_blank">{{ data.item.maker.substring(0, 10) + '...' }}</b-link> -->
+                        </template>
+                      </b-table>
+                    </font>
+                  </b-tab>
+
                   <b-tab title="Orders" class="p-1">
                     <div v-if="!tokensData || tokensData.length == 0">
                       <b-card>
@@ -344,6 +363,14 @@ const Exchange = {
     network() {
       return store.getters['connection/network'];
     },
+
+    nixTokens() {
+      return store.getters['nixData/nixTokens'];
+    },
+    nixTokenList() {
+      return store.getters['nixData/nixTokenList'];
+    },
+
     tokensData() {
       return store.getters['nixData/tokensData'];
     },
