@@ -178,7 +178,7 @@ const nixDataModule = {
       state.collectionList = collectionList;
     },
     updateNixToken(state, data) {
-      logInfo("nixDataModule", "updateNixToken: " + JSON.stringify(data));
+      // logInfo("nixDataModule", "updateNixToken: " + JSON.stringify(data));
 
       let token = state.nixTokens[data.tokenIndex];
       if (token == null) {
@@ -212,12 +212,12 @@ const nixDataModule = {
         token.volumeToken = data.volumeToken;
         token.volumeWeth = data.volumeWeth;
         token.averageWeth = data.averageWeth;
-        const ordersList = [];
         for (const [orderIndex, order] of Object.entries(data.orders)) {
+          if (!token.orders[orderIndex]) {
+            token.ordersList.push(order);
+          }
           token.orders[orderIndex] = order;
-          ordersList.push(order);
         }
-        token.ordersList = ordersList;
         Vue.set(state.nixTokens, data.tokenIndex, token);
       }
     },
@@ -254,8 +254,8 @@ const nixDataModule = {
         logDebug("nixDataModule", "execWeb3.getUpdatedEvents()");
 
         const wethLookback = 50000; // 100
-        const erc721Lookback = 20000; // 100
-        const nixLookback = 50000; // 100
+        const erc721Lookback = 30000; // 100
+        const nixLookback = 60000; // 100
 
         const accounts = {};
         const tokens = {};
@@ -548,7 +548,7 @@ const nixDataModule = {
             // console.log(JSON.stringify(orders));
             for (let i = 0; i < ordersLength; i++) {
               const maker = orders[0][i];
-              const taker = orders[1][i];
+              const taker = orders[1][i] == ADDRESS0 ? null : orders[1][i];
               const tokenIds = orders[2][i];
               const price = orders[3][i];
               const data = orders[4][i];

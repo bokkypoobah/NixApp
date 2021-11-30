@@ -60,7 +60,9 @@ const Exchange = {
                               <b-link :href="explorer + 'address/' + data.item.maker" target="_blank">{{ data.item.maker.substring(0, 10) + '...' }}</b-link>
                             </template>
                             <template #cell(taker)="data">
-                              <b-link :href="explorer + 'address/' + data.item.taker" target="_blank">{{ data.item.taker.substring(0, 10) + '...' }}</b-link>
+                              <div v-if="data.item.taker">
+                                <b-link :href="explorer + 'address/' + data.item.taker" target="_blank">{{ data.item.taker.substring(0, 10) + '...' }}</b-link>
+                              </div>
                             </template>
                             <template #cell(tokenIds)="data">
                               {{ JSON.stringify(data.item.tokenIds.map((x) => { return x.toString(); })) }}
