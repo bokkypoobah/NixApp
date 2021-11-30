@@ -622,6 +622,8 @@ const nixDataModule = {
 
           async function getOrderExecutedEvents(txHash) {
             const results = [];
+            const txData = await provider.getTransaction(txHash);
+            // console.log("txData: " + JSON.stringify(txData, null, 2));
             const txReceipt = await provider.getTransactionReceipt(txHash);
             for (let j = 0; j < txReceipt.logs.length; j++) {
               const log = txReceipt.logs[j];
@@ -630,6 +632,23 @@ const nixDataModule = {
                 try {
                   const decodedEventLog = nix.interface.decodeEventLog(parsedLog.eventFragment.name, log.data, log.topics);
                   if (parsedLog.eventFragment.name == 'OrderExecuted') {
+                    const functionData = nix.interface.decodeFunctionData('executeOrders', txData.data);
+                    // console.log("functionData: " + JSON.stringify(functionData.map((x) => { return x.toString(); }), null, 2));
+                    results.unshift({
+                      logIndex: log.logIndex,
+                      address: log.address,
+                      name: 'executeOrders',
+                      description: 'executeOrders(' + JSON.stringify(functionData[0].map((x) => { return x.toString(); })) +
+                        ', ' + JSON.stringify(functionData[1].map((x) => { return x.toString(); })) +
+                        ', ' + JSON.stringify(functionData[2].map((x) => { return x.toString(); })) +
+                        ', ' + ethers.utils.formatEther(functionData[3]) +
+                        ', ' + functionData[4] +
+                        ', ' + functionData[5].replace(ADDRESS0, 'null') + ')',
+                      token: decodedEventLog[0],
+                      orderIndex: decodedEventLog[1].toNumber(),
+                      tradeIndex: decodedEventLog[2].toNumber(),
+                      tokenIds: decodedEventLog[3].map((x) => { return x.toNumber(); }),
+                    });
                     results.push({
                       logIndex: log.logIndex,
                       address: log.address,
