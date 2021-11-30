@@ -229,7 +229,6 @@ const collectionDataModule = {
                   let symbol = null;
                   let name = null;
                   let contractTotalSupply = null;
-                  const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
                   const enumerableBatchSize = 1000;
                   const scanBatchSize = 5000;
                   if ((tokenType & MASK_ERC721) == MASK_ERC721) {
@@ -252,7 +251,7 @@ const collectionDataModule = {
                       contractTotalSupply = null;
                       const scanFrom = 0;
                       const scanTo = 6969;
-                      var searchTokenIds = range(parseInt(scanFrom), (parseInt(scanTo) - 1), 1);
+                      var searchTokenIds = generateRange(parseInt(scanFrom), (parseInt(scanTo) - 1), 1);
                       for (let i = 0; i < searchTokenIds.length; i += scanBatchSize) {
                         const batch = searchTokenIds.slice(i, parseInt(i) + scanBatchSize);
                         const ownersInfo = await erc721Helper.ownersByTokenIds(collection.address, batch);
@@ -339,8 +338,6 @@ const collectionDataModule = {
                     }
                   }
                 }
-
-
 
                 commit('updateCollection', {
                   chainId: collection.chainId,

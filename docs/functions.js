@@ -327,3 +327,5 @@ function chunkArray(myArray, chunk_size) {
   }
   return results;
 }
+
+const generateRange = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));

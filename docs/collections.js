@@ -523,7 +523,6 @@ const Collections = {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const erc721Helper = new ethers.Contract(ERC721HELPERADDRESS, ERC721HELPERABI, provider);
       const tokenInfo = await erc721Helper.tokenInfo([this.inspect.address]);
-      const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
       const timestamp = parseInt(new Date() / 1000);
       const batchSize = parseInt(this.scanOwners.batchSize);
       if (this.inspect.erc721Types.includes('ERC721Enumerable')) {
@@ -538,7 +537,7 @@ const Collections = {
           this.scanOwners.owners = owners;
         }
       } else {
-        var searchTokenIds = range(parseInt(this.scanOwners.from), (parseInt(this.scanOwners.to) - 1), 1);
+        var searchTokenIds = generateRange(parseInt(this.scanOwners.from), (parseInt(this.scanOwners.to) - 1), 1);
         const owners = [];
         for (let i = 0; i < searchTokenIds.length; i += batchSize) {
           const batch = searchTokenIds.slice(i, parseInt(i) + batchSize);

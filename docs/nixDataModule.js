@@ -431,8 +431,7 @@ const nixDataModule = {
                 } else {
                   const scanFrom = 0;
                   const scanTo = 6969;
-                  const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
-                  var searchTokenIds = range(parseInt(scanFrom), (parseInt(scanTo) - 1), 1);
+                  var searchTokenIds = generateRange(parseInt(scanFrom), (parseInt(scanTo) - 1), 1);
                   for (let j = 0; j < searchTokenIds.length; j += scanBatchSize) {
                     const batch = searchTokenIds.slice(j, parseInt(j) + scanBatchSize);
                     const ownersInfo = await erc721Helper.ownersByTokenIds(collectionsToSync[i], batch);
@@ -487,12 +486,10 @@ const nixDataModule = {
       async function fullSyncNix(provider, nix, nixHelper, erc721Helper, erc721, weth, blockNumber, timestamp) {
         logInfo("nixDataModule", "fullSyncNix()");
 
-        const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
-
         var tokensData = [];
         const tokensLength = await nix.tokensLength();
         if (tokensLength > 0) {
-          var tokenIndices = range(0, tokensLength - 1, 1);
+          var tokenIndices = generateRange(0, tokensLength - 1, 1);
           const tokens = await nixHelper.getTokens(tokenIndices);
           for (let i = 0; i < tokens[0].length; i++) {
             const token = tokens[0][i];
@@ -543,7 +540,7 @@ const nixDataModule = {
             // tokensData.push({ token: token, ordersLength: ordersLength, executed: executed, volumeToken: volumeToken, volumeWeth: volumeWeth, averageWeth: averageWeth, ordersData: ordersData });
 
             var ordersData = [];
-            var orderIndices = range(0, ordersLength - 1, 1);
+            var orderIndices = generateRange(0, ordersLength - 1, 1);
             const orders = await nixHelper.getOrders(token, orderIndices);
             // console.log(JSON.stringify(orders));
             for (let i = 0; i < ordersLength; i++) {
@@ -584,7 +581,7 @@ const nixDataModule = {
         const tradesLength = await nix.tradesLength();
         const loaded = 0;
         var tradeData = [];
-        const tradeIndices = range(loaded, parseInt(tradesLength) - 1, 1);
+        const tradeIndices = generateRange(loaded, parseInt(tradesLength) - 1, 1);
         const trades = await nixHelper.getTrades(tradeIndices);
         for (let i = 0; i < trades[0].length; i++) {
           const taker = trades[0][i];
@@ -805,12 +802,10 @@ const nixDataModule = {
             });
           }
 
-          // const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
-          //
           // var tokensData = [];
           // const tokensLength = await nix.tokensLength();
           // if (tokensLength > 0) {
-          //   var tokenIndices = range(0, tokensLength - 1, 1);
+          //   var tokenIndices = generateRange(0, tokensLength - 1, 1);
           //   const tokens = await nixHelper.getTokens(tokenIndices);
           //   for (let i = 0; i < tokens[0].length; i++) {
           //     const token = tokens[0][i];
@@ -820,7 +815,7 @@ const nixDataModule = {
           //     const volumeWeth = tokens[4][i];
           //     const averageWeth = volumeWeth  > 0 ? volumeWeth.div(volumeToken) : null;
           //     var ordersData = [];
-          //     var orderIndices = range(0, ordersLength - 1, 1);
+          //     var orderIndices = generateRange(0, ordersLength - 1, 1);
           //     const orders = await nixHelper.getOrders(token, orderIndices);
           //     for (let i = 0; i < ordersLength; i++) {
           //       const maker = orders[0][i];
@@ -849,7 +844,7 @@ const nixDataModule = {
           //   var tradeData = [];
           //   const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
           //   const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
-          //   const tradeIndices = range(loaded, parseInt(tradesLength) - 1, 1);
+          //   const tradeIndices = generateRange(loaded, parseInt(tradesLength) - 1, 1);
           //   const trades = await nixHelper.getTrades(tradeIndices);
           //   for (let i = 0; i < trades[0].length; i++) {
           //     const taker = trades[0][i];
