@@ -24,7 +24,22 @@ const Collections = {
                             <b-link :href="explorer + 'token/' + data.item.address" class="card-link truncate" target="_blank">{{ data.item.address }}</b-link>
                           </template>
                           <template #cell(totalSupply)="data">
-                            {{ data.item.totalSupply ? data.item.totalSupply : 'Not Enumerable' }}
+                            <div v-if="data.item.totalSupply">
+                              <div v-if="data.item.totalSupply == data.item.computedTotalSupply" v-b-popover.hover="'Count of retrieved tokenIds matches contract totalSupply'">
+                                {{ data.item.totalSupply }}
+                              </div>
+                              <div v-else v-b-popover.hover="'Count of retrieved tokenIds vs contract totalSupply'">
+                                {{ (data.item.computedTotalSupply ? data.item.computedTotalSupply : '?') + ' of ' + data.item.totalSupply }} found
+                              </div>
+                            </div>
+                            <div v-else>
+                              <div v-if="data.item.computedTotalSupply" v-b-popover.hover="'Count of retrieved tokenIds, as the contract does not implement ERC721Enumerable'">
+                                {{ data.item.computedTotalSupply }}
+                              </div>
+                              <div v-else v-b-popover.hover="'Collection contract does not implement ERC721Enumerable'">
+                                n/a
+                              </div>
+                            </div>
                           </template>
                           <template #cell(timestamp)="data">
                             <div v-if="data.item.timestamp">
@@ -284,9 +299,9 @@ const Collections = {
         { key: 'chainId', label: 'Chain Id', thStyle: 'width: 10%;', sortable: true },
         { key: 'address', label: 'Address', thStyle: 'width: 10%;', sortable: true },
         { key: 'symbol', label: 'Symbol', thStyle: 'width: 10%;', sortable: true },
-        { key: 'name', label: 'Name', thStyle: 'width: 15%;', sortable: true },
-        { key: 'totalSupply', label: 'Total Supply', thStyle: 'width: 10%;', thClass: 'text-right', tdClass: 'text-right', sortable: true },
-        { key: 'computedTotalSupply', label: 'Computed Total Supply', thStyle: 'width: 20%;', thClass: 'text-right', tdClass: 'text-right', sortable: true },
+        { key: 'name', label: 'Name', thStyle: 'width: 20%;', sortable: true },
+        { key: 'totalSupply', label: 'Total Supply', thStyle: 'width: 20%;', thClass: 'text-right', tdClass: 'text-right', sortable: true },
+        // { key: 'computedTotalSupply', label: 'Computed Total Supply', thStyle: 'width: 20%;', thClass: 'text-right', tdClass: 'text-right', sortable: true },
         { key: 'blockNumber', label: 'Block Number', thStyle: 'width: 10%;', thClass: 'text-right', tdClass: 'text-right', sortable: true },
         { key: 'timestamp', label: 'Timestamp', thStyle: 'width: 20%;', sortable: true },
       ],
