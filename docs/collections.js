@@ -29,7 +29,7 @@ const Collections = {
                                 {{ data.item.totalSupply }}
                               </div>
                               <div v-else v-b-popover.hover="'Count of retrieved tokenIds vs contract totalSupply'">
-                                {{ (data.item.computedTotalSupply ? data.item.computedTotalSupply : '?') + ' of ' + data.item.totalSupply }} found
+                                Loaded {{ (data.item.computedTotalSupply ? data.item.computedTotalSupply : '?') + ' of ' + data.item.totalSupply }}
                               </div>
                             </div>
                             <div v-else>
@@ -37,7 +37,7 @@ const Collections = {
                                 {{ data.item.computedTotalSupply }}
                               </div>
                               <div v-else v-b-popover.hover="'Collection contract does not implement ERC721Enumerable'">
-                                n/a
+                                Counting
                               </div>
                             </div>
                           </template>

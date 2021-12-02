@@ -250,12 +250,12 @@ const nixDataModule = {
     // Called by Connection.execWeb3()
     async execWeb3({ state, commit, rootState }, { count, listenersInstalled }) {
 
-      async function getUpdatedEvents(provider, nix, erc721, weth, blockNumber) {
-        logDebug("nixDataModule", "execWeb3.getUpdatedEvents()");
+      async function getRecentEvents(provider, nix, erc721, weth, blockNumber) {
+        logDebug("nixDataModule", "execWeb3.getRecentEvents()");
 
         const wethLookback = 50000; // 100
-        const erc721Lookback = 30000; // 100
-        const nixLookback = 60000; // 100
+        const erc721Lookback = 100000; // 100
+        const nixLookback = 80000; // 100
 
         const accounts = {};
         const tokens = {};
@@ -351,32 +351,33 @@ const nixDataModule = {
             }
           }
         }
-        logInfo("nixDataModule", "execWeb3.getUpdatedEvents() - nixTokens: " + JSON.stringify(Object.keys(nixTokens)));
-        for (let collection of Object.keys(nixOrders)) {
-          logInfo("nixDataModule", "execWeb3.getUpdatedEvents() - nixOrders: " + collection + " - " + Object.keys(nixOrders[collection]));
-        }
-        logInfo("nixDataModule", "execWeb3.getUpdatedEvents() - nixTrades: " + JSON.stringify(Object.keys(nixTrades)));
-        logInfo("nixDataModule", "execWeb3.getUpdatedEvents() - accounts: " + JSON.stringify(Object.keys(accounts)));
+        // logInfo("nixDataModule", "execWeb3.getRecentEvents() - nixTokens: " + JSON.stringify(Object.keys(nixTokens)));
+        // for (let collection of Object.keys(nixOrders)) {
+        //   logInfo("nixDataModule", "execWeb3.getRecentEvents() - nixOrders: " + collection + " - " + Object.keys(nixOrders[collection]));
+        // }
+        // logInfo("nixDataModule", "execWeb3.getRecentEvents() - nixTrades: " + JSON.stringify(Object.keys(nixTrades)));
+        // logInfo("nixDataModule", "execWeb3.getRecentEvents() - accounts: " + JSON.stringify(Object.keys(accounts)));
         for (let collection of Object.keys(tokens)) {
-          logInfo("nixDataModule", "execWeb3.getUpdatedEvents() - tokens: " + collection + " - " + Object.keys(tokens[collection]));
+          logInfo("nixDataModule", "execWeb3.getRecentEvents() - tokens: " + collection + " - " + Object.keys(tokens[collection]));
         }
         return { nixTokens, nixOrders, nixTrades, accounts, tokens };
       }
 
-      async function fullSyncCollections(erc721Helper, blockNumber, timestamp) {
-        // logInfo("nixDataModule", "execWeb3.fullSyncCollections()");
-        const collectionsToSync = [];
+      async function syncCollections(erc721Helper, updates, blockNumber, timestamp) {
+        // logInfo("nixDataModule", "execWeb3.syncCollections()");
+        const collectionsToSyncHash = {};
         for (const [address, collectionConfig] of Object.entries(store.getters['collectionData/collectionsConfig'])) {
           if (collectionConfig.chainId == store.getters['connection/network'].chainId) {
-            if (state.collections[collectionConfig.chainId + '.' + collectionConfig.address] == null) {
-              collectionsToSync.push(collectionConfig.address)
+            if (updates.tokens[address]) {
+              collectionsToSyncHash[address] = true;
+            } else if (state.collections[collectionConfig.chainId + '.' + collectionConfig.address] == null) {
+              collectionsToSyncHash[collectionConfig.address] = true;
             }
           }
         }
-        logInfo("nixDataModule", "execWeb3.fullSyncCollections() - collectionsToSync: " + JSON.stringify(collectionsToSync));
-
+        const collectionsToSync = Object.keys(collectionsToSyncHash);
         if (collectionsToSync.length > 0) {
-          const enumerableBatchSize = 50;
+          const enumerableBatchSize = 1000;
           const scanBatchSize = 5000;
           let tokenInfo = null;
           try {
@@ -406,32 +407,62 @@ const nixDataModule = {
             for (let i = 0; i < tokenInfo[0].length; i++) {
               const tokenType = tokenInfo[0][i].toNumber();
               if ((tokenType & MASK_ERC721) == MASK_ERC721) {
-                if ((tokenType & MASK_ERC721ENUMERABLE) == MASK_ERC721ENUMERABLE) {
-                  const totalSupply = tokenInfo[3][i].toString();
-                  for (let j = 0; j < totalSupply; j += enumerableBatchSize) {
-                    const to = (j + enumerableBatchSize > totalSupply) ? totalSupply : j + enumerableBatchSize;
-                    const ownersInfo = await erc721Helper.ownersByEnumerableIndex(collectionsToSync[i], j, to);
-                    const owners = {};
-                    for (let k = 0; k < ownersInfo[0].length; k++) {
-                      const tokenId = ownersInfo[0][k].toString();
-                      owners[tokenId] = { tokenId: tokenId, owner: ownersInfo[1][k] };
+                const collection = state.collections[store.getters['connection/network'].chainId + '.' + collectionsToSync[i]];
+                if (!collection || Object.keys(collection.tokens) == 0) {
+                  if ((tokenType & MASK_ERC721ENUMERABLE) == MASK_ERC721ENUMERABLE) {
+                    logInfo("nixDataModule", "execWeb3.syncCollections() - Initial sync: " + collectionsToSync[i] + " with ERC721Enumerable");
+                    const totalSupply = tokenInfo[3][i].toString();
+                    for (let j = 0; j < totalSupply; j += enumerableBatchSize) {
+                      const to = (j + enumerableBatchSize > totalSupply) ? totalSupply : j + enumerableBatchSize;
+                      const ownersInfo = await erc721Helper.ownersByEnumerableIndex(collectionsToSync[i], j, to);
+                      const owners = {};
+                      for (let k = 0; k < ownersInfo[0].length; k++) {
+                        const tokenId = ownersInfo[0][k].toString();
+                        owners[tokenId] = { tokenId: tokenId, owner: ownersInfo[1][k] };
+                      }
+                      const tokens = {};
+                      for (const [tokenId, owner] of Object.entries(owners)) {
+                        tokens[tokenId] = { tokenId: tokenId, owner: owner.owner, tokenURI: null };
+                      }
+                      commit('newCollectionTokens', {
+                        chainId: store.getters['connection/network'].chainId,
+                        address: collectionsToSync[i],
+                        blockNumber: blockNumber,
+                        timestamp: timestamp,
+                        tokens: tokens,
+                      });
                     }
-                    const tokens = {};
-                    for (const [tokenId, owner] of Object.entries(owners)) {
-                      tokens[tokenId] = { tokenId: tokenId, owner: owner.owner, tokenURI: null };
+                  } else {
+                    logInfo("nixDataModule", "execWeb3.syncCollections() - Initial sync: " + collectionsToSync[i] + " without ERC721Enumerable");
+                    const scanFrom = 0;
+                    const scanTo = 6969;
+                    var searchTokenIds = generateRange(parseInt(scanFrom), (parseInt(scanTo) - 1), 1);
+                    for (let j = 0; j < searchTokenIds.length; j += scanBatchSize) {
+                      const batch = searchTokenIds.slice(j, parseInt(j) + scanBatchSize);
+                      const ownersInfo = await erc721Helper.ownersByTokenIds(collectionsToSync[i], batch);
+                      const owners = {};
+                      for (let k = 0; k < ownersInfo[0].length; k++) {
+                        if (ownersInfo[0][k]) {
+                          const tokenId = batch[k].toString();
+                          owners[tokenId] = { tokenId: tokenId, owner: ownersInfo[1][k] };
+                        }
+                      }
+                      const tokens = {};
+                      for (const [tokenId, owner] of Object.entries(owners)) {
+                        tokens[tokenId] = { tokenId: tokenId, owner: owner.owner, tokenURI: null };
+                      }
+                      commit('newCollectionTokens', {
+                        chainId: store.getters['connection/network'].chainId,
+                        address: collectionsToSync[i],
+                        blockNumber: blockNumber,
+                        timestamp: timestamp,
+                        tokens: tokens,
+                      });
                     }
-                    commit('newCollectionTokens', {
-                      chainId: store.getters['connection/network'].chainId,
-                      address: collectionsToSync[i],
-                      blockNumber: blockNumber,
-                      timestamp: timestamp,
-                      tokens: tokens,
-                    });
                   }
                 } else {
-                  const scanFrom = 0;
-                  const scanTo = 6969;
-                  var searchTokenIds = generateRange(parseInt(scanFrom), (parseInt(scanTo) - 1), 1);
+                  var searchTokenIds = Object.keys(updates.tokens[collectionsToSync[i]]);
+                  logInfo("nixDataModule", "execWeb3.syncCollections() - Incremental sync: " + collectionsToSync[i] + " - " + JSON.stringify(searchTokenIds));
                   for (let j = 0; j < searchTokenIds.length; j += scanBatchSize) {
                     const batch = searchTokenIds.slice(j, parseInt(j) + scanBatchSize);
                     const ownersInfo = await erc721Helper.ownersByTokenIds(collectionsToSync[i], batch);
@@ -457,34 +488,14 @@ const nixDataModule = {
                 }
               }
             }
-
-
           } catch (e) {
-            console.log("ERROR - Not ERC-721");
+            logError("nixDataModule", "execWeb3.syncCollections() - ERROR - Not ERC-721?: " + e);
           }
-          // logInfo("nixDataModule", "execWeb3.fullSyncCollections() - tokenInfo: " + JSON.stringify(tokenInfo));
         }
-
-        // for (const [address, collectionConfig] of Object.entries(collectionsConfig)) {
-        //   logInfo("nixDataModule", "execWeb3.fullSyncCollections() - collection: " + JSON.stringify(collectionConfig));
-        //   const collectionKey = collectionConfig.chainId + '.' + collectionConfig.address;
-        //   let collection = state.collections[collectionKey];
-        //   if (collection == null) {
-        //     logInfo("nixDataModule", "execWeb3.fullSyncCollections() - New sync chainId: " + collectionConfig.chainId + ", address: " + collectionConfig.address);
-        //     let tokenInfo = null;
-        //     try {
-        //       tokenInfo = await erc721Helper.tokenInfo([collectionConfig.address]);
-        //
-        //     } catch (e) {
-        //       console.log("ERROR - Not ERC-721");
-        //     }
-        //     logInfo("nixDataModule", "execWeb3.fullSyncCollections() - tokenInfo: " + JSON.stringify(tokenInfo));
-        //   }
-        // }
       }
 
-      async function fullSyncNix(provider, nix, nixHelper, erc721Helper, erc721, weth, blockNumber, timestamp) {
-        logInfo("nixDataModule", "fullSyncNix()");
+      async function fullSyncNixOrders(provider, nix, nixHelper, erc721Helper, erc721, weth, blockNumber, timestamp) {
+        logInfo("nixDataModule", "fullSyncNixOrders()");
 
         var tokensData = [];
         const tokensLength = await nix.tokensLength();
@@ -577,6 +588,10 @@ const nixDataModule = {
           }
           // console.log(JSON.stringify(ordersData));
         }
+      }
+
+      async function fullSyncNixTrades(provider, nix, nixHelper, erc721Helper, erc721, weth, blockNumber, timestamp) {
+        logInfo("nixDataModule", "fullSyncNixTrades()");
 
         const tradesLength = await nix.tradesLength();
         const loaded = 0;
@@ -754,11 +769,10 @@ const nixDataModule = {
         logInfo("nixDataModule", "incrementalSync()" + JSON.stringify(updates));
       }
 
-
       logDebug("nixDataModule", "execWeb3() start[" + count + ", " + listenersInstalled + ", " + JSON.stringify(rootState.route.params) + "]");
       if (!state.executing) {
         commit('updateExecuting', true);
-        logDebug("nixDataModule", "execWeb3() executing[" + count + ", " + JSON.stringify(rootState.route.params) + "]");
+        logInfo("nixDataModule", "execWeb3() executing[" + count + ", " + JSON.stringify(rootState.route.params) + "]");
 
         var paramsChanged = false;
         if (state.params != rootState.route.params.param) {
@@ -781,10 +795,11 @@ const nixDataModule = {
           const erc721Helper = new ethers.Contract(ERC721HELPERADDRESS, ERC721HELPERABI, provider);
           const erc721 = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
 
-          const updates = await getUpdatedEvents(provider, nix, erc721, weth, blockNumber);
+          const updates = await getRecentEvents(provider, nix, erc721, weth, blockNumber);
           // console.log(JSON.stringify(updates));
-          await fullSyncNix(provider, nix, nixHelper, erc721Helper, erc721, weth, blockNumber, timestamp);
-          await fullSyncCollections(erc721Helper, blockNumber, timestamp);
+          await fullSyncNixOrders(provider, nix, nixHelper, erc721Helper, erc721, weth, blockNumber, timestamp);
+          await syncCollections(erc721Helper, updates, blockNumber, timestamp);
+          await fullSyncNixTrades(provider, nix, nixHelper, erc721Helper, erc721, weth, blockNumber, timestamp);
           // await incrementalSync(updates);
 
           if (!state.nixRoyaltyEngine) {
@@ -801,198 +816,6 @@ const nixDataModule = {
               logInfo("nixDataModule", "nix - event: " + JSON.stringify(event));
             });
           }
-
-          // var tokensData = [];
-          // const tokensLength = await nix.tokensLength();
-          // if (tokensLength > 0) {
-          //   var tokenIndices = generateRange(0, tokensLength - 1, 1);
-          //   const tokens = await nixHelper.getTokens(tokenIndices);
-          //   for (let i = 0; i < tokens[0].length; i++) {
-          //     const token = tokens[0][i];
-          //     const ordersLength = tokens[1][i];
-          //     const executed = tokens[2][i];
-          //     const volumeToken = tokens[3][i];
-          //     const volumeWeth = tokens[4][i];
-          //     const averageWeth = volumeWeth  > 0 ? volumeWeth.div(volumeToken) : null;
-          //     var ordersData = [];
-          //     var orderIndices = generateRange(0, ordersLength - 1, 1);
-          //     const orders = await nixHelper.getOrders(token, orderIndices);
-          //     for (let i = 0; i < ordersLength; i++) {
-          //       const maker = orders[0][i];
-          //       const taker = orders[1][i];
-          //       const tokenIds = orders[2][i];
-          //       const price = orders[3][i];
-          //       const data = orders[4][i];
-          //       const buyOrSell = data[0];
-          //       const anyOrAll = data[1];
-          //       const expiry = data[2];
-          //       const expiryString = expiry == 0 ? "(none)" : new Date(expiry * 1000).toISOString();
-          //       const tradeCount = data[3];
-          //       const tradeMax = data[4];
-          //       const royaltyFactor = data[5];
-          //       const orderStatus = data[6];
-          //       ordersData.push({ orderIndex: i, maker: maker, taker: taker, tokenIds: tokenIds, price: price, buyOrSell: buyOrSell,
-          //         anyOrAll: anyOrAll, expiry: expiry, tradeCount: tradeCount, tradeMax: tradeMax, royaltyFactor: royaltyFactor,
-          //         orderStatus: orderStatus });
-          //     }
-          //     tokensData.push({ token: token, ordersLength: ordersLength, executed: executed, volumeToken: volumeToken, volumeWeth: volumeWeth, averageWeth: averageWeth, ordersData: ordersData });
-          //   }
-          //   commit('updateTokensData', tokensData);
-          //
-          //   const tradesLength = await nix.tradesLength();
-          //   const loaded = 0;
-          //   var tradeData = [];
-          //   const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
-          //   const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
-          //   const tradeIndices = generateRange(loaded, parseInt(tradesLength) - 1, 1);
-          //   const trades = await nixHelper.getTrades(tradeIndices);
-          //   for (let i = 0; i < trades[0].length; i++) {
-          //     const taker = trades[0][i];
-          //     const royaltyFactor = trades[1][i];
-          //     const blockNumber = trades[2][i];
-          //     const orders = trades[3][i];
-          //
-          //     // event OrderExecuted(address indexed token, uint indexed orderIndex, uint indexed tradeIndex, uint[] tokenIds);
-          //     // TODO - handle removed: true
-          //     async function getOrderExecutedTransaction(tradeIndex, blockNumber, nix) {
-          //       let eventFilter = nix.filters.OrderExecuted(null, null, tradeIndex);
-          //       const timestamp = (await provider.getBlock(blockNumber)).timestamp;
-          //       let events = await nix.queryFilter(eventFilter, blockNumber, blockNumber);
-          //       for (let j = 0; j < events.length; j++) {
-          //         const event = events[j];
-          //         const parsedLog = nix.interface.parseLog(event);
-          //         const decodedEventLog = nix.interface.decodeEventLog(parsedLog.eventFragment.name, event.data, event.topics);
-          //         return {
-          //           address: event.address,
-          //           txHash: event.transactionHash,
-          //           txIndex: event.transactionIndex,
-          //           logIndex: event.logIndex,
-          //           blockNumber: event.blockNumber,
-          //           timestamp: timestamp,
-          //           removed: event.removed,
-          //           eventName: parsedLog.eventFragment.name,
-          //           token: decodedEventLog[0],
-          //           orderIndex: decodedEventLog[1].toNumber(),
-          //           tradeIndex: decodedEventLog[2].toNumber(),
-          //           tokenIds: decodedEventLog[3].map((x) => { return x.toNumber(); }),
-          //         };
-          //       }
-          //       return null;
-          //     }
-          //
-          //     async function getOrderExecutedEvents(txHash) {
-          //       const results = [];
-          //       const txReceipt = await provider.getTransactionReceipt(txHash);
-          //       for (let j = 0; j < txReceipt.logs.length; j++) {
-          //         const log = txReceipt.logs[j];
-          //         if (log.address == nix.address) {
-          //           const parsedLog = nix.interface.parseLog(log);
-          //           try {
-          //             const decodedEventLog = nix.interface.decodeEventLog(parsedLog.eventFragment.name, log.data, log.topics);
-          //             if (parsedLog.eventFragment.name == 'OrderExecuted') {
-          //               results.push({
-          //                 logIndex: log.logIndex,
-          //                 address: log.address,
-          //                 name: 'OrderExecuted',
-          //                 description: 'Nix.OrderExecuted(' + decodedEventLog[0].substring(0, 10) + '...' +
-          //                   ', ' + decodedEventLog[1].toNumber() +
-          //                   ', ' + decodedEventLog[2].toNumber() +
-          //                   ', [' + decodedEventLog[3].map((x) => { return x.toNumber(); }) +
-          //                   '])',
-          //                 token: decodedEventLog[0],
-          //                 orderIndex: decodedEventLog[1].toNumber(),
-          //                 tradeIndex: decodedEventLog[2].toNumber(),
-          //                 tokenIds: decodedEventLog[3].map((x) => { return x.toNumber(); }),
-          //               });
-          //             } else if (parsedLog.eventFragment.name == 'ThankYou') {
-          //               results.push({
-          //                 logIndex: log.logIndex,
-          //                 address: log.address,
-          //                 name: 'ThankYou',
-          //                 description: 'Nix.ThankYou(' + ethers.utils.formatEther(decodedEventLog[0]) + ')',
-          //                 tip: ethers.utils.formatEther(decodedEventLog[0]),
-          //               });
-          //             } else {
-          //               console.log("TODO: " + parsedLog.eventFragment.name);
-          //             }
-          //           } catch (e) {
-          //           }
-          //         } else if (log.address == weth.address) {
-          //           try {
-          //             const parsedLog = weth.interface.parseLog(log);
-          //             const decodedEventLog = weth.interface.decodeEventLog(parsedLog.eventFragment.name, log.data, log.topics);
-          //             if (parsedLog.eventFragment.name == 'Transfer') {
-          //               results.push({
-          //                 logIndex: log.logIndex,
-          //                 address: log.address,
-          //                 name: 'Transfer',
-          //                 description: 'WETH.Transfer(' + decodedEventLog[0].substring(0, 10) + '...' +
-          //                   ', ' + decodedEventLog[1].substring(0, 10) + '...' +
-          //                   ', ' + ethers.utils.formatEther(decodedEventLog[2]) +
-          //                   ')',
-          //                 from: decodedEventLog[0],
-          //                 to: decodedEventLog[1],
-          //                 tokens: decodedEventLog[2].toString(),
-          //               });
-          //             } else {
-          //               console.log("TODO: " + parsedLog.eventFragment.name);
-          //             }
-          //           } catch (e) {
-          //           }
-          //         } else {
-          //           try {
-          //             const parsedLog = testToadz.interface.parseLog(log);
-          //             const decodedEventLog = testToadz.interface.decodeEventLog(parsedLog.eventFragment.name, log.data, log.topics);
-          //             if (parsedLog.eventFragment.name == 'Transfer') {
-          //               results.push({
-          //                 logIndex: log.logIndex,
-          //                 address: log.address,
-          //                 name: 'Transfer',
-          //                 description: log.address.substring(0, 10) + '.Transfer(' + decodedEventLog[0].substring(0, 10) + '...' +
-          //                   ', ' + decodedEventLog[1].substring(0, 10) + '...' +
-          //                   ', ' + decodedEventLog[2].toNumber() +
-          //                   ')',
-          //                 from: decodedEventLog[0],
-          //                 to: decodedEventLog[1],
-          //                 tokenId: decodedEventLog[2].toString(),
-          //               });
-          //             } else if (parsedLog.eventFragment.name == 'Approval') {
-          //               results.push({
-          //                 logIndex: log.logIndex,
-          //                 address: log.address,
-          //                 name: 'Approval',
-          //                 description: log.address.substring(0, 10) + '.Approval(' + decodedEventLog[0].substring(0, 10) + '...' +
-          //                   ', ' + decodedEventLog[1].substring(0, 10) + '...' +
-          //                   ', ' + decodedEventLog[2].toNumber() +
-          //                   ')',
-          //                 owner: decodedEventLog[0],
-          //                 approved: decodedEventLog[1],
-          //                 tokenId: decodedEventLog[2].toString(),
-          //               });
-          //             } else {
-          //               console.log("TODO: " + parsedLog.eventFragment.name);
-          //             }
-          //           } catch (e) {
-          //           }
-          //         }
-          //       }
-          //       return results;
-          //     }
-          //     const tx = await getOrderExecutedTransaction(i, blockNumber.toNumber(), nix);
-          //     const orderExecutedEvents = await getOrderExecutedEvents(tx.txHash);
-          //     // console.log("orderExecutedEvents: " + JSON.stringify(orderExecutedEvents, null, 2));
-          //     tradeData.push({
-          //       tradeIndex: i,
-          //       taker: taker,
-          //       royaltyFactor: royaltyFactor,
-          //       blockNumber: blockNumber,
-          //       orders: orders,
-          //       txHash: tx.txHash,
-          //       events: orderExecutedEvents,
-          //     });
-          //   }
-          //   commit('updateTradeData', tradeData);
-          // }
         }
         commit('updateExecuting', false);
         logDebug("nixDataModule", "execWeb3() end[" + count + "]");
@@ -1005,87 +828,3 @@ const nixDataModule = {
   //   logInfo("nixDataModule", "mounted() $route: " + JSON.stringify(this.$route.params));
   // },
 };
-
-
-// const filter = {
-//   address: NIXADDRESS,
-//   // address: [NIXADDRESS, weth.address],
-//   // fromBlock: blockNumber.sub(1000).toNumber(),
-//   // fromBlock: blockNumber.toNumber(),
-//   fromBlock: 'earliest',
-//   // toBlock: 'latest',
-//   toBlock: blockNumber.toNumber(),
-//   // topics: [[
-//   //   // '0x98294be035c742c5a68ff3c35920bf3c58cba97677569fb8bea1ae14e1e8643d', // OrderAdded(address token, uint256 orderIndex)
-//   //   // '0xf4c563a3ea86ff1f4275e8c207df0375a51963f2b831b7bf4da8be938d92876c', // TokenAdded(address token, uint256 tokenIndex)
-//   //   '0x384bb209f0fe774478cff852a38e0ad1152d763f1a10b696be5b14437e594ef4', // event OrderExecuted(address indexed token, uint indexed orderIndex, uint indexed tradeIndex, uint[] tokenIds);
-//   //   // '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', // Transfer(index_topic_1 address from, index_topic_2 address to, index_topic_3 uint256 tokenId)
-//   // //   // // '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', // Transfer(index_topic_1 address src, index_topic_2 address dst, uint256 wad)
-//   //   // '0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c', // weth Deposit(index_topic_1 address dst, uint256 wad)
-//   // ]],
-// };
-// const timestamp = (await provider.getBlock(blockNumber.toNumber())).timestamp;
-// const logs = await provider.getLogs(filter);
-
-// // console.log("logs: " + JSON.stringify(logs, null, 2));
-// for (let j = 0; j < logs.length; j++) {
-//   const log = logs[j];
-//   console.log("log: " + JSON.stringify(log, null, 2));
-//   try {
-//     let data;
-//     if (log.address == nix.address) {
-//       data = nix.interface.parseLog(log);
-//     } else if (log.address = weth.address) {
-//       data = weth.interface.parseLog(log);
-//     } else if (log.address = testToadz.address) {
-//       data = testToadz.interface.parseLog(log);
-//     } else {
-//       data = weth.interface.parseLog(log);
-//       // data = testToadz.interface.parseLog(log);
-//     }
-//     // const data = nix.interface.parseLog(log);
-//     // if (data.name == 'OrderExecuted') {
-//       // console.log("data: " + JSON.stringify(data, null, 2));
-//       var result = data.name + "(";
-//       let separator = "";
-//       data.eventFragment.inputs.forEach((a) => {
-//         result = result + separator + a.name + ": ";
-//         if (a.type == 'address') {
-//           result = result + data.args[a.name].toString(); // this.getShortAccountName(data.args[a.name].toString());
-//         } else if (a.type == 'uint256' || a.type == 'uint128') {
-//           if (a.name == 'tokens' || a.name == 'amount' || a.name == 'balance' || a.name == 'value') {
-//             result = result + ethers.utils.formatUnits(data.args[a.name], 18);
-//           } else {
-//             result = result + data.args[a.name].toString();
-//           }
-//         } else {
-//           result = result + data.args[a.name].toString();
-//         }
-//         separator = ", ";
-//       });
-//       result = result + ")";
-//       console.log(new Date(timestamp * 1000).toUTCString() + ": address: " + log.address + ", txHash: " + log.transactionHash + ", txIndex: " + log.transactionIndex + ", logIndex: " + log.logIndex + ", blockNumber: " + log.blockNumber + ", removed: " + log.removed + ": " + result);
-//       // console.log("          + " + this.getShortAccountName(log.address) + " " + log.blockNumber + "." + log.logIndex + " " + result);
-//     // }
-//   } catch (e) {
-//   }
-// }
-
-// const decodedEvents = logs.map(log => {
-//         nix.abi.decodeEventLog("Transfer", log.data)
-//     });
-
-// const logs = await provider.getLogs({
-//       fromBlock: process.env.DEPLOYMENT_BLOCK,
-//       toBlock: 'latest',
-//       address: process.env.MY_CONTRACT_ADDRESS,
-//       topic: event
-//     })
-
-
-
-
-// 10:57:05 INFO nixDataModule:nix - event: {"blockNumber":9672209,"blockHash":"0x740255487f8cb61cf09873e0bed18b4923938f9a75877164be7be678d8bf7ee0","transactionIndex":14,"removed":false,"address":"0xDd26fD59b687269A5672217614BA72dd0ffC6b9f","data":"0x000000000000000000000000652dc3aa8e1d18a8cc19aef62cf4f03c4d50b2b50000000000000000000000000000000000000000000000000000000000000001","topics":["0xf4c563a3ea86ff1f4275e8c207df0375a51963f2b831b7bf4da8be938d92876c"],"transactionHash":"0xec0647ac16574d22d8bcb5eb830fd1ecd7a0469eb998944479b2e22494ddc9d4","logIndex":11,"event":"TokenAdded","eventSignature":"TokenAdded(address,uint256)","args":["0x652dc3aA8e1D18A8CC19AeF62CF4F03C4D50B2b5",{"type":"BigNumber","hex":"0x01"}]}
-//
-//
-// 11:21:34 INFO nixDataModule:nix - event: {"blockNumber":9672307,"blockHash":"0x771cd94c3eed6a855d9aa8982085e974376ee2a21fbe2f83cb96c61f8d04c238","transactionIndex":8,"removed":false,"address":"0xDd26fD59b687269A5672217614BA72dd0ffC6b9f","data":"0x000000000000000000000000652dc3aa8e1d18a8cc19aef62cf4f03c4d50b2b50000000000000000000000000000000000000000000000000000000000000001","topics":["0x98294be035c742c5a68ff3c35920bf3c58cba97677569fb8bea1ae14e1e8643d"],"transactionHash":"0x70cb39c34c6b8f9fd7aed8a76332a0a72e6eb9f897461b78aa0788fa613ce82f","logIndex":8,"event":"OrderAdded","eventSignature":"OrderAdded(address,uint256)","args":["0x652dc3aA8e1D18A8CC19AeF62CF4F03C4D50B2b5",{"type":"BigNumber","hex":"0x01"}]}
