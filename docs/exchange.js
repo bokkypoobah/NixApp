@@ -299,7 +299,7 @@ const Exchange = {
                   </b-tab>
 
                   <b-tab title="Trades" class="p-1">
-                    <div v-if="!tradeData || tradeData.length == 0">
+                    <div v-if="!nixTradeList || nixTradeList.length == 0">
                       <b-card>
                         <b-card-text>
                           Loading trades
@@ -308,7 +308,7 @@ const Exchange = {
                     </div>
                     <b-card>
                       <font size="-2">
-                        <b-table small fixed striped sticky-header="1000px" :fields="tradeFields" :items="tradeData" head-variant="light" show-empty>
+                        <b-table small fixed striped sticky-header="1000px" :fields="tradeFields" :items="nixTradeList" head-variant="light" show-empty>
                           <template #cell(taker)="data">
                             <b-link :href="explorer + 'address/' + data.item.taker" target="_blank">{{ data.item.taker.substring(0, 10) + '...' }}</b-link>
                           </template>
@@ -433,8 +433,8 @@ const Exchange = {
     tokensData() {
       return store.getters['nixData/tokensData'];
     },
-    tradeData() {
-      return store.getters['nixData/tradeData'];
+    nixTradeList() {
+      return store.getters['nixData/nixTradeList'];
     },
   },
   methods: {
