@@ -262,9 +262,12 @@ const nixDataModule = {
       async function getRecentEvents(provider, nix, erc721, weth, blockNumber) {
         logDebug("nixDataModule", "execWeb3.getRecentEvents()");
 
-        const wethLookback = 50000; // 100
-        const erc721Lookback = 100000; // 100
-        const nixLookback = 80000; // 100
+        // const wethLookback = 50000; // 100
+        // const erc721Lookback = 100000; // 100
+        // const nixLookback = 80000; // 100
+        const wethLookback = 100;
+        const erc721Lookback = 100;
+        const nixLookback = 100;
 
         const accounts = {};
         const tokens = {};
@@ -610,7 +613,6 @@ const nixDataModule = {
       }
 
       async function syncNixTrades(provider, nix, nixHelper, erc721Helper, erc721, weth, updates, blockNumber, timestamp) {
-        logInfo("nixDataModule", "syncNixTrades()");
         logInfo("nixDataModule", "execWeb3.syncNixTrades() - nixTrades: " + JSON.stringify(Object.keys(updates.nixTrades)));
 
         const tradesLength = (await nix.tradesLength()).toNumber();
@@ -626,6 +628,7 @@ const nixDataModule = {
         const tradeIndices = Object.keys(tradeIndexHash);
         const trades = await nixHelper.getTrades(tradeIndices);
         for (let i = 0; i < trades[0].length; i++) {
+          const tradeIndex = parseInt(tradeIndices[i]);
           const taker = trades[0][i];
           const royaltyFactor = trades[1][i].toNumber();
           const blockNumber = trades[2][i].toNumber();
@@ -634,6 +637,7 @@ const nixDataModule = {
           // event OrderExecuted(address indexed token, uint indexed orderIndex, uint indexed tradeIndex, uint[] tokenIds);
           // TODO - handle removed: true
           async function getOrderExecutedTransaction(tradeIndex, blockNumber, nix) {
+            // logInfo("nixDataModule", "syncNixTrades.getOrderExecutedTransaction(" + tradeIndex + ", " + blockNumber + ")");
             let eventFilter = nix.filters.OrderExecuted(null, null, tradeIndex);
             const timestamp = (await provider.getBlock(blockNumber)).timestamp;
             let events = await nix.queryFilter(eventFilter, blockNumber, blockNumber);
@@ -776,18 +780,19 @@ const nixDataModule = {
             }
             return results;
           }
-          const tx = await getOrderExecutedTransaction(i, blockNumber, nix);
-          const orderExecutedEvents = await getOrderExecutedEvents(tx.txHash);
-          // console.log("orderExecutedEvents: " + JSON.stringify(orderExecutedEvents, null, 2));
-          tradeData.push({
-            tradeIndex: i,
-            taker: taker,
-            royaltyFactor: royaltyFactor,
-            blockNumber: blockNumber,
-            orders: orders,
-            txHash: tx.txHash,
-            events: orderExecutedEvents,
-          });
+          const tx = await getOrderExecutedTransaction(tradeIndex, blockNumber, nix);
+          if (tx) {
+            const orderExecutedEvents = await getOrderExecutedEvents(tx.txHash);
+            tradeData.push({
+              tradeIndex: tradeIndex,
+              taker: taker,
+              royaltyFactor: royaltyFactor,
+              blockNumber: blockNumber,
+              orders: orders,
+              txHash: tx.txHash,
+              events: orderExecutedEvents,
+            });
+          }
         }
         commit('updateNixTrades', tradeData);
       }
