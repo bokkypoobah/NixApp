@@ -106,7 +106,6 @@ const nixDataModule = {
     collections: {},
     collectionList: [],
     nixTokens: {},
-    nixTokenList: [],
     nixTrades: {},
     nixTradeList: [],
 
@@ -120,7 +119,6 @@ const nixDataModule = {
     collections: state => state.collections,
     collectionList: state => state.collectionList,
     nixTokens: state => state.nixTokens,
-    nixTokenList: state => state.nixTokenList,
     nixTrades: state => state.nixTrades,
     nixTradeList: state => state.nixTradeList,
 
@@ -202,11 +200,6 @@ const nixDataModule = {
           ordersList: ordersList,
         });
         token = state.nixTokens[data.tokenIndex];
-        const nixTokenList = [];
-        for (const [tokenIndex, t] of Object.entries(state.nixTokens)) {
-          nixTokenList.push(t);
-        }
-        state.nixTokenList = nixTokenList;
       } else {
         token.ordersLength = data.ordersLength;
         token.executed = data.executed;
@@ -231,6 +224,8 @@ const nixDataModule = {
             token.ordersList.push(order);
           }
           token.orders[orderIndex] = order;
+          // TODO - Compare
+          Vue.set(state.nixTokens[data.tokenIndex].orders, orderIndex, order);
         }
         Vue.set(state.nixTokens, data.tokenIndex, token);
       }
@@ -277,9 +272,9 @@ const nixDataModule = {
         // const wethLookback = 50000;
         // const erc721Lookback = 100000;
         // const nixLookback = 80000;
-        const wethLookback = 100;
-        const erc721Lookback = 100;
-        const nixLookback = 100;
+        const wethLookback = 10;
+        const erc721Lookback = 10;
+        const nixLookback = 10;
 
         const accounts = {};
         const tokens = {};
@@ -375,15 +370,15 @@ const nixDataModule = {
             }
           }
         }
-        // logInfo("nixDataModule", "execWeb3.getRecentEvents() - nixTokens: " + JSON.stringify(Object.keys(nixTokens)));
-        // for (let collection of Object.keys(nixOrders)) {
-        //   logInfo("nixDataModule", "execWeb3.getRecentEvents() - nixOrders: " + collection + " - " + Object.keys(nixOrders[collection]));
-        // }
-        // logInfo("nixDataModule", "execWeb3.getRecentEvents() - nixTrades: " + JSON.stringify(Object.keys(nixTrades)));
-        // logInfo("nixDataModule", "execWeb3.getRecentEvents() - accounts: " + JSON.stringify(Object.keys(accounts)));
-        // for (let collection of Object.keys(tokens)) {
-        //   logInfo("nixDataModule", "execWeb3.getRecentEvents() - tokens: " + collection + " - " + Object.keys(tokens[collection]));
-        // }
+        logInfo("nixDataModule", "execWeb3.getRecentEvents() - nixTokens: " + JSON.stringify(Object.keys(nixTokens)));
+        for (let collection of Object.keys(nixOrders)) {
+          logInfo("nixDataModule", "execWeb3.getRecentEvents() - nixOrders: " + collection + " - " + Object.keys(nixOrders[collection]));
+        }
+        logInfo("nixDataModule", "execWeb3.getRecentEvents() - nixTrades: " + JSON.stringify(Object.keys(nixTrades)));
+        logInfo("nixDataModule", "execWeb3.getRecentEvents() - accounts: " + JSON.stringify(Object.keys(accounts)));
+        for (let collection of Object.keys(tokens)) {
+          logInfo("nixDataModule", "execWeb3.getRecentEvents() - tokens: " + collection + " - " + Object.keys(tokens[collection]));
+        }
         return { nixTokens, nixOrders, nixTrades, accounts, tokens };
       }
 

@@ -427,7 +427,13 @@ const Exchange = {
       return store.getters['nixData/nixTokens'];
     },
     nixTokenList() {
-      return store.getters['nixData/nixTokenList'];
+      const results = [];
+      if (store.getters['nixData/nixTokens']) {
+        for (const [tokenIndex, token] of Object.entries(store.getters['nixData/nixTokens'])) {
+          results.push(token);
+        }
+      }
+      return results;
     },
 
     tokensData() {
