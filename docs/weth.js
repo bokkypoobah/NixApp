@@ -156,10 +156,10 @@ const WETH = {
       return WETHADDRESS;
     },
     wethBalance() {
-      return store.getters['connection/wethBalance'];
+      return store.getters['connection/weth'] ? store.getters['connection/weth'].balance : null;
     },
     wethAllowanceToNix() {
-      return store.getters['connection/wethAllowanceToNix'];
+      return store.getters['connection/weth'] ? store.getters['connection/weth'].allowanceToNix : null;
     },
   },
   methods: {

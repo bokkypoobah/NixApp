@@ -117,7 +117,7 @@ const Connection = {
             <b-col cols="4" class="small">ETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ formatETH(balance) }}</b-link></b-col>
           </b-row>
           <b-row>
-            <b-col cols="4" class="small">WETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'token/' + wethAddress + '?=' + coinbase" class="card-link" target="_blank">{{ formatETH(wethBalance) }}</b-link> <font size="-3">Δ{{ weth && weth.updatedAccounts && weth.updatedAccounts.length }}</font></b-col>
+            <b-col cols="4" class="small">WETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'token/' + wethAddress + '?=' + coinbase" class="card-link" target="_blank">{{ formatETH(wethBalance) }}</b-link></b-col>
           </b-row>
           <b-row>
             <b-col cols="4" class="small">Nix WETH Allow</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + wethAddress + '#events'" class="card-link" target="_blank">{{ formatETH(wethAllowanceToNix) }}</b-link></b-col>
@@ -351,7 +351,7 @@ const Connection = {
               //     }
               //   }
               // }
-              // store.dispatch('connection/setWeth', { balance: wethBalance, allowanceToNix: wethAllowanceToNix, updatedAccounts: Object.keys(updatedAccounts) });
+              store.dispatch('connection/setWeth', { balance: wethBalance, allowanceToNix: wethAllowanceToNix });
 
               // const collections = Object.keys(store.getters['collectionData/collectionConfig']);
               // for (collection of collections) {
