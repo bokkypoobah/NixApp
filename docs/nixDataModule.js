@@ -506,17 +506,17 @@ const nixDataModule = {
         }
       }
 
-      async function fullSyncNixOrders(provider, nix, nixHelper, erc721Helper, erc721, weth, updates, blockNumber, timestamp) {
-        logInfo("nixDataModule", "fullSyncNixOrders()");
+      async function syncNixOrders(provider, nix, nixHelper, erc721Helper, erc721, weth, updates, blockNumber, timestamp) {
+        logInfo("nixDataModule", "syncNixOrders()");
 
-        logInfo("nixDataModule", "execWeb3.fullSyncNixOrders() - nixTokens: " + JSON.stringify(Object.keys(updates.nixTokens)));
+        logInfo("nixDataModule", "execWeb3.syncNixOrders() - nixTokens: " + JSON.stringify(Object.keys(updates.nixTokens)));
         for (let collection of Object.keys(updates.nixOrders)) {
-          logInfo("nixDataModule", "execWeb3.fullSyncNixOrders() - nixOrders: " + collection + " - " + Object.keys(updates.nixOrders[collection]));
+          logInfo("nixDataModule", "execWeb3.syncNixOrders() - nixOrders: " + collection + " - " + Object.keys(updates.nixOrders[collection]));
         }
-        logInfo("nixDataModule", "execWeb3.fullSyncNixOrders() - nixTrades: " + JSON.stringify(Object.keys(updates.nixTrades)));
-        logInfo("nixDataModule", "execWeb3.fullSyncNixOrders() - accounts: " + JSON.stringify(Object.keys(updates.accounts)));
+        logInfo("nixDataModule", "execWeb3.syncNixOrders() - nixTrades: " + JSON.stringify(Object.keys(updates.nixTrades)));
+        logInfo("nixDataModule", "execWeb3.syncNixOrders() - accounts: " + JSON.stringify(Object.keys(updates.accounts)));
         for (let collection of Object.keys(updates.tokens)) {
-          logInfo("nixDataModule", "execWeb3.fullSyncNixOrders() - tokens: " + collection + " - " + Object.keys(updates.tokens[collection]));
+          logInfo("nixDataModule", "execWeb3.syncNixOrders() - tokens: " + collection + " - " + Object.keys(updates.tokens[collection]));
         }
 
         var tokensData = [];
@@ -829,7 +829,7 @@ const nixDataModule = {
 
           const updates = await getRecentEvents(provider, nix, erc721, weth, blockNumber);
           // console.log(JSON.stringify(updates));
-          await fullSyncNixOrders(provider, nix, nixHelper, erc721Helper, erc721, weth, updates, blockNumber, timestamp);
+          await syncNixOrders(provider, nix, nixHelper, erc721Helper, erc721, weth, updates, blockNumber, timestamp);
           await syncCollections(erc721Helper, updates, blockNumber, timestamp);
           await syncNixTrades(provider, nix, nixHelper, erc721Helper, erc721, weth, updates, blockNumber, timestamp);
           // await incrementalSync(updates);
