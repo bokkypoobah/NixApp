@@ -55,7 +55,7 @@ const Exchange = {
                           </span>
                         </template>
                         <font size="-2">
-                          <b-table small fixed striped sticky-header="1000px" :items="nixToken.ordersList" head-variant="light" show-empty>
+                          <b-table small fixed striped sticky-header="1000px" :items="Object.values(nixToken.orders)" head-variant="light" show-empty>
                             <template #cell(maker)="data">
                               <b-link :href="explorer + 'address/' + data.item.maker" target="_blank">{{ data.item.maker.substring(0, 10) + '...' }}</b-link>
                             </template>
