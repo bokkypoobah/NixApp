@@ -181,7 +181,6 @@ const nixDataModule = {
     },
     updateNixToken(state, data) {
       // logInfo("nixDataModule", "updateNixToken: " + JSON.stringify(data));
-
       let token = state.nixTokens[data.tokenIndex];
       if (token == null) {
         const ordersList = [];
@@ -214,6 +213,19 @@ const nixDataModule = {
         token.volumeToken = data.volumeToken;
         token.volumeWeth = data.volumeWeth;
         token.averageWeth = data.averageWeth;
+        for (const [orderIndex, order] of Object.entries(data.orders)) {
+          if (!token.orders[orderIndex]) {
+            token.ordersList.push(order);
+          }
+          token.orders[orderIndex] = order;
+        }
+        Vue.set(state.nixTokens, data.tokenIndex, token);
+      }
+    },
+    updateNixTokenOrders(state, data) {
+      // logInfo("nixDataModule", "updateNixTokenOrders: " + JSON.stringify(data));
+      let token = state.nixTokens[data.tokenIndex];
+      if (token != null) {
         for (const [orderIndex, order] of Object.entries(data.orders)) {
           if (!token.orders[orderIndex]) {
             token.ordersList.push(order);
@@ -262,9 +274,9 @@ const nixDataModule = {
       async function getRecentEvents(provider, nix, erc721, weth, blockNumber) {
         logDebug("nixDataModule", "execWeb3.getRecentEvents()");
 
-        // const wethLookback = 50000; // 100
-        // const erc721Lookback = 100000; // 100
-        // const nixLookback = 80000; // 100
+        // const wethLookback = 50000;
+        // const erc721Lookback = 100000;
+        // const nixLookback = 80000;
         const wethLookback = 100;
         const erc721Lookback = 100;
         const nixLookback = 100;
@@ -506,23 +518,29 @@ const nixDataModule = {
         }
       }
 
-      async function syncNixOrders(provider, nix, nixHelper, erc721Helper, erc721, weth, updates, blockNumber, timestamp) {
-        logInfo("nixDataModule", "syncNixOrders()");
-
-        logInfo("nixDataModule", "execWeb3.syncNixOrders() - nixTokens: " + JSON.stringify(Object.keys(updates.nixTokens)));
-        for (let collection of Object.keys(updates.nixOrders)) {
-          logInfo("nixDataModule", "execWeb3.syncNixOrders() - nixOrders: " + collection + " - " + Object.keys(updates.nixOrders[collection]));
+      // Sync Nix Tokens based on new Token, and new Orders on existing Tokens
+      async function syncNixTokens(provider, nix, nixHelper, erc721Helper, erc721, weth, updates, blockNumber, timestamp) {
+        // logInfo("nixDataModule", "execWeb3.syncNixTokens() - nixTokens: " + JSON.stringify(Object.keys(updates.nixTokens)));
+        // for (let collection of Object.keys(updates.nixOrders)) {
+        //   logInfo("nixDataModule", "execWeb3.syncNixTokens() - nixOrders: " + collection + " - " + Object.keys(updates.nixOrders[collection]));
+        // }
+        const tokensLength = (await nix.tokensLength()).toNumber();
+        const tokenIndexHash = {};
+        for (let i = 0; i < tokensLength; i++) {
+          if (updates.nixTrades[i]) {
+            tokenIndexHash[i] = true;
+          } else if (!(i in state.nixTokens)) {
+            tokenIndexHash[i] = true;
+          } else {
+            if (state.nixTokens[i].token in updates.nixOrders) {
+              tokenIndexHash[i] = true;
+            }
+          }
         }
-        logInfo("nixDataModule", "execWeb3.syncNixOrders() - nixTrades: " + JSON.stringify(Object.keys(updates.nixTrades)));
-        logInfo("nixDataModule", "execWeb3.syncNixOrders() - accounts: " + JSON.stringify(Object.keys(updates.accounts)));
-        for (let collection of Object.keys(updates.tokens)) {
-          logInfo("nixDataModule", "execWeb3.syncNixOrders() - tokens: " + collection + " - " + Object.keys(updates.tokens[collection]));
-        }
-
+        const tokenIndices = Object.keys(tokenIndexHash);
         var tokensData = [];
-        const tokensLength = await nix.tokensLength();
-        if (tokensLength > 0) {
-          var tokenIndices = generateRange(0, tokensLength - 1, 1);
+        if (tokenIndices.length > 0) {
+          logInfo("nixDataModule", "execWeb3.syncNixOrders() - Refreshing Nix Tokens: " + JSON.stringify(tokenIndices));
           const tokens = await nixHelper.getTokens(tokenIndices);
           for (let i = 0; i < tokens[0].length; i++) {
             const token = tokens[0][i];
@@ -563,25 +581,52 @@ const nixDataModule = {
               orders: {},
             });
           }
-          for (let i = 0; i < tokens[0].length; i++) {
-            const token = tokens[0][i];
-            const ordersLength = tokens[1][i].toNumber();
-            const executed = tokens[2][i].toNumber();
-            const volumeToken = tokens[3][i].toNumber();
-            const volumeWeth = tokens[4][i];
-            const averageWeth = volumeWeth  > 0 ? volumeWeth.div(volumeToken) : null;
-            // tokensData.push({ token: token, ordersLength: ordersLength, executed: executed, volumeToken: volumeToken, volumeWeth: volumeWeth, averageWeth: averageWeth, ordersData: ordersData });
+        }
+      }
 
-            var ordersData = [];
-            var orderIndices = generateRange(0, ordersLength - 1, 1);
+      async function syncNixOrders(provider, nix, nixHelper, erc721Helper, erc721, weth, updates, blockNumber, timestamp) {
+        // for (let collection of Object.keys(updates.nixOrders)) {
+        //   logInfo("nixDataModule", "execWeb3.syncNixOrders() - nixOrders: " + collection + " - " + Object.keys(updates.nixOrders[collection]));
+        // }
+        // logInfo("nixDataModule", "execWeb3.syncNixOrders() - accounts: " + JSON.stringify(Object.keys(updates.accounts)));
+        const tokenIndices = Object.keys(state.nixTokens);
+        for (let i = 0; i < tokenIndices.length; i++) {
+          const nixToken = state.nixTokens[tokenIndices[i]];
+          const token = nixToken.token;
+          const ordersIndexHash = {};
+          if (token in updates.nixOrders) {
+            for (let j = 0; j < nixToken.ordersLength; j++) {
+              if (updates.nixOrders[token][j]) {
+                ordersIndexHash[j] = true;
+              } else if (!(j in nixToken.orders)) {
+                ordersIndexHash[j] = true;
+              }
+            }
+          }
+          // console.log(JSON.stringify(nixToken));
+          for (let j = 0; j < nixToken.ordersLength; j++) {
+            const order = nixToken.orders[j];
+            if (order) {
+              // console.log(j + " " + JSON.stringify(order));
+              if (order.maker in updates.accounts) {
+                ordersIndexHash[j] = true;
+              }
+            } else {
+              ordersIndexHash[j] = true;
+            }
+          }
+
+          const orderIndices = Object.keys(ordersIndexHash);
+          if (orderIndices.length > 0) {
+            logInfo("nixDataModule", "execWeb3.syncNixOrders() - Refreshing Nix Orders: " + JSON.stringify(orderIndices));
             const orders = await nixHelper.getOrders(token, orderIndices);
-            // console.log(JSON.stringify(orders));
-            for (let i = 0; i < ordersLength; i++) {
-              const maker = orders[0][i];
-              const taker = orders[1][i] == ADDRESS0 ? null : orders[1][i];
-              const tokenIds = orders[2][i];
-              const price = orders[3][i];
-              const data = orders[4][i];
+            const ordersData = [];
+            for (let j = 0; j < orders[0].length; j++) {
+              const maker = orders[0][j];
+              const taker = orders[1][j] == ADDRESS0 ? null : orders[1][j];
+              const tokenIds = orders[2][j];
+              const price = orders[3][j];
+              const data = orders[4][j];
               const buyOrSell = data[0].toNumber();
               const anyOrAll = data[1].toNumber();
               const expiry = data[2].toNumber();
@@ -589,32 +634,21 @@ const nixDataModule = {
               const tradeMax = data[4].toNumber();
               const royaltyFactor = data[5].toNumber();
               const orderStatus = data[6].toNumber();
-              ordersData.push({ orderIndex: i, maker: maker, taker: taker, tokenIds: tokenIds, price: price, buyOrSell: buyOrSell,
+              ordersData.push({ orderIndex: orderIndices[j], maker: maker, taker: taker, tokenIds: tokenIds, price: price, buyOrSell: buyOrSell,
                 anyOrAll: anyOrAll, expiry: expiry, tradeCount: tradeCount, tradeMax: tradeMax, royaltyFactor: royaltyFactor,
                 orderStatus: orderStatus });
             }
-
-            commit('updateNixToken', {
+            commit('updateNixTokenOrders', {
               tokenIndex: tokenIndices[i],
               token: token,
-              // symbol: symbol,
-              // name: name,
-              // totalSupply: totalSupply,
-              ordersLength: ordersLength,
-              executed: executed,
-              volumeToken: volumeToken,
-              volumeWeth: volumeWeth,
-              averageWeth: averageWeth,
               orders: ordersData,
             });
           }
-          // console.log(JSON.stringify(ordersData));
         }
       }
 
       async function syncNixTrades(provider, nix, nixHelper, erc721Helper, erc721, weth, updates, blockNumber, timestamp) {
-        logInfo("nixDataModule", "execWeb3.syncNixTrades() - nixTrades: " + JSON.stringify(Object.keys(updates.nixTrades)));
-
+        // logInfo("nixDataModule", "execWeb3.syncNixTrades() - nixTrades: " + JSON.stringify(Object.keys(updates.nixTrades)));
         const tradesLength = (await nix.tradesLength()).toNumber();
         var tradeData = [];
         const tradeIndexHash = {};
@@ -626,6 +660,7 @@ const nixDataModule = {
           }
         }
         const tradeIndices = Object.keys(tradeIndexHash);
+        logInfo("nixDataModule", "execWeb3.syncNixOrders() - Refreshing Nix Trades: " + JSON.stringify(tradeIndices));
         const trades = await nixHelper.getTrades(tradeIndices);
         for (let i = 0; i < trades[0].length; i++) {
           const tradeIndex = parseInt(tradeIndices[i]);
@@ -781,6 +816,7 @@ const nixDataModule = {
             return results;
           }
           const tx = await getOrderExecutedTransaction(tradeIndex, blockNumber, nix);
+          // logInfo("nixDataModule", "execWeb3.syncNixTrades() - tradeIndex: " + tradeIndex);
           if (tx) {
             const orderExecutedEvents = await getOrderExecutedEvents(tx.txHash);
             tradeData.push({
@@ -793,8 +829,8 @@ const nixDataModule = {
               events: orderExecutedEvents,
             });
           }
+          commit('updateNixTrades', tradeData);
         }
-        commit('updateNixTrades', tradeData);
       }
 
       async function incrementalSync(updates) {
@@ -829,6 +865,7 @@ const nixDataModule = {
 
           const updates = await getRecentEvents(provider, nix, erc721, weth, blockNumber);
           // console.log(JSON.stringify(updates));
+          await syncNixTokens(provider, nix, nixHelper, erc721Helper, erc721, weth, updates, blockNumber, timestamp);
           await syncNixOrders(provider, nix, nixHelper, erc721Helper, erc721, weth, updates, blockNumber, timestamp);
           await syncCollections(erc721Helper, updates, blockNumber, timestamp);
           await syncNixTrades(provider, nix, nixHelper, erc721Helper, erc721, weth, updates, blockNumber, timestamp);
