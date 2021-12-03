@@ -140,7 +140,7 @@ const nixDataModule = {
           totalSupply: data.totalSupply,
           blockNumber: null,
           timestamp: null,
-          tokens: [],
+          tokens: {},
           computedTotalSupply: null,
         });
       }
@@ -155,10 +155,16 @@ const nixDataModule = {
       const collectionKey = data.chainId + '.' + data.address;
       let collection = state.collections[collectionKey];
       if (collection != null) {
+        // logInfo("nixDataModule", "newCollectionTokens B: " + JSON.stringify(state.collections));
+        // logInfo("nixDataModule", "newCollectionTokens data.tokens: " + JSON.stringify(data.tokens));
         const tokens = collection.tokens;
+        // console.log("tokens: " + JSON.stringify(tokens));
         for (const [tokenId, token] of Object.entries(data.tokens)) {
+          // console.log("tokenId: " + tokenId + ", " + token);
           tokens[tokenId] = token;
+          // console.log("tokens: " + JSON.stringify(tokens));
         }
+        // logInfo("nixDataModule", "newCollectionTokens tokens: " + JSON.stringify(tokens));
         Vue.set(state.collections, collectionKey, {
           chainId: data.chainId,
           address: data.address,
@@ -171,6 +177,7 @@ const nixDataModule = {
           computedTotalSupply: Object.keys(tokens).length,
         });
       }
+      // logInfo("nixDataModule", "newCollectionTokens A: " + JSON.stringify(state.collections));
       const collectionList = [];
       for (const [key, collection] of Object.entries(state.collections)) {
         collectionList.push(collection);

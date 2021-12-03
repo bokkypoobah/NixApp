@@ -19,7 +19,7 @@ const Collections = {
                   <b-tab active title="Collections" class="p-1">
                     <b-card-text>
                       <font size="-1">
-                        <b-table small fixed striped sticky-header="1000px" :fields="collectionFields" :items="collectionList" head-variant="light">
+                        <b-table small fixed striped sticky-header="1000px" :fields="collectionsFields" :items="collectionList" head-variant="light">
                           <template #cell(address)="data">
                             <b-link :href="explorer + 'token/' + data.item.address" class="card-link truncate" target="_blank">{{ data.item.address }}</b-link>
                           </template>
@@ -49,6 +49,23 @@ const Collections = {
                         </b-table>
                       </font>
                     </b-card-text>
+                  </b-tab>
+
+                  <b-tab active title="Collection" class="p-1">
+                    <b-form-group label-cols="3" label-size="sm" label="Collection">
+                      <div v-if="collectionListAsOptions.length > 0">
+                        <b-form-select size="sm" v-model="collection.selected" :options="collectionListAsOptions" class="w-50"></b-form-select>
+                      </div>
+                      <div v-else>
+                        Loading ...
+                      </div>
+                    </b-form-group>
+                    <div v-if="collections[collection.selected] && collections[collection.selected].tokens">
+                      <font size="-2">
+                        <b-table small fixed striped sticky-header="1000px" :items="Object.values(collections[collection.selected].tokens)" head-variant="light">
+                        </b-table>
+                      </font>
+                    </div>
                   </b-tab>
 
                   <b-tab title="Search OS Collections" class="p-1">
@@ -295,7 +312,7 @@ const Collections = {
 
       tabIndex: 0,
 
-      collectionFields: [
+      collectionsFields: [
         { key: 'chainId', label: 'Chain Id', thStyle: 'width: 10%;', sortable: true },
         { key: 'address', label: 'Address', thStyle: 'width: 10%;', sortable: true },
         { key: 'symbol', label: 'Symbol', thStyle: 'width: 10%;', sortable: true },
@@ -305,6 +322,10 @@ const Collections = {
         { key: 'blockNumber', label: 'Block Number', thStyle: 'width: 10%;', thClass: 'text-right', tdClass: 'text-right', sortable: true },
         { key: 'timestamp', label: 'Timestamp', thStyle: 'width: 20%;', sortable: true },
       ],
+
+      collection: {
+        selected: '4.0x652dc3aa8e1d18a8cc19aef62cf4f03c4d50b2b5',
+      },
 
       osCollection: {
         data: [],
@@ -398,6 +419,21 @@ const Collections = {
     },
     collectionList() {
       return store.getters['nixData/collectionList'];
+    },
+    collectionListAsOptions() {
+      const results = [];
+      const map = {};
+      if (store.getters['nixData/collections']) {
+        for (const [chainIdAddress, collection] of Object.entries(store.getters['nixData/collections'])) {
+          results.push({ value: chainIdAddress, text: collection.symbol + ' - ' + collection.name + ' - ' + collection.computedTotalSupply });
+        }
+        results.sort(function(a, b) {
+          return ('' + a.text + a.value).localeCompare(b.text + b.value);
+        });
+      // } else {
+      //   results.push({ value: '--- (loading) ---', text: '--- (loading) ---'});
+      }
+      return results;
     },
   },
   methods: {
