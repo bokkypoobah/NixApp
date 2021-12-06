@@ -185,38 +185,27 @@ const nixDataModule = {
       state.collectionList = collectionList;
     },
     updateTraitsAndImages(state, data) {
-      logInfo("nixDataModule", "updateTraitsAndImages: " + JSON.stringify(data));
+      // logInfo("nixDataModule", "updateTraitsAndImages: " + JSON.stringify(data));
       const collectionKey = data.chainId + '.' + data.address;
-      let collection = state.collections[collectionKey];
+      const collection = state.collections[collectionKey];
       if (collection != null) {
-      //   // logInfo("nixDataModule", "newCollectionTokens B: " + JSON.stringify(state.collections));
-      //   // logInfo("nixDataModule", "newCollectionTokens data.tokens: " + JSON.stringify(data.tokens));
-      //   const tokens = collection.tokens;
-      //   // console.log("tokens: " + JSON.stringify(tokens));
         for (const [tokenId, token] of Object.entries(data.traitsAndImages)) {
           console.log("tokenId: " + tokenId + ", " + JSON.stringify(token));
-      //     tokens[tokenId] = token;
-      //     // console.log("tokens: " + JSON.stringify(tokens));
+          const existingToken = collection.tokens[tokenId];
+          if (existingToken) {
+            existingToken.metadataRetrieved = token.metadataRetrieved;
+            existingToken.traits = token.traits;
+            existingToken.image = token.image;
+            Vue.set(collection.tokens, tokenId, existingToken);
+          }
         }
-      //   // logInfo("nixDataModule", "newCollectionTokens tokens: " + JSON.stringify(tokens));
-      //   Vue.set(state.collections, collectionKey, {
-      //     chainId: data.chainId,
-      //     address: data.address,
-      //     symbol: collection.symbol,
-      //     name: collection.name,
-      //     totalSupply: collection.totalSupply,
-      //     blockNumber: data.blockNumber,
-      //     timestamp: data.timestamp,
-      //     tokens: tokens,
-      //     computedTotalSupply: Object.keys(tokens).length,
-      //   });
+        Vue.set(state.collections, collectionKey, collection);
       }
-      // // logInfo("nixDataModule", "newCollectionTokens A: " + JSON.stringify(state.collections));
-      // const collectionList = [];
-      // for (const [key, collection] of Object.entries(state.collections)) {
-      //   collectionList.push(collection);
-      // }
-      // state.collectionList = collectionList;
+      const collectionList = [];
+      for (const [key, collection] of Object.entries(state.collections)) {
+        collectionList.push(collection);
+      }
+      state.collectionList = collectionList;
     },
     updateNixToken(state, data) {
       // logInfo("nixDataModule", "updateNixToken: " + JSON.stringify(data));
@@ -488,7 +477,7 @@ const nixDataModule = {
                       }
                       const tokens = {};
                       for (const [tokenId, owner] of Object.entries(owners)) {
-                        tokens[tokenId] = { tokenId: tokenId, owner: owner.owner, tokenURI: null, traits: [], image: null };
+                        tokens[tokenId] = { tokenId: tokenId, owner: owner.owner, tokenURI: null, metadataRetrieved: false, traits: [], image: null };
                       }
                       commit('newCollectionTokens', {
                         chainId: store.getters['connection/network'].chainId,
@@ -515,7 +504,7 @@ const nixDataModule = {
                       }
                       const tokens = {};
                       for (const [tokenId, owner] of Object.entries(owners)) {
-                        tokens[tokenId] = { tokenId: tokenId, owner: owner.owner, tokenURI: null, traits: [], image: null };
+                        tokens[tokenId] = { tokenId: tokenId, owner: owner.owner, tokenURI: null, metadataRetrieved: false, traits: [], image: null };
                       }
                       commit('newCollectionTokens', {
                         chainId: store.getters['connection/network'].chainId,
@@ -887,7 +876,7 @@ const nixDataModule = {
           //   console.log("  Processing " + tokenId + " " + JSON.stringify(token));
           // }
 
-          const tokenIds = Object.values(collection.tokens).filter(token => token.image === null).map(a => a.tokenId);
+          const tokenIds = Object.values(collection.tokens).filter(token => token.metadataRetrieved === false).map(a => a.tokenId);
           console.log("tokenIds: " + JSON.stringify(tokenIds));
 
           const BATCHSIZE = 30; // Max 30
@@ -900,13 +889,13 @@ const nixDataModule = {
               url = url + "&token_ids=" + tokenIds[j];
             }
             console.log("url: " + JSON.stringify(url));
-            // const data = await fetch(url).then(response => response.json());
-            // if (data.assets && data.assets.length > 0) {
-            //   for (let assetIndex = 0; assetIndex < data.assets.length; assetIndex++) {
-            //     const asset = data.assets[assetIndex];
-            //     traitsAndImages[asset.token_id] = { traits: asset.traits, image: asset.image_url };
-            //   }
-            // }
+            const data = await fetch(url).then(response => response.json());
+            if (data.assets && data.assets.length > 0) {
+              for (let assetIndex = 0; assetIndex < data.assets.length; assetIndex++) {
+                const asset = data.assets[assetIndex];
+                traitsAndImages[asset.token_id] = { metadataRetrieved: true, traits: asset.traits, image: asset.image_url };
+              }
+            }
             await delay(DELAYINMILLIS);
           }
           // console.log("traitsAndImages: " + JSON.stringify(traitsAndImages));
