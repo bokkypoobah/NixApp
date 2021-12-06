@@ -190,7 +190,6 @@ const nixDataModule = {
       const collection = state.collections[collectionKey];
       if (collection != null) {
         for (const [tokenId, token] of Object.entries(data.traitsAndImages)) {
-          console.log("tokenId: " + tokenId + ", " + JSON.stringify(token));
           const existingToken = collection.tokens[tokenId];
           if (existingToken) {
             existingToken.metadataRetrieved = token.metadataRetrieved;
@@ -877,7 +876,6 @@ const nixDataModule = {
           // }
 
           const tokenIds = Object.values(collection.tokens).filter(token => token.metadataRetrieved === false).map(a => a.tokenId);
-          console.log("tokenIds: " + JSON.stringify(tokenIds));
 
           const BATCHSIZE = 30; // Max 30
           const DELAYINMILLIS = 500;
