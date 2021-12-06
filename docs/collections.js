@@ -62,7 +62,19 @@ const Collections = {
                     </b-form-group>
                     <div v-if="collections[collection.selected] && collections[collection.selected].tokens">
                       <font size="-2">
-                        <b-table small fixed striped sticky-header="1000px" :items="Object.values(collections[collection.selected].tokens)" head-variant="light">
+                        <b-table small fixed striped sticky-header="1000px" :fields="collectionFields" :items="Object.values(collections[collection.selected].tokens)" head-variant="light">
+                          <template #cell(traits)="data">
+                            <div v-if="data.item.traits">
+                              <b-row v-for="(attribute, i) in data.item.traits"  v-bind:key="i" class="m-0 p-0">
+                                <b-col cols="3" class="m-0 p-0"><font size="-3">{{ attribute.trait_type }}</font></b-col><b-col class="m-0 p-0"><b><font size="-2">{{ attribute.value }}</font></b></b-col>
+                              </b-row>
+                            </div>
+                          </template>
+                          <template #cell(image)="data">
+                            <div v-if="data.item.image">
+                              <b-img-lazy :width="'100%'" :src="data.item.image.replace('ipfs://', 'https://ipfs.io/ipfs/')" />
+                            </div>
+                          </template>
                         </b-table>
                       </font>
                     </div>
@@ -326,6 +338,15 @@ const Collections = {
       collection: {
         selected: '4.0x652dc3aa8e1d18a8cc19aef62cf4f03c4d50b2b5',
       },
+
+      collectionFields: [
+        { key: 'tokenId', label: 'Token Id', thStyle: 'width: 10%;', sortable: true },
+        { key: 'owner', label: 'Owner', thStyle: 'width: 25%;', sortable: true },
+        // { key: 'tokenURI', label: 'Token URI', thStyle: 'width: 25%;', sortable: true },
+        // { key: 'metadataRetrieved', label: 'Metadata Retrieved', thStyle: 'width: 20%;', sortable: true },
+        { key: 'traits', label: 'Traits', thStyle: 'width: 40%;', thClass: 'text-right', tdClass: 'text-right', sortable: true },
+        { key: 'image', label: 'Image', thStyle: 'width: 25%;', thClass: 'text-right', tdClass: 'text-right', sortable: true },
+      ],
 
       osCollection: {
         data: [],
