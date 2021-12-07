@@ -152,6 +152,9 @@ const WETH = {
     balance() {
       return store.getters['connection/balance'];
     },
+    wethData() {
+      return store.getters['nixData/wethData'];
+    },
     wethAddress() {
       return WETHADDRESS;
     },

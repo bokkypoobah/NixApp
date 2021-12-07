@@ -330,6 +330,31 @@ const Exchange = {
                     </b-card>
                   </b-tab>
 
+                  <b-tab title="WETH Approvals" class="p-1">
+                    <div v-if="!wethData || Object.keys(wethData).length == 0">
+                      <b-card>
+                        <b-card-text>
+                          Loading WETH Approvals
+                        </b-card-text>
+                      </b-card>
+                    </div>
+                    <b-card>
+                      <font size="-2">
+                        <b-table small fixed striped sticky-header="1000px" :fields="wethFields" :items="Object.values(wethData)" head-variant="light" show-empty>
+                          <template #cell(account)="data">
+                            <b-link :href="explorer + 'address/' + data.item.account" class="truncate" target="_blank">{{ data.item.account }}</b-link>
+                          </template>
+                          <template #cell(balance)="data">
+                            {{ formatETH(data.item.balance) }}
+                          </template>
+                          <template #cell(allowance)="data">
+                            {{ formatETH(data.item.allowance) }}
+                          </template>
+                        </b-table>
+                      </font>
+                    </b-card>
+                  </b-tab>
+
                 </b-tabs>
               </b-card>
             </div>
@@ -406,7 +431,14 @@ const Exchange = {
         { key: 'volumeToken', label: 'Volume (Tokens)', thStyle: 'width: 10%;', sortable: true },
         { key: 'volumeWeth', label: 'Volume (WETH)', thStyle: 'width: 10%;', sortable: true },
         { key: 'averageWeth', label: 'Average (WETH)', thStyle: 'width: 15%;', sortable: true },
-      ]
+      ],
+
+      wethFields: [
+        { key: 'account', label: '#', thStyle: 'width: 30%;', sortable: true },
+        { key: 'balance', label: 'Balance', thStyle: 'width: 40%;', sortable: true },
+        { key: 'allowance', label: 'Allowance To Nix', thStyle: 'width: 40%;', sortable: true },
+      ],
+
     }
   },
   computed: {
@@ -434,6 +466,9 @@ const Exchange = {
         }
       }
       return results;
+    },
+    wethData() {
+      return store.getters['nixData/wethData'];
     },
 
     tokensData() {

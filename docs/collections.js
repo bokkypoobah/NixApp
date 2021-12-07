@@ -340,11 +340,11 @@ const Collections = {
       },
 
       collectionFields: [
-        { key: 'tokenId', label: 'Token Id', thStyle: 'width: 10%;', sortable: true },
+        { key: 'tokenId', label: 'Token Id', thStyle: 'width: 25%;', sortable: true },
         { key: 'owner', label: 'Owner', thStyle: 'width: 25%;', sortable: true },
         // { key: 'tokenURI', label: 'Token URI', thStyle: 'width: 25%;', sortable: true },
         // { key: 'metadataRetrieved', label: 'Metadata Retrieved', thStyle: 'width: 20%;', sortable: true },
-        { key: 'traits', label: 'Traits', thStyle: 'width: 40%;', thClass: 'text-right', tdClass: 'text-right', sortable: true },
+        { key: 'traits', label: 'Traits', thStyle: 'width: 25%;', thClass: 'text-right', tdClass: 'text-right', sortable: true },
         { key: 'image', label: 'Image', thStyle: 'width: 25%;', thClass: 'text-right', tdClass: 'text-right', sortable: true },
       ],
 
