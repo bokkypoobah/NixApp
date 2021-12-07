@@ -888,23 +888,23 @@ const nixDataModule = {
 
       // Sync Nix Tokens based on new Token, and new Orders on existing Tokens
       async function syncWeth(provider, nix, erc721Helper, weth, updates, blockNumber, timestamp) {
-        logInfo("nixDataModule", "execWeb3.syncWeth() - nixTokens: " + JSON.stringify(Object.keys(updates.nixTokens)));
-        // logInfo("nixDataModule", "execWeb3.syncNixTokens() - nixTokens: " + JSON.stringify(Object.keys(updates.nixTokens)));
-        // for (let collection of Object.keys(updates.nixOrders)) {
-        //   logInfo("nixDataModule", "execWeb3.syncNixTokens() - nixOrders: " + collection + " - " + Object.keys(updates.nixOrders[collection]));
-        // }
-
-        const makerAccountHash = {};
+        logInfo("nixDataModule", "execWeb3.syncWeth() - accounts: " + JSON.stringify(Object.keys(updates.accounts)));
+        const accountsToUpdateHash = {};
         for (const token of Object.values(state.nixTokens)) {
           for (const order of Object.values(token.orders)) {
-            makerAccountHash[order.maker] = true;
+            if (!state.wethData[order.maker]) {
+              accountsToUpdateHash[order.maker] = true;
+            }
           }
         }
-        const makerAccounts = Object.keys(makerAccountHash);
-        const wethInfo = await erc721Helper.getERC20Info(weth.address, makerAccounts, nix.address);
+        for (const account of Object.keys(updates.accounts)) {
+          accountsToUpdateHash[account] = true;
+        }
+        const accountsToUpdate = Object.keys(accountsToUpdateHash);
+        const wethInfo = await erc721Helper.getERC20Info(weth.address, accountsToUpdate, nix.address);
         const wethData = {};
         for (let i = 0; i < wethInfo[0].length; i++) {
-          wethData[makerAccounts[i]] = { account: makerAccounts[i], balance: wethInfo[0][i], allowance: wethInfo[1][i] };
+          wethData[accountsToUpdate[i]] = { account: accountsToUpdate[i], balance: wethInfo[0][i], allowance: wethInfo[1][i] };
         }
         commit('updateWETHData', {
           chainId: store.getters['connection/network'].chainId,
@@ -912,67 +912,6 @@ const nixDataModule = {
           timestamp: timestamp,
           wethData: wethData,
         });
-
-        // function getERC20Info(ERC20 token, address[] memory tokenOwners, address spender) public view returns (uint[] memory balances, uint[] memory allowances) {
-
-        // const tokensLength = (await nix.tokensLength()).toNumber();
-        // const tokenIndexHash = {};
-        // for (let i = 0; i < tokensLength; i++) {
-        //   if (updates.nixTrades[i]) {
-        //     tokenIndexHash[i] = true;
-        //   } else if (!(i in state.nixTokens)) {
-        //     tokenIndexHash[i] = true;
-        //   } else {
-        //     if (state.nixTokens[i].token in updates.nixOrders) {
-        //       tokenIndexHash[i] = true;
-        //     }
-        //   }
-        // }
-        // const tokenIndices = Object.keys(tokenIndexHash);
-        // var tokensData = [];
-        // if (tokenIndices.length > 0) {
-        //   logInfo("nixDataModule", "execWeb3.syncNixOrders() - Refreshing Nix Tokens: " + JSON.stringify(tokenIndices));
-        //   const tokens = await nixHelper.getTokens(tokenIndices);
-        //   for (let i = 0; i < tokens[0].length; i++) {
-        //     const token = tokens[0][i];
-        //     const ordersLength = tokens[1][i].toNumber();
-        //     const executed = tokens[2][i].toNumber();
-        //     const volumeToken = tokens[3][i].toNumber();
-        //     const volumeWeth = tokens[4][i];
-        //     const averageWeth = volumeWeth  > 0 ? volumeWeth.div(volumeToken) : null;
-        //     let tokenInfo = null;
-        //     let symbol = null;
-        //     let name = null;
-        //     let totalSupply = null;
-        //     try {
-        //       tokenInfo = await erc721Helper.tokenInfo([token]);
-        //       const tokenType = tokenInfo[0][0].toNumber();
-        //       if ((tokenType & MASK_ERC721) == MASK_ERC721) {
-        //         if ((tokenType & MASK_ERC721METADATA) == MASK_ERC721METADATA) {
-        //           symbol = tokenInfo[1][0];
-        //           name = tokenInfo[2][0];
-        //         }
-        //         if ((tokenType & MASK_ERC721ENUMERABLE) == MASK_ERC721ENUMERABLE) {
-        //           totalSupply = tokenInfo[3][0].toNumber();
-        //         }
-        //       }
-        //     } catch (e) {
-        //     }
-        //     commit('updateNixToken', {
-        //       tokenIndex: tokenIndices[i],
-        //       token: token,
-        //       symbol: symbol,
-        //       name: name,
-        //       totalSupply: totalSupply,
-        //       ordersLength: ordersLength,
-        //       executed: executed,
-        //       volumeToken: volumeToken,
-        //       volumeWeth: volumeWeth,
-        //       averageWeth: averageWeth,
-        //       orders: {},
-        //     });
-        //   }
-        // }
       }
 
       async function syncTraitsAndImages(updates) {
@@ -1041,7 +980,6 @@ const nixDataModule = {
           const erc721 = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
 
           const updates = await getRecentEvents(provider, nix, erc721, weth, blockNumber);
-          // console.log(JSON.stringify(updates));
           await syncNixTokens(provider, nix, nixHelper, erc721Helper, weth, updates, blockNumber, timestamp);
           await syncCollections(erc721Helper, updates, blockNumber, timestamp);
           await syncTraitsAndImages(updates);
