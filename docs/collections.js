@@ -62,7 +62,7 @@ const Collections = {
                     </b-form-group>
                     <div v-if="collections[collection.selected] && collections[collection.selected].tokens">
                       <font size="-2">
-                        <b-table small fixed striped sticky-header="1000px" :fields="collectionFields" :items="Object.values(collections[collection.selected].tokens)" head-variant="light">
+                        <b-table small fixed striped sticky-header="1000px" :fields="collectionFields" :items="selectedRecords(collection)" head-variant="light">
                           <template #cell(traits)="data">
                             <div v-if="data.item.traits">
                               <b-row v-for="(attribute, i) in data.item.traits"  v-bind:key="i" class="m-0 p-0">
@@ -336,7 +336,7 @@ const Collections = {
       ],
 
       collection: {
-        selected: '4.0x652dc3aa8e1d18a8cc19aef62cf4f03c4d50b2b5',
+        selected: '4.0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4',
       },
 
       collectionFields: [
@@ -484,6 +484,14 @@ const Collections = {
           return new Date(d).toDateString().substring(4);
         }
       }
+    },
+    selectedRecords(collection) {
+      // console.log("selectedRecords(" + collection + ")");
+      const results = [];
+      if (collection.selected && this.collections && this.collections[collection.selected]) {
+        return Object.values(this.collections[collection.selected].tokens);
+      }
+      return results;
     },
 
     async recalculateOSFilter() {

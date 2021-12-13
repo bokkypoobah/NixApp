@@ -674,7 +674,7 @@ const nixDataModule = {
             for (let j = 0; j < orders[0].length; j++) {
               const maker = orders[0][j];
               const taker = orders[1][j] == ADDRESS0 ? null : orders[1][j];
-              const tokenIds = orders[2][j];
+              const tokenIds = orders[2][j] == null ? null : orders[2][j].map((x) => { return x.toString(); });
               const price = orders[3][j];
               const data = orders[4][j];
               const buyOrSell = data[0].toNumber();
@@ -953,6 +953,36 @@ const nixDataModule = {
         }
       }
 
+      function recalculate() {
+        console.log("Recalculate");
+        for (const nixToken of Object.values(state.nixTokens)) {
+          // console.log(JSON.stringify(nixToken.orders));
+          for (const collection of Object.values(state.collections)) {
+            if (collection.address == nixToken.token) {
+                const tokenIdsByOwners = {};
+                // console.log(JSON.stringify(collection));
+                for (const [tokenId, token] of Object.entries(collection.tokens)) {
+                  // console.log(JSON.stringify(token));
+                  if (token.owner in tokenIdsByOwners) {
+                    tokenIdsByOwners[token.owner][tokenId] = true;
+                    // tokenIdsByOwners[token.owner].push(tokenId);
+                  } else {
+                    tokenIdsByOwners[token.owner] = {};
+                    tokenIdsByOwners[token.owner][tokenId] = true;
+                  }
+                }
+                console.log(JSON.stringify(tokenIdsByOwners));
+
+                for (const [orderId, order] of Object.entries(nixToken.orders)) {
+                  if (order.orderStatus == ORDERSTATUS_EXECUTABLE) {
+                    console.log(JSON.stringify(order));
+                  }
+                }
+            }
+          }
+        }
+      }
+
       logDebug("nixDataModule", "execWeb3() start[" + count + ", " + listenersInstalled + ", " + JSON.stringify(rootState.route.params) + "]");
       if (!state.executing) {
         commit('updateExecuting', true);
@@ -982,10 +1012,11 @@ const nixDataModule = {
           const updates = await getRecentEvents(provider, nix, erc721, weth, blockNumber);
           await syncNixTokens(provider, nix, nixHelper, erc721Helper, weth, updates, blockNumber, timestamp);
           await syncCollections(erc721Helper, updates, blockNumber, timestamp);
-          await syncTraitsAndImages(updates);
           await syncNixOrders(provider, nix, nixHelper, weth, updates, blockNumber, timestamp);
-          await syncNixTrades(provider, nix, nixHelper, erc721, weth, updates, blockNumber, timestamp);
           await syncWeth(provider, nix, erc721Helper, weth, updates, blockNumber, timestamp);
+          await syncTraitsAndImages(updates);
+          await syncNixTrades(provider, nix, nixHelper, erc721, weth, updates, blockNumber, timestamp);
+          recalculate();
 
           if (!state.nixRoyaltyEngine) {
             const nixRoyaltyEngine = await nix.royaltyEngine();
