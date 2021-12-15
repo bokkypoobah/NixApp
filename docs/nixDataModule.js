@@ -971,12 +971,68 @@ const nixDataModule = {
                     tokenIdsByOwners[token.owner][tokenId] = true;
                   }
                 }
-                console.log(JSON.stringify(tokenIdsByOwners));
+                // console.log(JSON.stringify(tokenIdsByOwners));
 
+                // Buy Any
+                // - [1, 2, 3]
+                // - [] -> stored in globalBuys
+                //
+                // Buy All - Don't have to own. Must have single owner
+                // - [1, 2, 3]
+                //
+                // Sell Any - Must own
+                // - [1, 2, 3]
+                // - []
+                //
+                // Sell All - Must own
+                // - [1, 2, 3]
+
+                // console.log(JSON.stringify(state.wethData));
+                // {
+                //   "0x000001f568875F378Bf6d170B790967FE429C81A":{"account":"0x000001f568875F378Bf6d170B790967FE429C81A","balance":{"type":"BigNumber","hex":"0x131b32d4a684e000"},"allowance":{"type":"BigNumber","hex":"0x06aaf7c8516d0c0000"}},
+                //   "0x9a36E8C0cc2B57d732d5f0DB237D8601762970A4":{"account":"0x9a36E8C0cc2B57d732d5f0DB237D8601762970A4","balance":{"type":"BigNumber","hex":"0x455c7684fb670000"},"allowance":{"type":"BigNumber","hex":"0x056900d33ca7fc0000"}},
+                //   "0x07fb31ff47Dc15f78C5261EEb3D711fb6eA985D1":{"account":"0x07fb31ff47Dc15f78C5261EEb3D711fb6eA985D1","balance":{"type":"BigNumber","hex":"0x0dc7e2f5fddb234e"},"allowance":{"type":"BigNumber","hex":"0x869d529b714a0000"}},
+                //   "0x0457F40b63aF465a7a31efCD060095679491a248":{"account":"0x0457F40b63aF465a7a31efCD060095679491a248","balance":{"type":"BigNumber","hex":"0x0186cc6acd4b0000"},"allowance":{"type":"BigNumber","hex":"0x00"}}
+                // }
+
+                const globalBuys = {};
                 for (const [orderId, order] of Object.entries(nixToken.orders)) {
-                  if (order.orderStatus == ORDERSTATUS_EXECUTABLE) {
-                    console.log(JSON.stringify(order));
-                  }
+                  // {"orderIndex":"3","maker":"0x07fb31ff47Dc15f78C5261EEb3D711fb6eA985D1","taker":null,
+                  // "tokenIds":["881","947","1361","1479"],"price":{"type":"BigNumber","hex":"0x6a94d74f430000"},
+                  // "buyOrSell":1,"anyOrAll":0,"expiry":1672491599,"tradeCount":2,"tradeMax":7,"royaltyFactor":100,
+                  // "orderStatus":0}
+                  // console.log(JSON.stringify(order));
+                  // console.log(JSON.stringify(state.wethData[order.maker]));
+                  const makersTokenIds = tokenIdsByOwners[order.maker] == null ? null : Object.keys(tokenIdsByOwners[order.maker]);
+                  const expiryString = (order.expiry == 0) ? "No expiry" : (order.expiry == 1) ? "Disabled" : new Date(order.expiry * 1000).toUTCString();
+                  const wethBalanceString = state.wethData[order.maker] == null || state.wethData[order.maker].balance == null ? null : ethers.utils.formatEther(state.wethData[order.maker].balance);
+                  const wethAllowanceString = state.wethData[order.maker] == null || state.wethData[order.maker].allowance == null ? null : ethers.utils.formatEther(state.wethData[order.maker].allowance);
+                  console.log(order.orderIndex + ' ' + BUYORSELLSTRING[order.buyOrSell] + ' ' + ANYORALLSTRING[order.anyOrAll] +
+                    " - maker: " + order.maker + ", taker: " + order.taker + ", tokenIds: " + JSON.stringify(order.tokenIds) +
+                    ", price: " + ethers.utils.formatEther(order.price) +
+                    ", expiry: " + expiryString +
+                    ", orderStatus: " + ORDERSTATUSSTRING[order.orderStatus] +
+                    ", makersTokenIds: " + JSON.stringify(makersTokenIds) +
+                    ", wethBalance: " + JSON.stringify(wethBalanceString) +
+                    ", wethAllowance: " + JSON.stringify(wethAllowanceString)
+                  );
+
+
+                  // if (order.orderStatus == ORDERSTATUS_EXECUTABLE) {
+                  //   if (order.buySell == BUYSELL.BUY) {
+                  //     if (order.anyOrAll == ANYORALL.ANY) {
+                  //       console.log("Buy Any: " + order.maker);
+                  //     } else {
+                  //       console.log("Buy All: " + order.maker);
+                  //     }
+                  //   } else {
+                  //     if (order.anyOrAll == ANYORALL.ANY) {
+                  //       console.log("Sell Any maker: " + order.maker + ", owns: " + JSON.stringify(tokenIdsByOwners[order.maker]));
+                  //     } else {
+                  //       console.log("Sell All maker: " + order.maker + ", owns: " + JSON.stringify(tokenIdsByOwners[order.maker]));
+                  //     }
+                  //   }
+                  // }
                 }
             }
           }
