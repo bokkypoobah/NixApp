@@ -1,13 +1,13 @@
 const WETH = {
   template: `
     <div class="mt-5 pt-3">
-      <b-card class="mt-5" header-class="warningheader" header="Web3 Connection And/Or Incorrect Network Detected" v-if="!powerOn || network == null || network.chainId != 4">
+      <b-card class="mt-5" header-class="warningheader" header="Web3 Connection And/Or Incorrect Network Detected" v-if="!powerOn || (network.chainId != 1 && network.chainId != 4)">
         <b-card-text>
           Please install the MetaMask extension, connect to the Rinkeby network and refresh this page. Then click the [Power] button on the top right.
         </b-card-text>
       </b-card>
 
-      <b-card no-body header="WETH" class="border-0" header-class="p-1" v-if="network && network.chainId == 4">
+      <b-card no-body header="WETH" class="border-0" header-class="p-1" v-if="network.chainId == 1 || network.chainId == 4">
         <b-card no-body class="border-0 m-0 mt-2">
           <b-card-body class="p-0">
 
@@ -23,7 +23,7 @@ const WETH = {
                       <b-form-input size="sm" readonly v-model="formatETH(balance)" class="w-50"></b-form-input>
                     </b-form-group>
                     <b-form-group label-cols="3" label-size="sm" label="WETH Address">
-                      <b-link :href="explorer + 'address/' + weth.address + '#code'" class="card-link" target="_blank">{{ weth.address }}</b-link>
+                      <b-link :href="explorer + 'address/' + network.wethAddress + '#code'" class="card-link" target="_blank">{{ network.wethAddress }}</b-link>
                     </b-form-group>
                     <b-form-group label-cols="3" label-size="sm" label="WETH Balance">
                       <b-form-input size="sm" readonly v-model="formatETH(wethBalance)" class="w-50"></b-form-input>
@@ -120,7 +120,6 @@ const WETH = {
 
       weth: {
         ethBalance: null,
-        address: WETHADDRESS,
         wethBalance: null,
         wethAllowanceToNix: null,
         ethToWrap: null,
@@ -156,7 +155,7 @@ const WETH = {
       return store.getters['nixData/wethData'];
     },
     wethAddress() {
-      return WETHADDRESS;
+      return this.network.wethAddress;
     },
     wethBalance() {
       return store.getters['connection/weth'] ? store.getters['connection/weth'].balance : null;
@@ -191,7 +190,7 @@ const WETH = {
           if (value1) {
             event.preventDefault();
             const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
+            const weth = new ethers.Contract(store.getters['connection/network'].wethAddress, WETHABI, provider);
             const wethWithSigner = weth.connect(provider.getSigner());
             try {
               const tx = await wethWithSigner.deposit({ value: ethers.utils.parseEther(this.weth.ethToWrap) });
@@ -225,7 +224,7 @@ const WETH = {
           if (value1) {
             event.preventDefault();
             const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
+            const weth = new ethers.Contract(store.getters['connection/network'].wethAddress, WETHABI, provider);
             const wethWithSigner = weth.connect(provider.getSigner());
             try {
               const tx = await wethWithSigner.withdraw(ethers.utils.parseEther(this.weth.wethToUnwrap));
@@ -259,7 +258,7 @@ const WETH = {
           if (value1) {
             event.preventDefault();
             const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
+            const weth = new ethers.Contract(store.getters['connection/network'].wethAddress, WETHABI, provider);
             const wethWithSigner = weth.connect(provider.getSigner());
             try {
               const tx = await wethWithSigner.approve(NIXADDRESS, ethers.utils.parseEther(this.weth.wethToApproveToNix));
@@ -293,7 +292,7 @@ const WETH = {
           if (value1) {
             event.preventDefault();
             const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
+            const weth = new ethers.Contract(store.getters['connection/network'].wethAddress, WETHABI, provider);
             const wethWithSigner = weth.connect(provider.getSigner());
             try {
               const tx = await wethWithSigner.transfer(this.weth.transferTo, ethers.utils.parseEther(this.weth.transferAmount));

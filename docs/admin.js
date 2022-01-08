@@ -1,13 +1,13 @@
 const Admin = {
   template: `
     <div class="mt-5 pt-3">
-      <b-card class="mt-5" header-class="warningheader" header="Web3 Connection And/Or Incorrect Network Detected" v-if="!powerOn || network == null || network.chainId != 4">
+      <b-card class="mt-5" header-class="warningheader" header="Web3 Connection And/Or Incorrect Network Detected" v-if="!powerOn || (network.chainId != 1 && network.chainId != 4)">
         <b-card-text>
           Please install the MetaMask extension, connect to the Rinkeby network and refresh this page. Then click the [Power] button on the top right.
         </b-card-text>
       </b-card>
 
-      <b-card no-body header="Admin" class="border-0" header-class="p-1" v-if="network && network.chainId == 4">
+      <b-card no-body header="Admin" class="border-0" header-class="p-1" v-if="network.chainId == 1 || network.chainId == 4">
         <b-card no-body class="border-0 m-0 mt-2">
           <b-card-body class="p-0">
 

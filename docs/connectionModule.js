@@ -15,16 +15,126 @@
 // Görli     | https://goerli.etherscan.io/  | https://faucet.goerli.mudit.blog/<br />https://goerli-faucet.slock.it/<br />https://bridge.goerli.com/
 // ----------------------------------------------------------------------------
 var networks = {
-  "-1" : { "id": "-1", "name": "Network Unknown", "explorer": "", "faucets": {} },
-  "1" : { "id": "1", "name": "Ethereum Mainnet", "explorer": "https://etherscan.io/", "faucets": {} },
-  "2" : { "id": "2", "name": "Morden Testnet (deprecated)", "explorer": "https://morden.etherscan.io/", "faucets": {} },
-  "3" : { "id": "3", "name": "Ropsten Testnet", "explorer": "https://ropsten.etherscan.io/", "faucets": { "faucet.metamask.io": "https://faucet.metamask.io/" /*, "BokkyPooBah's VIP": "https://twitter.com/BokkyPooBah/status/1099498823699714048/" */ } },
-  "4" : { "id": "4", "name": "Rinkeby Testnet", "explorer": "https://rinkeby.etherscan.io/", "faucets": { "faucet.metamask.io": "https://faucet.metamask.io/", "faucet.rinkeby.io": "https://faucet.rinkeby.io/" } },
-  "42" : { "id": "42", "name": "Kovan Testnet", "explorer": "https://kovan.etherscan.io/", "faucets": { "faucet.kovan.network": "https://faucet.kovan.network/", "github.com/kovan-testnet": "https://github.com/kovan-testnet/faucet" } },
-  "5" : { "id": "5", "name": "Görli Testnet", "explorer": "https://goerli.etherscan.io/", "faucets": { "faucet.goerli.mudit.blog": "https://faucet.goerli.mudit.blog/", "goerli-faucet.slock.it": "https://goerli-faucet.slock.it/" } },
-  "1337" : { "id": "1337", "name": "Geth Devnet", "explorer": "(none)", "faucets": [] },
-  "4447" : { "id": "4447", "name": "Truffle Devnet", "explorer": "(none)", "faucets": [] },
-  "5777" : { "id": "5777", "name": "Ganache Devnet", "explorer": "(none)", "faucets": [] },
+  "-1" : {
+    "id": "-1",
+    "name": "Network Unknown",
+    "nixAddress": null,
+    "nixHelperAddress": null,
+    "wethAddress": null,
+    "royaltyEngineAddress": null,
+    "erc721HelperAddress": null,
+    "explorer": "",
+    "opensea": "(none)",
+    "faucets": {}
+  },
+  "1" : {
+    "id": "1",
+    "name": "Ethereum Mainnet",
+    "nixAddress": "0xFF0000ffe3475C081E541a1baAbc5DB7eA6e0353",
+    "nixHelperAddress": "0x76f910c835b5a06CD465657f1a71153e2B6B2C0B",
+    "wethAddress": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "royaltyEngineAddress": "0x0385603ab55642cb4Dd5De3aE9e306809991804f",
+    "erc721HelperAddress": "0x1CB0bA2E867549Aa7485a91dD90C454C2121b975",
+    "explorer": "https://etherscan.io/",
+    "opensea": "https://opensea.io/",
+    "faucets": {}
+  },
+  "2" : {
+    "id": "2",
+    "name": "Morden Testnet (deprecated)",
+    "nixAddress": null,
+    "nixHelperAddress": null,
+    "wethAddress": null,
+    "royaltyEngineAddress": null,
+    "erc721HelperAddress": null,
+    "explorer": "https://morden.etherscan.io/",
+    "opensea": "(none)",
+    "faucets": {}
+  },
+  "3" : {
+    "id": "3",
+    "name": "Ropsten Testnet",
+    "nixAddress": null,
+    "nixHelperAddress": null,
+    "wethAddress": null,
+    "royaltyEngineAddress": null,
+    "erc721HelperAddress": null,
+    "explorer": "https://ropsten.etherscan.io/",
+    "opensea": "(none)",
+    "faucets": { "faucet.metamask.io": "https://faucet.metamask.io/" }
+  },
+  "4" : {
+    "id": "4",
+    "name": "Rinkeby Testnet",
+    "nixAddress": "0xFF0000ffe3475C081E541a1baAbc5DB7eA6e0353",
+    "nixHelperAddress": "0x76f910c835b5a06CD465657f1a71153e2B6B2C0B",
+    "wethAddress": "0xD0000DE5A8A759EAD912F89d2E6f1ae59063a61A",
+    "royaltyEngineAddress": "0x8d17687ea9a6bb6efA24ec11DcFab01661b2ddcd",
+    "erc721HelperAddress": "0x1CB0bA2E867549Aa7485a91dD90C454C2121b975",
+    "explorer": "https://rinkeby.etherscan.io/",
+    "opensea": "https://testnets.opensea.io/",
+    "faucets": { "faucet.metamask.io": "https://faucet.metamask.io/", "faucet.rinkeby.io": "https://faucet.rinkeby.io/" }
+  },
+  "42" : {
+    "id": "42",
+    "name": "Kovan Testnet",
+    "nixAddress": null,
+    "nixHelperAddress": null,
+    "wethAddress": null,
+    "royaltyEngineAddress": null,
+    "erc721HelperAddress": null,
+    "explorer": "https://kovan.etherscan.io/",
+    "opensea": "(none)",
+    "faucets": { "faucet.kovan.network": "https://faucet.kovan.network/", "github.com/kovan-testnet": "https://github.com/kovan-testnet/faucet" }
+  },
+  "5" : {
+    "id": "5",
+    "name": "Görli Testnet",
+    "nixAddress": null,
+    "nixHelperAddress": null,
+    "wethAddress": null,
+    "royaltyEngineAddress": null,
+    "erc721HelperAddress": null,
+    "explorer": "https://goerli.etherscan.io/",
+    "opensea": "(none)",
+    "faucets": { "faucet.goerli.mudit.blog": "https://faucet.goerli.mudit.blog/", "goerli-faucet.slock.it": "https://goerli-faucet.slock.it/" }
+  },
+  "1337" : {
+    "id": "1337",
+    "name": "Geth Devnet",
+    "nixAddress": null,
+    "nixHelperAddress": null,
+    "wethAddress": null,
+    "royaltyEngineAddress": null,
+    "erc721HelperAddress": null,
+    "explorer": "(none)",
+    "opensea": "(none)",
+    "faucets": {}
+  },
+  "4447" : {
+    "id": "4447",
+    "name": "Truffle Devnet",
+    "nixAddress": null,
+    "nixHelperAddress": null,
+    "wethAddress": null,
+    "royaltyEngineAddress": null,
+    "erc721HelperAddress": null,
+    "explorer": "(none)",
+    "opensea": "(none)",
+    "faucets": {}
+  },
+  "5777" : {
+    "id": "5777",
+    "name": "Ganache Devnet",
+    "nixAddress": null,
+    "nixHelperAddress": null,
+    "wethAddress": null,
+    "royaltyEngineAddress": null,
+    "erc721HelperAddress": null,
+    "explorer": "(none)",
+    "opensea": "(none)",
+    "faucets": {}
+  },
 };
 
 function getNetworkDetails(network) {
@@ -80,47 +190,73 @@ const promisify = (inner) =>
 const Connection = {
   template: `
     <div>
-      <!--
-      powerOn: {{ powerOn }}<br />
-      connected: {{ connected }}<br />
-      connectionError: {{ connectionError }}<br />
-      blockUpdated: {{ blockUpdated }}<br />
-      block: {{ block == null ? 'null' : block.number }}<br />
-      coinbaseUpdated: {{ coinbaseUpdated }}<br />
-      network: {{ network == null ? 'null' : network.chainId }}<br />
-      networkUpdated: {{ networkUpdated }}<br />
-      <br />
-      <br />
-      -->
-
       <b-card header-class="warningheader" v-if="!connected" header="Web3 Connection Not Detected">
         <b-card-text>
           Please use the <b-link href="https://metamask.io" target="_blank">MetaMask</b-link> addon with Firefox, Chromium, Opera or Chrome, or any other other web3 browser to view this page
         </b-card-text>
       </b-card>
-      <b-button v-b-toggle.connection size="sm" block variant="outline-info" v-if="connected">{{ networkName }} <b-spinner class="float-right mt-1" :variant="spinnerVariant" style="animation: spinner-grow 3.75s linear infinite;" small type="grow" label="Spinning" /></b-button>
+      <b-button v-b-toggle.connection size="sm" block variant="outline-info" v-if="connected">{{ network.name }} <b-spinner class="float-right mt-1" :variant="spinnerVariant" style="animation: spinner-grow 3.75s linear infinite;" small type="grow" label="Spinning" /></b-button>
       <b-collapse id="connection" visible class="mt-2">
         <b-card no-body class="border-0" v-if="connected">
           <b-row>
             <b-col cols="4" class="small">Block</b-col>
             <b-col class="small truncate" cols="8" >
-              <b-link :href="explorer + 'block/' + blockNumber" class="card-link" target="_blank">{{ blockNumberString }}</b-link>&nbsp;&nbsp;<font size="-3">{{ lastBlockTimeDiff }}</font>
+              <b-link :href="network.explorer + 'block/' + blockNumber" class="card-link" target="_blank">{{ blockNumberString }}</b-link>&nbsp;&nbsp;<font size="-3">{{ lastBlockTimeDiff }}</font>
             </b-col>
           </b-row>
           <b-row>
             <b-col cols="4" class="small">Account</b-col>
             <b-col class="small truncate" cols="8">
-              <b-link :href="explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ coinbase == null ? '' : (coinbase.substring(0, 20) + '...') }}</b-link><span class="float-right"><b-link v-b-popover.hover="'View on OpenSea.io'" :href="'https://testnets.opensea.io/accounts/'+ coinbase" target="_blank"><img src="images/381114e-opensea-logomark-flat-colored-blue.png" width="20px" /></b-link> <!-- <b-link :href="'https://rarible.com/user/'+ coinbase" v-b-popover.hover="'View on Rarible.com'" target="_blank"><img src="images/rarible_feb7c08ba34c310f059947d23916f76c12314e85.png" height="20px" /></b-link> --></span>
+              <b-link :href="network.explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ coinbase == null ? '' : (coinbase.substring(0, 20) + '...') }}</b-link><span class="float-right"><b-link v-b-popover.hover="'View on OpenSea.io'" :href="network.opensea + 'accounts/'+ coinbase" target="_blank"><img src="images/381114e-opensea-logomark-flat-colored-blue.png" width="20px" /></b-link></span>
             </b-col>
           </b-row>
           <b-row>
-            <b-col cols="4" class="small">ETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ formatETH(balance) }}</b-link></b-col>
+            <b-col cols="4" class="small">ETH Balance</b-col>
+            <b-col class="small truncate" cols="8">
+              <b-link :href="network.explorer + 'address/' + coinbase" class="card-link" target="_blank">{{ formatETH(balance) }}</b-link>
+            </b-col>
           </b-row>
           <b-row>
-            <b-col cols="4" class="small">WETH Balance</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'token/' + wethAddress + '?=' + coinbase" class="card-link" target="_blank">{{ formatETH(wethBalance) }}</b-link></b-col>
+            <b-col cols="4" class="small">WETH Balance</b-col>
+            <b-col class="small truncate" cols="8">
+              <b-link :href="network.explorer + 'token/' + network.wethAddress + '?=' + coinbase" class="card-link" target="_blank">{{ formatETH(wethBalance) }}</b-link>
+            </b-col>
           </b-row>
           <b-row>
-            <b-col cols="4" class="small">Nix WETH Allow</b-col><b-col class="small truncate" cols="8"><b-link :href="explorer + 'address/' + wethAddress + '#events'" class="card-link" target="_blank">{{ formatETH(wethAllowanceToNix) }}</b-link></b-col>
+            <b-col cols="4" class="small">Nix WETH Allow</b-col>
+            <b-col class="small truncate" cols="8">
+              <b-link :href="network.explorer + 'address/' + network.wethAddress + '#events'" class="card-link" target="_blank">{{ formatETH(wethAllowanceToNix) }}</b-link>
+            </b-col>
+          </b-row>
+          <b-row>
+            <b-col cols="4" class="small">Nix</b-col>
+            <b-col class="small truncate" cols="8">
+              <b-link :href="network.explorer + 'address/' + network.nixAddress + '#code'" class="card-link" target="_blank">{{ network.nixAddress == null ? '' : (network.nixAddress.substring(0, 20) + '...') }}</b-link>
+            </b-col>
+          </b-row>
+          <b-row>
+            <b-col cols="4" class="small">Nix Helper</b-col>
+            <b-col class="small truncate" cols="8">
+              <b-link :href="network.explorer + 'address/' + network.nixHelperAddress + '#code'" class="card-link" target="_blank">{{ network.nixHelperAddress == null ? '' : (network.nixHelperAddress.substring(0, 20) + '...') }}</b-link>
+            </b-col>
+          </b-row>
+          <b-row>
+            <b-col cols="4" class="small">WETH</b-col>
+            <b-col class="small truncate" cols="8">
+              <b-link :href="network.explorer + 'token/' + network.wethAddress" class="card-link" target="_blank">{{ network.wethAddress == null ? '' : (network.wethAddress.substring(0, 20) + '...') }}</b-link>
+            </b-col>
+          </b-row>
+          <b-row>
+            <b-col cols="4" class="small">Royalty Engine</b-col>
+            <b-col class="small truncate" cols="8">
+              <b-link :href="network.explorer + 'address/' + network.royaltyEngineAddress + '#code'" class="card-link" target="_blank">{{ network.royaltyEngineAddress == null ? '' : (network.royaltyEngineAddress.substring(0, 20) + '...') }}</b-link>
+            </b-col>
+          </b-row>
+          <b-row>
+            <b-col cols="4" class="small">ERC721 Helper</b-col>
+            <b-col class="small truncate" cols="8">
+              <b-link :href="network.explorer + 'address/' + network.erc721HelperAddress + '#code'" class="card-link" target="_blank">{{ network.erc721HelperAddress == null ? '' : (network.erc721HelperAddress.substring(0, 20) + '...') }}</b-link>
+            </b-col>
           </b-row>
           <b-row v-show="Object.keys(faucets).length">
             <b-col cols="4" class="small">Faucet(s)</b-col>
@@ -182,12 +318,6 @@ const Connection = {
     network() {
       return store.getters['connection/network'];
     },
-    networkUpdated() {
-      return store.getters['connection/networkUpdated'];
-    },
-    networkName() {
-      return store.getters['connection/networkName'];
-    },
     explorer() {
       return store.getters['connection/explorer'];
     },
@@ -208,9 +338,6 @@ const Connection = {
     },
     weth() {
       return store.getters['connection/weth'];
-    },
-    wethAddress() {
-      return WETHADDRESS;
     },
     wethBalance() {
       return store.getters['connection/weth'] ? store.getters['connection/weth'].balance : null;
@@ -307,6 +434,7 @@ const Connection = {
             const provider = new ethers.providers.Web3Provider(window.ethereum);
             const network = await provider.getNetwork();
             store.dispatch('connection/setNetwork', network);
+            logInfo("Connection", "execWeb3() network: " + JSON.stringify(this.network));
             const block = await provider.getBlock();
             store.dispatch('connection/setBlock', block);
             const signer = provider.getSigner()
@@ -315,98 +443,11 @@ const Connection = {
             const balance = await provider.getBalance(this.coinbase);
             store.dispatch('connection/setBalance', balance);
 
-            if (network.chainId == 4) {
-              const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
+            if (this.network.chainId == 1 || this.network.chainId == 4) {
+              const weth = new ethers.Contract(this.network.wethAddress, WETHABI, provider);
               const wethBalance = await weth.balanceOf(this.coinbase);
-              const wethAllowanceToNix = await weth.allowance(this.coinbase, NIXADDRESS);
-
-              const blockNumber = block.number;
-              // const wethLookback = 50000; // 100
-              // const wethFilter = {
-              //   address: WETHADDRESS,
-              //   fromBlock: blockNumber - wethLookback,
-              //   toBlock: blockNumber,
-              //   topics: [[
-              //     '0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c', // Deposit (index_topic_1 address dst, uint256 wad)
-              //     '0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65', // Withdrawal (index_topic_1 address src, uint256 wad)
-              //     '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', // Transfer(index_topic_1 address from, index_topic_2 address to, index_topic_3 uint256 tokenId)
-              //     '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925', // Approval (index_topic_1 address src, index_topic_2 address guy, uint256 wad)
-              //   ]],
-              // };
-              // const wethEvents = await provider.getLogs(wethFilter);
-              // const updatedAccounts = {};
-              // for (let j = 0; j < wethEvents.length; j++) {
-              //   const wethEvent = wethEvents[j];
-              //   const parsedLog = weth.interface.parseLog(wethEvent);
-              //   const decodedEventLog = weth.interface.decodeEventLog(parsedLog.eventFragment.name, wethEvent.data, wethEvent.topics);
-              //   // console.log(parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
-              //   if (parsedLog.eventFragment.name == "Transfer") {
-              //     updatedAccounts[decodedEventLog[0]] = true;
-              //     updatedAccounts[decodedEventLog[1]] = true;
-              //   } else if (parsedLog.eventFragment.name == "Deposit" || parsedLog.eventFragment.name == "Withdrawal") {
-              //     updatedAccounts[decodedEventLog[0]] = true;
-              //   } else { // Approval
-              //     if (decodedEventLog[1] == NIXADDRESS) {
-              //       updatedAccounts[decodedEventLog[0]] = true;
-              //     }
-              //   }
-              // }
+              const wethAllowanceToNix = await weth.allowance(this.coinbase, this.network.nixAddress);
               store.dispatch('connection/setWeth', { balance: wethBalance, allowanceToNix: wethAllowanceToNix });
-
-              // const collections = Object.keys(store.getters['collectionData/collectionConfig']);
-              // for (collection of collections) {
-              //   // console.log("collection: " + JSON.stringify(collection));
-              //   const erc721Lookback = 2000; // 100
-              //   const erc721Filter = {
-              //     address: collection,
-              //     // address: [["0x652dc3aa8e1d18a8cc19aef62cf4f03c4d50b2b5", "0xD000F000Aa1F8accbd5815056Ea32A54777b2Fc4", "0xab04795fa12aCe45Dd2A2E4A132e4E46B2d4D1B8"]],
-              //     // fromBlock: 9718914, // blockNumber - 300, //  - erc721Lookback,
-              //     // toBlock: 9718914, // blockNumber - 200,
-              //     fromBlock: blockNumber - erc721Lookback,
-              //     toBlock: blockNumber,
-              //     topics: [[
-              //       '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', // Transfer(index_topic_1 address from, index_topic_2 address to, index_topic_3 uint256 tokenId)
-              //       '0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31', // ApprovalForAll (index_topic_1 address owner, index_topic_2 address operator, bool approved)
-              //     ]],
-              //   };
-              //   console.log("erc721Filter: " + JSON.stringify(erc721Filter));
-              //   const erc721Events = await provider.getLogs(erc721Filter);
-              //   // console.log("erc721Events: " + JSON.stringify(erc721Events));
-              //   const testToadz = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
-              //   // const updatedTokenIdsMap = {};
-              //   // const updateApprovals = {};
-              //   for (let j = 0; j < erc721Events.length; j++) {
-              //     const erc721Event = erc721Events[j];
-              //     const parsedLog = testToadz.interface.parseLog(erc721Event);
-              //     // console.log("parsedLog: " + JSON.stringify(parsedLog));
-              //     const decodedEventLog = testToadz.interface.decodeEventLog(parsedLog.eventFragment.name, erc721Event.data, erc721Event.topics);
-              //     console.log(erc721Event.address + " " + parsedLog.eventFragment.name + " " + JSON.stringify(decodedEventLog.map((x) => { return x.toString(); })));
-              //     if (parsedLog.eventFragment.name == "Transfer") {
-              //   //     updatedTokenIdsMap[decodedEventLog[2]] = true;
-              //     } else {
-              //   //     updateApprovals[decodedEventLog[0]] = true;
-              //     }
-              //   }
-              //   // // TODO - Send both below to Nix to handle
-              //   // console.log("updateApprovals: " + JSON.stringify(Object.keys(updateApprovals)));
-              //   // const updatedTokenIds = Object.keys(updatedTokenIdsMap);
-              //   // console.log("updatedTokenIds: " + JSON.stringify(updatedTokenIds));
-              //   // const scanBatchSize = 5000;
-              //   // for (let i = 0; i < updatedTokenIds.length; i += scanBatchSize) {
-              //   //   const batch = updatedTokenIds.slice(i, parseInt(i) + scanBatchSize);
-              //   //   const ownersInfo = await erc721Helper.ownersByTokenIds(collection.address, batch);
-              //   //   for (let j = 0; j < ownersInfo[0].length; j++) {
-              //   //     if (ownersInfo[0][j]) {
-              //   //       const tokenId = batch[j].toString();
-              //   //       // owners[tokenId] = { tokenId: tokenId, owner: ownersInfo[1][j] };
-              //   //       // console.log(tokenId + " = " + ownersInfo[1][j]);
-              //   //     }
-              //   //   }
-              //   // }
-              //
-              // }
-
-
             } else {
               store.dispatch('connection/setWeth', { balance: null, allowanceToNix: null, updatedAccounts: [] });
             }
@@ -489,11 +530,19 @@ const connectionModule = {
     powerOn: false,
     connected: false,
     connectionError: null,
-    network: null,
-    networkUpdated: false,
-    networkName: null,
-    explorer: "https://etherscan.io/",
-    faucets: null,
+    network: {
+      chainId: null,
+      updated: true,
+      name: null,
+      nixAddress: null,
+      nixHelperAddress: null,
+      wethAddress: null,
+      royaltyEngineAddress: null,
+      erc721HelperAddress: null,
+      explorer: "https://etherscan.io/",
+      opensea: null,
+      faucets: {},
+    },
     coinbase: null,
     coinbaseUpdated: false,
     balance: null,
@@ -513,10 +562,6 @@ const connectionModule = {
     connectionError: state => state.connectionError,
     connection: state => state.connection,
     network: state => state.network,
-    networkUpdated: state => state.networkUpdated,
-    networkName: state => state.networkName,
-    explorer: state => state.explorer,
-    faucets: state => state.faucets,
     coinbase: state => state.coinbase,
     coinbaseUpdated: state => state.coinbaseUpdated,
     balance: state => state.balance,
@@ -542,21 +587,36 @@ const connectionModule = {
       state.connectionError = error;
     },
     setNetwork(state, network) {
-      logDebug("connectionModule", "mutations.setNetwork() - networkName: " + network.chainId);
-      if (state.network == null || state.network.chainId != network.chainId) {
-        logDebug("connectionModule", "mutations.setNetwork() - networkName: " + network.chainId + " updated");
-        state.network = network;
+      logInfo("connectionModule", "mutations.setNetwork() - network.chainId: " + network.chainId);
+      if (state.network.chainId != network.chainId) {
+        state.network.chainId = network.chainId;
         var networkDetails = getNetworkDetails(network.chainId);
-        state.networkName = networkDetails.name;
-        logDebug("connectionModule", "mutations.setNetwork() - networkName: " + state.networkName);
-        state.explorer = networkDetails.explorer;
-        state.faucets = networkDetails.faucets;
-        state.networkUpdated = true;
+        state.network.name = networkDetails.name;
+        state.network.nixAddress = networkDetails.nixAddress;
+        state.network.nixHelperAddress = networkDetails.nixHelperAddress;
+        state.network.wethAddress = networkDetails.wethAddress;
+        state.network.royaltyEngineAddress = networkDetails.royaltyEngineAddress;
+        state.network.erc721HelperAddress = networkDetails.erc721HelperAddress;
+        state.network.explorer = networkDetails.explorer;
+        state.network.opensea = networkDetails.opensea;
+        state.network.faucets = networkDetails.faucets;
+        state.network.updated = true;
+        logInfo("connectionModule", "state.network: " + JSON.stringify(state.network));
       } else {
-        if (state.networkUpdated) {
-          state.networkUpdated = false;
+        if (state.network.updated) {
+          state.network.updated = false;
         }
       }
+
+      // network: {
+      //   chainId: null,
+      //   updated: true,
+      //   name: null,
+      //   explorer: "https://etherscan.io/",
+      //   opensea: null,
+      //   faucets: null,
+      // },
+
     },
     setCoinbase(state, coinbase) {
       logDebug("connectionModule", "mutations.setCoinbase(" + coinbase + ")");

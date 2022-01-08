@@ -1,14 +1,14 @@
 const NixData = {
   template: `
     <div>
-      <b-card header-class="warningheader" header="Incorrect Network Detected" v-if="!powerOn || network == null || network.chainId != 4">
+      <b-card header-class="warningheader" header="Incorrect Network Detected" v-if="!powerOn || (network.chainId != 1 && network.chainId != 4)">
         <b-card-text>
           Please install the MetaMask extension, connect to the Rinkeby network and refresh this page. Then click the [Power] button on the top right.
         </b-card-text>
       </b-card>
       <b-button v-b-toggle.nix_contract size="sm" block variant="outline-info">Nix Exchange</b-button>
       <b-collapse id="nix_contract" visible class="my-2">
-        <b-card no-body class="border-0" v-if="network && network.chainId == 4">
+        <b-card no-body class="border-0" v-if="network.chainId == 1 || network.chainId == 4">
           <b-row>
             <b-col cols="4" class="small">Nix</b-col>
             <b-col class="small truncate" cols="8">
@@ -331,8 +331,10 @@ const nixDataModule = {
         const nixOrders = {};
         const nixTrades = {};
 
+        const network = store.getters['connection/network'];
+
         const nixFilter = {
-          address: NIXADDRESS,
+          address: network.nixAddress,
           fromBlock: blockNumber - nixLookback,
           toBlock: blockNumber,
           topics: [[
@@ -360,7 +362,7 @@ const nixDataModule = {
         }
 
         const wethFilter = {
-          address: WETHADDRESS,
+          address: network.wethAddress,
           fromBlock: blockNumber - wethLookback,
           toBlock: blockNumber,
           topics: [[
@@ -413,7 +415,7 @@ const nixDataModule = {
               }
               tokens[erc721Event.address][decodedEventLog[2]] = true;
             } else { // ApprovalForAll
-              if (decodedEventLog[1] == NIXADDRESS) {
+              if (decodedEventLog[1] == network.nixAddress) {
                 accounts[decodedEventLog[0]] = true;
               }
             }
@@ -574,7 +576,7 @@ const nixDataModule = {
         // for (let collection of Object.keys(updates.nixOrders)) {
         //   logInfo("nixDataModule", "execWeb3.syncNixTokens() - nixOrders: " + collection + " - " + Object.keys(updates.nixOrders[collection]));
         // }
-        const tokensLength = (await nix.tokensLength()).toNumber();
+        const tokensLength = (await nix.getLengths())[0].toNumber();
         const tokenIndexHash = {};
         for (let i = 0; i < tokensLength; i++) {
           if (updates.nixTrades[i]) {
@@ -847,7 +849,7 @@ const nixDataModule = {
         }
 
         // logInfo("nixDataModule", "execWeb3.syncNixTrades() - nixTrades: " + JSON.stringify(Object.keys(updates.nixTrades)));
-        const tradesLength = (await nix.tradesLength()).toNumber();
+        const tradesLength = (await nix.getLengths())[1].toNumber();
         var tradeData = [];
         const tradeIndexHash = {};
         for (let i = 0; i < tradesLength; i++) {
@@ -1011,6 +1013,9 @@ const nixDataModule = {
                     " - maker: " + order.maker + ", taker: " + order.taker + ", tokenIds: " + JSON.stringify(order.tokenIds) +
                     ", price: " + ethers.utils.formatEther(order.price) +
                     ", expiry: " + expiryString +
+                    ", tradeCount: " + order.tradeCount +
+                    ", tradeMax: " + order.tradeMax +
+                    ", royaltyFactor: " + order.royaltyFactor +
                     ", orderStatus: " + ORDERSTATUSSTRING[order.orderStatus] +
                     ", makersTokenIds: " + JSON.stringify(makersTokenIds) +
                     ", wethBalance: " + JSON.stringify(wethBalanceString) +
@@ -1018,22 +1023,31 @@ const nixDataModule = {
                   );
 
 
-                  // if (order.orderStatus == ORDERSTATUS_EXECUTABLE) {
-                  //   if (order.buySell == BUYSELL.BUY) {
-                  //     if (order.anyOrAll == ANYORALL.ANY) {
+                  if (order.orderStatus == ORDERSTATUS_EXECUTABLE) {
+                    if (order.buyOrSell == BUYSELL.BUY) {
+                      if (order.anyOrAll == ANYORALL.ANY) {
+                        if (order.tokenIds.length == 0) {
+                          console.log("  Global Buy Any: " + order.maker);
+                          globalBuys[order.orderIndex] = order;
+                        } else {
+                          for (let tokenIdIndex = 0; tokenIdIndex < order.tokenIds.length; tokenIdIndex++) {
+                            console.log(order.tokenIds[tokenIdIndex]);
+                          }
+                        }
                   //       console.log("Buy Any: " + order.maker);
-                  //     } else {
+                      } else {
                   //       console.log("Buy All: " + order.maker);
-                  //     }
-                  //   } else {
+                      }
+                    } else {
                   //     if (order.anyOrAll == ANYORALL.ANY) {
                   //       console.log("Sell Any maker: " + order.maker + ", owns: " + JSON.stringify(tokenIdsByOwners[order.maker]));
                   //     } else {
                   //       console.log("Sell All maker: " + order.maker + ", owns: " + JSON.stringify(tokenIdsByOwners[order.maker]));
                   //     }
-                  //   }
-                  // }
+                    }
+                  }
                 }
+                console.log("globalBuys: " + JSON.stringify(globalBuys));
             }
           }
         }
@@ -1059,10 +1073,11 @@ const nixDataModule = {
           const blockNumber = block ? block.number : await provider.getBlockNumber();
           const timestamp = block ? block.timestamp : await provider.getBlock().timestamp;
           logDebug("nixDataModule", "execWeb3() count: " + count + ", blockUpdated: " + blockUpdated + ", blockNumber: " + blockNumber + ", listenersInstalled: " + listenersInstalled + ", rootState.route.params: " + JSON.stringify(rootState.route.params) + "]");
-          const weth = new ethers.Contract(WETHADDRESS, WETHABI, provider);
-          const nix = new ethers.Contract(NIXADDRESS, NIXABI, provider);
-          const nixHelper = new ethers.Contract(NIXHELPERADDRESS, NIXHELPERABI, provider);
-          const erc721Helper = new ethers.Contract(ERC721HELPERADDRESS, ERC721HELPERABI, provider);
+          const network = store.getters['connection/network'];
+          const weth = new ethers.Contract(network.wethAddress, WETHABI, provider);
+          const nix = new ethers.Contract(network.nixAddress, NIXABI, provider);
+          const nixHelper = new ethers.Contract(network.nixHelperAddress, NIXHELPERABI, provider);
+          const erc721Helper = new ethers.Contract(network.erc721HelperAddress, ERC721HELPERABI, provider);
           const erc721 = new ethers.Contract(TESTTOADZADDRESS, TESTTOADZABI, provider);
 
           const updates = await getRecentEvents(provider, nix, erc721, weth, blockNumber);

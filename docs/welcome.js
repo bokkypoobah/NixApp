@@ -5,7 +5,7 @@ const Welcome = {
       <b-card no-body header="Welcome" class="border-0" header-class="p-1">
         <b-card no-body class="border-0 m-0 mt-2">
 
-          <b-card class="my-3" header-class="warningheader" header="Web3 Connection And/Or Incorrect Network Detected" v-if="!powerOn || network == null || network.chainId != 4">
+          <b-card class="my-3" header-class="warningheader" header="Web3 Connection And/Or Incorrect Network Detected" v-if="!powerOn || (network.chainId != 1 && network.chainId != 4)">
             <b-card-text>
               Please install the MetaMask extension, connect to the Rinkeby network and refresh this page. Then click the [Power] button on the top right.
             </b-card-text>
@@ -13,6 +13,12 @@ const Welcome = {
 
           <b-card-body class="p-0">
             <b-card class="mb-2">
+
+              <b-card class="my-3" header-class="warningheader" header="Mainnet Warning" v-if="network.chainId == 1">
+                <b-card-text>
+                  Please use the Rinkeby Network, as the Mainnet is in alpha.
+                </b-card-text>
+              </b-card>
 
               <b-card-text>
                 Welcome to the Nix Decentralised ERC-721 Exchange. Check out the menus on the top right. Click on the top left icon to get back here. <b>Status: WIP</b>
@@ -22,19 +28,19 @@ const Welcome = {
                 <h5>How This Works</h5>
                 <ul>
                   <li>
-                    <b>Makers</b> add orders to buy or sell NFTs in the Nix exchange at <b-link :href="explorer + 'address/' + nixAddress + '#code'" target="_blank">{{ nixAddress.substring(0, 20) + '...' }}</b-link>. (Exchange -> Orders)
+                    <b>Makers</b> add orders to buy or sell NFTs in the Nix exchange at <b-link :href="network.explorer + 'address/' + network.nixAddress + '#code'" target="_blank">{{ network.nixAddress && (network.nixAddress.substring(0, 20) + '...') || '' }}</b-link>. (Exchange -> Orders)
                   </li>
                   <li>
                     <b>Takers</b> execute against one or more orders. (Exchange -> Trades)
                   </li>
                   <li>
-                    Payments are made in <b-link :href="explorer + 'token/' + wethAddress" target="_blank">WETH</b-link> and are netted, so no fancy flash loans are required for complicated buy/sell bulk trades. The taker pays the <b>netAmount</b> in WETH if negative, or receives if positive.
+                    Payments are made in <b-link :href="network.explorer + 'token/' + network.wethAddress" target="_blank">WETH</b-link> and are netted, so no fancy flash loans are required for complicated buy/sell bulk trades. The taker pays the <b>netAmount</b> in WETH if negative, or receives if positive.
                   </li>
                   <li>
                     The Nix exchange must be approved to transfer the WETH and/or the NFT. (Tokens -> Approval and WETH -> Approval)
                   </li>
                   <li>
-                    The NixHelper contract at <b-link :href="explorer + 'address/' + nixHelperAddress + '#code'" target="_blank">{{ nixHelperAddress.substring(0, 20) + '...' }}</b-link> allows this Web3 UI to retrieve the order and trade information in bulk, via the web3 connection.
+                    The NixHelper contract at <b-link :href="explorer + 'address/' + network.nixHelperAddress + '#code'" target="_blank">{{ network.nixHelperAddress && network.nixHelperAddress.substring(0, 20) + '...' || '' }}</b-link> allows this Web3 UI to retrieve the order and trade information in bulk, via the web3 connection.
                   </li>
                   <li>
                     There are no fees on this exchange.
@@ -92,7 +98,7 @@ const Welcome = {
                 <h5>ERC-721 Token Collection Data Retrieval</h5>
                 <ul>
                   <li>
-                    The ERC721Helper contract at <b-link :href="explorer + 'address/' + erc721HelperAddress + '#code'" target="_blank">{{ erc721HelperAddress.substring(0, 20) + '...' }}</b-link> allows this Web3 UI to retrieve the token ownership and tokenURI information for ERC-721 NFT collections in bulk, via the web3 connection.
+                    The ERC721Helper contract at <b-link :href="network.explorer + 'address/' + network.erc721HelperAddress + '#code'" target="_blank">{{ network.erc721HelperAddress && network.erc721HelperAddress.substring(0, 20) + '...' || '' }}</b-link> allows this Web3 UI to retrieve the token ownership and tokenURI information for ERC-721 NFT collections in bulk, via the web3 connection.
                   </li>
                   <li>
                     The tokenURI information for each tokenId within an NFT collection may have an image and/or traits. This can be parsed and used for displaying and filtering.
@@ -104,7 +110,7 @@ const Welcome = {
                 <h5>Royalties</h5>
                 <ul>
                   <li>
-                    This exchange uses <b-link href="https://royaltyregistry.xyz/lookup" target="_blank">Manifold's Royalty Engine</b-link> at <b-link :href="explorer + 'address/' + nixRoyaltyEngine + '#code'" target="_blank">{{ nixRoyaltyEngine == null ? '' : (nixRoyaltyEngine.substring(0, 20) + '...') }}</b-link> to compute the royalty payments on NFT sales. Note that there can be different royalty payment rates for different tokenIds within the same collection.
+                    This exchange uses <b-link href="https://royaltyregistry.xyz/lookup" target="_blank">Manifold's Royalty Engine</b-link> at <b-link :href="explorer + 'address/' + network.nixRoyaltyEngine + '#code'" target="_blank">{{ network.nixRoyaltyEngine && nixRoyaltyEngine.substring(0, 20) + '...' || '' }}</b-link> to compute the royalty payments on NFT sales. Note that there can be different royalty payment rates for different tokenIds within the same collection.
                   </li>
                   <li>
                     Deployers of ERC-721 token collection configure the royalty payment information in the <b-link href="https://royaltyregistry.xyz/configure" target="_blank">Royalty Registry</b-link>.
@@ -160,21 +166,6 @@ const Welcome = {
     },
     network() {
       return store.getters['connection/network'];
-    },
-    nixAddress() {
-      return NIXADDRESS;
-    },
-    nixHelperAddress() {
-      return NIXHELPERADDRESS;
-    },
-    nixRoyaltyEngine() {
-      return store.getters['nixData/nixRoyaltyEngine'];
-    },
-    erc721HelperAddress() {
-      return ERC721HELPERADDRESS;
-    },
-    wethAddress() {
-      return WETHADDRESS;
     },
   },
   methods: {

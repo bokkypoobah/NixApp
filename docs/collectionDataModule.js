@@ -1,14 +1,14 @@
 const CollectionData = {
   template: `
     <div>
-      <b-card header-class="warningheader" header="Incorrect Network Detected" v-if="!powerOn || network == null || network.chainId != 4">
+      <b-card header-class="warningheader" header="Incorrect Network Detected" v-if="!powerOn || (network.chainId != 1 && network.chainId != 4)">
         <b-card-text>
           Please install the MetaMask extension, connect to the Rinkeby network and refresh this page. Then click the [Power] button on the top right.
         </b-card-text>
       </b-card>
       <b-button v-b-toggle.collections size="sm" block variant="outline-info">ERC-721 Token Collections</b-button>
       <b-collapse id="collections" visible class="my-2">
-        <b-card no-body class="border-0" v-if="network && network.chainId == 4">
+        <b-card no-body class="border-0" v-if="network.chainId == 1 || network.chainId == 4">
           <b-row>
             <b-col cols="4" class="small">Collections</b-col>
             <b-col class="small truncate" cols="8">{{ Object.keys(collections).length }}</b-col>
